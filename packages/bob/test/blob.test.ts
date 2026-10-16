@@ -128,6 +128,24 @@ describe("temperature", () => {
     expect(s.w).toBeLessThan(28);
   });
 
+  it("frozen on a gentle ice slope he drifts slowly downhill, and never flies off", () => {
+    // A staircase slope, 1 px down every 12 px (like the course's ice).
+    const w = new World(320, 200, 1);
+    for (let x = 0; x < 320; x++) for (let y = 120 + Math.floor(x / 12); y < 200; y++) w.set(x, y, M.ice);
+    const b = new Blob(DEFAULTS);
+    b.fixedTemp = -20;
+    b.spawn(w, 100, 110);
+    let fastest = 0, x0 = 0;
+    for (let i = 0; i < 300; i++) {
+      b.step(w, { move: 0, jump: false });
+      if (i === 60) x0 = b.main!.cx;
+      fastest = Math.max(fastest, Math.hypot(b.main!.vx, b.main!.vy));
+    }
+    expect(b.main!.cx).toBeGreaterThan(x0 + 5); // downhill is to the right
+    expect(fastest).toBeLessThan(120);
+    expect(b.pieces.length).toBe(1);
+  });
+
   it("frozen, a drop cracks him into chunks; at room temperature he survives it", () => {
     const w1 = ground(), cold = bob(w1, {}, -20);
     lift(cold, 40);

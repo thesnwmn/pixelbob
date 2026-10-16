@@ -17,7 +17,8 @@ How Bob is built, how he moves, and what every material and effect does to him. 
   - Friction comes from the material under him.
   - He can step up a single pixel. Smooth slopes (staircases of 1 px steps) roll freely, while 2 px or larger bumps snag his underside. That difference is the whole of "rough terrain".
 - **Liquids:** buoyancy by density (he's 10.5 to water's 10, so he sinks slowly, about 2 px/s) and heavy drag by viscosity. He doesn't push liquid cells aside yet.
-- **Keeping it calm.** Pieces pushing apart, and bits drifting together, move particles without giving them speed, and no particle may move faster than 120 px/s relative to its piece. Without this, stiff or freshly cut pieces fling bits across the screen.
+- **Keeping it calm.** Shape matching only ever reshapes a piece, never moves or spins it: half-frozen, his particles pull with different strengths, and uneven pulls used to push him along by themselves (enough to launch him off a slope). Pieces pushing apart, and bits drifting together, move particles without giving them speed, and no particle may move faster than 120 px/s relative to its piece. Without these, stiff or freshly cut pieces fling bits across the screen.
+- **Slopes for rigid pieces.** A pixel slope is a staircase and collisions push straight up off each step, so a frozen lump wouldn't feel the slope at all. Frozen pieces on the ground get gravity along the slope fitted through the surface under them, against friction from their weight: they creep down ice and stay put on rock.
 
 ## How he moves: everything is deformation
 
@@ -41,7 +42,7 @@ Each particle has its own temperature. It exchanges heat with the cell it's in a
 
 | State | Range | Muscle | Shape | Bonds | What it means |
 |---|---|---|---|---|---|
-| Frozen | below −8 °C | none | rigid, set in the pose he froze in | don't stretch-tear, but **crack** on impact | Can't roll or jump; slides on momentum like a block (friction from his weight; long on ice, short on rock), doesn't bounce, and cracks into chunks if dropped about 20 px |
+| Frozen | below −8 °C | none | rigid, set in the pose he froze in | don't stretch-tear, but **crack** on impact | Can't roll or jump; slides like a block (friction from his weight; long on ice, short on rock), drifts slowly down icy slopes, doesn't bounce, and cracks into chunks if dropped about 20 px |
 | Cold | −8 to 8 °C | ramps 0 → full | stiffening | stiffening | Sluggish |
 | Normal | 8 to 40 °C | full | bouncy jelly | stretchy | Default |
 | Warm / runny | 40 to 70 °C | weakening | memory fades to almost none | **taffy**: bonds take on whatever length they're pulled to | Switches from rolling to oozing; spreads into a puddle; pours through gaps; stays poured until cool |

@@ -83,6 +83,9 @@ export class Blob {
   /** Shift from pushing apart overlapping pieces this substep, which mustn't become velocity. */
   private fsx = new Float32Array(0);
   private fsy = new Float32Array(0);
+  /** Shape-matching pull per particle, before taking out net shift and spin. */
+  private dsx = new Float32Array(0);
+  private dsy = new Float32Array(0);
 
   ba = new Int32Array(0); bb = new Int32Array(0);
   bl = new Float32Array(0);
@@ -150,7 +153,7 @@ export class Blob {
     const f = () => new Float32Array(cap);
     this.x = f(); this.y = f(); this.px = f(); this.py = f(); this.vx = f(); this.vy = f(); this.t = f();
     this.rx = f(); this.ry = f(); this.hx = f(); this.hy = f(); this.cool = f();
-    this.cnx = f(); this.cny = f(); this.hit = f(); this.fz = f(); this.rn = f(); this.al = f(); this.tread = f(); this.fsx = f(); this.fsy = f();
+    this.cnx = f(); this.cny = f(); this.hit = f(); this.fz = f(); this.rn = f(); this.al = f(); this.tread = f(); this.fsx = f(); this.fsy = f(); this.dsx = f(); this.dsy = f();
     this.alive = new Uint8Array(cap); this.piece = new Int32Array(cap); this.deg = new Uint8Array(cap);
     this.cmat = new Uint8Array(cap); this.ccell = new Int32Array(cap);
     this.ba = new Int32Array(cap * NB / 2); this.bb = new Int32Array(cap * NB / 2); this.bl = new Float32Array(cap * NB / 2); this.bn = new Float32Array(cap * NB / 2);
@@ -443,10 +446,29 @@ export class Blob {
       }
       const th = Math.atan2(c - b, a + d), co = Math.cos(th), si = Math.sin(th);
       const sx = pi === 0 ? this.sx : 1, sy = pi === 0 ? this.sy : 1;
+      // Each particle's pull towards its goal. Particles can pull with different strengths
+      // (half frozen: the cold side is stiffer), and uneven pulls would shift and spin the
+      // whole piece by themselves. So take out any net shift and net spin: shape matching
+      // only ever changes his shape, never moves him.
+      const { dsx, dsy } = this;
+      let mx = 0, my = 0;
       for (let k = p.start; k < p.start + p.len; k++) {
         const i = order[k], al = this.al[i];
         const gx = cx + (co * rx[i] - si * ry[i]) * sx, gy = cy + (si * rx[i] + co * ry[i]) * sy;
-        x[i] += (gx - x[i]) * al; y[i] += (gy - y[i]) * al;
+        dsx[i] = (gx - x[i]) * al; dsy[i] = (gy - y[i]) * al;
+        mx += dsx[i]; my += dsy[i];
+      }
+      mx /= p.len; my /= p.len;
+      let tq = 0, inertia = 0;
+      for (let k = p.start; k < p.start + p.len; k++) {
+        const i = order[k], ox = x[i] - cx, oy = y[i] - cy;
+        dsx[i] -= mx; dsy[i] -= my;
+        tq += ox * dsy[i] - oy * dsx[i]; inertia += ox * ox + oy * oy;
+      }
+      const spin = inertia > 0 ? tq / inertia : 0;
+      for (let k = p.start; k < p.start + p.len; k++) {
+        const i = order[k], ox = x[i] - cx, oy = y[i] - cy;
+        x[i] += dsx[i] + spin * oy; y[i] += dsy[i] - spin * ox;
       }
     }
   }
@@ -625,12 +647,22 @@ export class Blob {
           for (let j = p.start; j < p.start + p.len; j++) vy[order[j]] += dv;
           mvy += dv;
         }
-        // And it slides like a block: friction from its weight, not from how many of its
-        // particles happen to touch (a rigid lump only touches with a few).
+        // And it slides like a block on a slope. Pixel slopes are staircases, and collisions
+        // only push straight up off each step, so a rigid lump never feels the slope by itself:
+        // fit a line through the points it rests on and apply gravity down it, against
+        // friction from its weight (not from how many of its particles happen to touch).
         if (touching) {
-          const dv = -Math.sign(mvx) * Math.min(Math.abs(mvx), (mu / touching) * this.tweaks.grip * this.tweaks.gravity * DT * f);
-          for (let j = p.start; j < p.start + p.len; j++) vx[order[j]] += dv;
-          mvx += dv;
+          const slope = this.slopeUnder(cx, cy, p.radius);
+          const len = Math.hypot(1, slope), tx = 1 / len, ty = slope / len;
+          const g = this.tweaks.gravity, down = g * ty, grip = (mu / touching) * this.tweaks.grip * g * tx;
+          const vt = mvx * tx + mvy * ty;
+          // Gravity along the slope, then friction against the motion; held still if it can't overcome it.
+          let nt = vt + down * DT * f;
+          const drag = grip * DT * f;
+          nt = Math.abs(nt) <= drag ? 0 : nt - Math.sign(nt) * drag;
+          const dv = nt - vt;
+          for (let j = p.start; j < p.start + p.len; j++) { vx[order[j]] += dv * tx; vy[order[j]] += dv * ty; }
+          mvx += dv * tx; mvy += dv * ty;
         }
       }
       // Only frozen Bob is damped: jelly keeps its wobble, and oozing is all internal motion.
@@ -688,6 +720,26 @@ export class Blob {
         cracks++;
       } else if (f <= 0.5) this.tear(i);
     }
+  }
+
+  /**
+   * Slope of the ground under a piece (dy/dx, positive = downhill to the right), fitted
+   * through the surface height of the columns either side of it, out to twice its radius,
+   * so steps of a pixel staircase read as the slope they make.
+   */
+  private slopeUnder(cx: number, cy: number, r: number): number {
+    const world = this.world;
+    if (!world) return 0;
+    let n = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+    const reach = Math.max(4, Math.round(r * 2)), y0 = Math.floor(cy);
+    for (let x = Math.round(cx) - reach; x <= Math.round(cx) + reach; x++) {
+      let y = y0;
+      while (y < y0 + reach * 2 && !this.solid(world, x, y)) y++;
+      if (y >= y0 + reach * 2 || y === y0) continue;
+      n++; sx += x; sy += y; sxx += x * x; sxy += x * y;
+    }
+    const vxx = sxx - (sx * sx) / n;
+    return n >= 4 && vxx > 0 ? Math.max(-1, Math.min(1, (sxy - (sx * sy) / n) / vxx)) : 0;
   }
 
   /** Exchange heat with the cells he's in and touching; boil off or dissolve. */

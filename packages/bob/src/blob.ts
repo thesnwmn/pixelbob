@@ -23,8 +23,8 @@ export interface Piece {
 }
 
 const SUB = 10, DT = 1 / 60, H = DT / SUB;
-/** Bob is a little denser than water: he sinks slowly and floats on mud and lava. */
-const BOB_DENSITY = 11;
+/** Bob is a little denser than water: he sinks slowly and floats on brine, mud and lava. */
+const BOB_DENSITY = 10.5;
 /** Max bonds per particle. */
 const NB = 10;
 /** Particles closer than this push apart. */
@@ -32,6 +32,13 @@ const R0 = 0.85;
 /** Max movement per substep, so particles can't tunnel through a cell. */
 const MAXD = 0.9;
 const EPS = 0.001;
+const VMAX = 450;
+/** Fastest a particle may move relative to its piece. */
+const RELMAX = 120;
+/** °C per step a struggling Bob warms himself by, below room temperature. */
+const SHIVER = 0.15;
+/** Jumping out of liquid is weaker than off the ground: falling in is a trap, but one you can climb out of. */
+const WATER_JUMP = 0.6;
 
 const STATIC = Cat.Static, POWDER = Cat.Powder, LIQUID = Cat.Liquid;
 
@@ -73,9 +80,14 @@ export class Blob {
   private al = new Float32Array(0);
   /** Speed the underside of each particle runs at against floors and ceilings (crawling). */
   private tread = new Float32Array(0);
+  /** Shift from pushing apart overlapping pieces this substep, which mustn't become velocity. */
+  private fsx = new Float32Array(0);
+  private fsy = new Float32Array(0);
 
   ba = new Int32Array(0); bb = new Int32Array(0);
   bl = new Float32Array(0);
+  /** Natural length each bond relaxes back to when he's neither frozen nor runny. */
+  bn = new Float32Array(0);
   nb = 0;
 
   order = new Int32Array(0);
@@ -94,6 +106,13 @@ export class Blob {
   coyote = 0;
   facing = 1;
   private held = false;
+  /** Jump released this long ago and not yet used (fires on landing), with the charge it had. */
+  private buffer = 0;
+  private banked = 0;
+  /** The main piece is frozen rigid. */
+  private rigid = false;
+  /** The player is asking for something: he shivers, which warms him a little. */
+  private effort = false;
   /** Squash of the main piece's target shape (world frame), sx * sy = 1. */
   sx = 1;
   sy = 1;
@@ -131,10 +150,10 @@ export class Blob {
     const f = () => new Float32Array(cap);
     this.x = f(); this.y = f(); this.px = f(); this.py = f(); this.vx = f(); this.vy = f(); this.t = f();
     this.rx = f(); this.ry = f(); this.hx = f(); this.hy = f(); this.cool = f();
-    this.cnx = f(); this.cny = f(); this.hit = f(); this.fz = f(); this.rn = f(); this.al = f(); this.tread = f();
+    this.cnx = f(); this.cny = f(); this.hit = f(); this.fz = f(); this.rn = f(); this.al = f(); this.tread = f(); this.fsx = f(); this.fsy = f();
     this.alive = new Uint8Array(cap); this.piece = new Int32Array(cap); this.deg = new Uint8Array(cap);
     this.cmat = new Uint8Array(cap); this.ccell = new Int32Array(cap);
-    this.ba = new Int32Array(cap * NB / 2); this.bb = new Int32Array(cap * NB / 2); this.bl = new Float32Array(cap * NB / 2);
+    this.ba = new Int32Array(cap * NB / 2); this.bb = new Int32Array(cap * NB / 2); this.bl = new Float32Array(cap * NB / 2); this.bn = new Float32Array(cap * NB / 2);
     this.nb = 0;
     this.order = new Int32Array(cap);
     this.ww = world.w;
@@ -160,7 +179,8 @@ export class Blob {
     });
     this.count = this.total = n;
     this.losses = { boiled: 0, dissolved: 0, crushed: 0, fell: 0 };
-    this.charge = this.stretch = this.coyote = this.sag = 0;
+    this.charge = this.stretch = this.coyote = this.sag = this.buffer = this.banked = 0;
+    this.rigid = false;
     this.sx = this.sy = 1;
     this.held = false;
     this.rebuild(true);
@@ -168,7 +188,7 @@ export class Blob {
 
   private bond(a: number, b: number, len: number): void {
     if (this.nb >= this.ba.length || this.deg[a] >= NB || this.deg[b] >= NB) return;
-    this.ba[this.nb] = a; this.bb[this.nb] = b; this.bl[this.nb] = len;
+    this.ba[this.nb] = a; this.bb[this.nb] = b; this.bl[this.nb] = this.bn[this.nb] = len;
     this.nb++;
     this.deg[a]++; this.deg[b]++;
   }
@@ -176,7 +196,7 @@ export class Blob {
   private unbond(k: number): void {
     this.deg[this.ba[k]]--; this.deg[this.bb[k]]--;
     const l = --this.nb;
-    this.ba[k] = this.ba[l]; this.bb[k] = this.bb[l]; this.bl[k] = this.bl[l];
+    this.ba[k] = this.ba[l]; this.bb[k] = this.bb[l]; this.bl[k] = this.bl[l]; this.bn[k] = this.bn[l];
     this.dirty = true;
   }
 
@@ -227,7 +247,7 @@ export class Blob {
     if (!this.count) return;
     this.world = world;
     const tw = this.tweaks, n = this.cap;
-    const { x, y, px, py, vx, vy, t, alive, fz, rn, cnx, cny, hit, cmat, ccell, cool } = this;
+    const { x, y, px, py, vx, vy, t, alive, fz, rn, cnx, cny, hit, cmat, ccell, cool, fsx, fsy } = this;
 
     for (let i = 0; i < n; i++) {
       if (!alive[i]) continue;
@@ -271,7 +291,7 @@ export class Blob {
           const m = world.mat[cy * world.w + cx];
           if (CAT[m] === LIQUID) {
             ay -= g * DENSITY[m] / BOB_DENSITY;
-            const drag = Math.min(0.5, H * (4 + 30 * (1 - MOBILITY[m])));
+            const drag = Math.min(0.5, H * (10 + 40 * (1 - MOBILITY[m])));
             vx[i] *= 1 - drag; vy[i] *= 1 - drag;
           }
         }
@@ -282,17 +302,22 @@ export class Blob {
         if (d > MAXD) { dx *= MAXD / d; dy *= MAXD / d; }
         x[i] += dx; y[i] += dy;
       }
+      fsx.fill(0); fsy.fill(0);
       this.shapeMatch();
       this.solveBonds(soft, s === SUB - 1);
       this.separate(s === SUB - 1);
       this.collide(world);
       for (let i = 0; i < n; i++) {
         if (!alive[i]) continue;
-        vx[i] = (x[i] - px[i]) / H; vy[i] = (y[i] - py[i]) / H;
+        vx[i] = (x[i] - px[i] - fsx[i]) / H; vy[i] = (y[i] - py[i] - fsy[i]) / H;
+        // Safety net: no particle outruns a hard fall.
+        const sp = vx[i] * vx[i] + vy[i] * vy[i];
+        if (sp > VMAX * VMAX) { const k = VMAX / Math.sqrt(sp); vx[i] *= k; vy[i] *= k; }
       }
     }
 
     this.impacts();
+    this.damp();
     this.heat(world);
     this.merge();
     if (this.dirty) this.rebuild(false);
@@ -309,24 +334,44 @@ export class Blob {
     const T = this.fixedTemp ?? p.temp;
     const m = tw.muscle * muscleAt(T);
     const grounded = p.ground >= Math.max(1, p.radius * 0.35);
-    this.coyote = grounded ? 0.1 : this.coyote - DT;
+    const swim = p.wet > 0.3;
+    this.coyote = grounded ? 0.15 : this.coyote - DT;
     const dir = Math.max(-1, Math.min(1, input.move));
     if (dir) this.facing = Math.sign(dir);
+    this.effort = dir !== 0 || input.jump;
+
+    // Freezing sets him rigid in his current shape: his squash stops being applied in
+    // world space (or a rolling frozen dome would be forced to change shape every frame).
+    const fzP = frozenness(T);
+    if (!this.rigid && fzP > 0.5) { this.rigid = true; this.reshapePiece(p); }
+    else if (this.rigid && fzP < 0.4) { this.rigid = false; this.sag = 0; this.reshapePiece(p); }
 
     // Jump: hold to squash (that's him winding up, so it takes muscle), release to spring.
+    // In water, holding paddles up and releasing leaps out. Released just before landing, it
+    // still fires on touchdown.
     if (input.jump && m > 0.05) {
       this.charge = Math.min(1, this.charge + (DT / 0.35) * Math.min(1, m));
       this.held = true;
     } else if (!input.jump && this.held) {
       this.held = false;
-      if (this.coyote > 0 && m > 0.05) {
+      this.buffer = 0.15;
+      this.banked = this.charge;
+      this.charge = 0;
+    }
+    if (this.buffer > 0) {
+      this.buffer -= DT;
+      if ((this.coyote > 0 || p.wet > 0.1) && m > 0.05) {
         // Push off along the ground's normal, leaning up, with a little of the stick.
         let jx = p.nx * 0.45 + dir * 0.2, jy = p.ny * 0.45 - 0.55;
+        if (this.coyote <= 0) { jx = dir * 0.25; jy = -1; }
         const jl = Math.hypot(jx, jy) || 1;
         jx /= jl; jy /= jl;
         // You can only push off what you're touching: perched on a point, jumps are weak.
-        const footing = Math.sqrt(Math.min(1, p.ground / Math.max(1, p.radius * 0.6)));
-        const speed = tw.jump * (0.55 + 0.45 * this.charge) * Math.min(1.4, m) * footing;
+        // Water gives a fair push too.
+        const footing = this.coyote > 0 ? Math.sqrt(Math.min(1, p.ground / Math.max(1, p.radius * 0.6))) : 0;
+        // Winding up needs ground to squash against, so a leap out of water gets no charge.
+        const charge = this.coyote > 0 ? this.banked : 0;
+        const speed = tw.jump * (0.55 + 0.45 * charge) * Math.min(1.4, m) * Math.max(footing, p.wet > 0.1 ? WATER_JUMP : 0);
         for (let k = p.start; k < p.start + p.len; k++) {
           const i = order[k];
           const into = vx[i] * jx + vy[i] * jy;
@@ -334,19 +379,17 @@ export class Blob {
           vx[i] += jx * speed; vy[i] += jy * speed;
         }
         this.stretch = 0.14;
-        this.coyote = 0;
+        this.coyote = this.buffer = 0;
       }
-      this.charge = 0;
     }
     if (!this.held) this.charge = 0;
     // He settles into a dome on the ground and rounds up in the air (world frame, so it doesn't roll with him).
-    this.sag += ((grounded ? 0.16 : 0) - this.sag) * 0.15 * (1 - frozenness(T));
+    this.sag += ((grounded ? 0.16 : 0) - this.sag) * 0.15;
     const sq = (1 + this.sag) * (1 + 0.35 * this.charge * Math.min(1, m));
-    this.sx = this.stretch > 0 ? 0.84 : sq;
+    this.sx = this.rigid ? 1 : this.stretch > 0 ? 0.84 : sq;
     this.sy = 1 / this.sx;
     if (this.stretch > 0) this.stretch -= DT;
 
-    const swim = p.wet > 0.3;
     // Runny Bob can't hold a shape to roll with, so he oozes (crawls) instead.
     const ooze = tw.drive === "crawl" ? 1 : runniness(T);
     if (ooze < 1) {
@@ -421,7 +464,7 @@ export class Blob {
       // (Frozen Bob doesn't tear by stretching: he cracks on impact instead, see impacts().)
       const limit = breakBase * (1 + 2 * r);
       // Only judged once a step, so a hard landing's momentary squeeze doesn't count.
-      if (breaking && strain > limit) { if (this.breaks.strain < 8 && (globalThis as any).DBG) console.log("break", a, b, len.toFixed(2), bl[k].toFixed(2), x[a].toFixed(2), y[a].toFixed(2), x[b].toFixed(2), y[b].toFixed(2), "prev", this.px[a].toFixed(2), this.py[a].toFixed(2), this.px[b].toFixed(2), this.py[b].toFixed(2)); this.breaks.strain++; this.unbond(k); this.cool[a] = this.cool[b] = 0.3 * (1 - r); continue; }
+      if (breaking && strain > limit) { this.breaks.strain++; this.unbond(k); this.cool[a] = this.cool[b] = 0.3 * (1 - r); continue; }
       const alpha = soft * (1 + 20 * r);
       const corr = (len - bl[k]) / (2 + alpha) / len;
       x[a] += dx * corr; y[a] += dy * corr;
@@ -430,14 +473,14 @@ export class Blob {
       if (f > 0) bl[k] += (len - bl[k]) * f * 0.05;
       // Runny Bob is taffy: bonds take on whatever length they're pulled to, so he pours and stays poured.
       else if (r > 0) bl[k] = Math.max(0.6, Math.min(4, bl[k] + (len - bl[k]) * r * 0.05));
-      // Cooled down again, long bonds shorten back up.
-      else if (bl[k] > 1.5) bl[k] += (1.42 - bl[k]) * 0.01;
+      // Back to normal, bonds return to their natural length, so he becomes a blob again.
+      else bl[k] += (this.bn[k] - bl[k]) * 0.01;
     }
   }
 
   /** Keep particles from piling onto each other; note pieces touching (they may merge). */
   private separate(noteMerges: boolean): void {
-    const { x, y, alive, head, next, piece, cool, deg, fz, rn } = this, n = this.cap, w = this.ww;
+    const { x, y, fsx, fsy, alive, head, next, piece, cool, deg, fz, rn } = this, n = this.cap, w = this.ww;
     const cells: number[] = [];
     for (let i = 0; i < n; i++) {
       if (!alive[i]) continue;
@@ -465,18 +508,26 @@ export class Blob {
             if (d2 < R0 * R0) {
               // Coincident particles: split them sideways.
               const d = Math.sqrt(d2), ok = d > 1e-4;
-              // Gently between pieces, or two stiff (frozen) bits overlapping would fling each other apart.
-              let corr = (R0 - (ok ? d : 0)) * 0.5;
-              if (piece[i] !== piece[j]) corr = Math.min(corr, 0.05);
+              const corr = (R0 - (ok ? d : 0)) * 0.5;
               const ux = ok ? dx / d : (i & 1 ? 1 : -1), uy = ok ? dy / d : 0;
               x[i] -= ux * corr; y[i] -= uy * corr;
               x[j] += ux * corr; y[j] += uy * corr;
+              // Between pieces, move without gaining speed (that shift is taken back out of the
+              // velocity): two stiff (frozen) bits pressed together would otherwise push each
+              // other faster every substep.
+              if (piece[i] !== piece[j]) {
+                fsx[i] -= ux * corr; fsy[i] -= uy * corr;
+                fsx[j] += ux * corr; fsy[j] += uy * corr;
+              }
             }
             // Surface tension: separate bits near each other draw together (and then rejoin).
             else if (attract && piece[i] !== piece[j] && d2 < 4) {
+              // (A drift, not a force: it isn't allowed to build up speed.)
               const d = Math.sqrt(d2), k = (attract * (d - R0)) / d;
               x[i] += dx * k; y[i] += dy * k;
               x[j] -= dx * k; y[j] -= dy * k;
+              fsx[i] += dx * k; fsy[i] += dy * k;
+              fsx[j] -= dx * k; fsy[j] -= dy * k;
             }
             // Rejoin: different pieces touching, or the same piece healing a torn spot.
             if (merge && (piece[i] !== piece[j] || (deg[i] < 5 && deg[j] < 5) || rn[i] > 0.3) && d2 < 1.3 && cool[i] <= 0 && cool[j] <= 0 && deg[i] < NB && deg[j] < NB && fz[i] < 0.5 && fz[j] < 0.5) {
@@ -502,7 +553,7 @@ export class Blob {
       let cx = Math.floor(nx);
       if (cx !== ocx && this.solid(world, cx, ocy)) {
         // A one-pixel ledge with room above: hop up onto it (smooth slopes are staircases).
-        if (!this.solid(world, cx, ocy - 1) && !this.solid(world, ocx, ocy - 1)) {
+        if (this.fz[i] < 0.5 && !this.solid(world, cx, ocy - 1) && !this.solid(world, ocx, ocy - 1)) {
           const lift = oy - (ocy - EPS);
           ny -= lift; py[i] -= lift;
         } else {
@@ -544,23 +595,89 @@ export class Blob {
 
   // ---- After the substeps ----
 
+  /**
+   * Internal damping: nudge each particle's velocity towards its piece's rigid motion
+   * (shared velocity plus spin). Frozen Bob keeps no wobble, or every landing would ring
+   * through the stiff body and bounce it off the ground. Also caps how fast particles move
+   * relative to their piece.
+   */
+  private damp(): void {
+    const { x, y, vx, vy, order, fz } = this;
+    for (const p of this.pieces) {
+      if (p.len < 3) continue;
+      let cx = 0, cy = 0, mvx = 0, mvy = 0, f = 0, r = 0;
+      for (let k = p.start; k < p.start + p.len; k++) { const i = order[k]; cx += x[i]; cy += y[i]; mvx += vx[i]; mvy += vy[i]; f += fz[i]; r += this.rn[i]; }
+      cx /= p.len; cy /= p.len; mvx /= p.len; mvy /= p.len; f /= p.len; r /= p.len;
+      let num = 0, den = 0;
+      for (let k = p.start; k < p.start + p.len; k++) {
+        const i = order[k], ox = x[i] - cx, oy = y[i] - cy;
+        num += ox * (vy[i] - mvy) - oy * (vx[i] - mvx); den += ox * ox + oy * oy;
+      }
+      if (f > 0.3) {
+        let landed = false, mu = 0, touching = 0;
+        for (let j = p.start; j < p.start + p.len; j++) {
+          const i = order[j];
+          if (this.cny[i] < 0) { landed = true; mu += FRICTION[this.cmat[i]]; touching++; }
+        }
+        // A frozen lump landing stays down: shape matching would otherwise spring it back up.
+        if (landed && p.vy > 30 && mvy < 0) {
+          const dv = -mvy * Math.min(1, f * 1.2);
+          for (let j = p.start; j < p.start + p.len; j++) vy[order[j]] += dv;
+          mvy += dv;
+        }
+        // And it slides like a block: friction from its weight, not from how many of its
+        // particles happen to touch (a rigid lump only touches with a few).
+        if (touching) {
+          const dv = -Math.sign(mvx) * Math.min(Math.abs(mvx), (mu / touching) * this.tweaks.grip * this.tweaks.gravity * DT * f);
+          for (let j = p.start; j < p.start + p.len; j++) vx[order[j]] += dv;
+          mvx += dv;
+        }
+      }
+      // Only frozen Bob is damped: jelly keeps its wobble, and oozing is all internal motion.
+      const w = den > 0 ? num / den : 0, k = 0.8 * f;
+      for (let j = p.start; j < p.start + p.len; j++) {
+        const i = order[j], ox = x[i] - cx, oy = y[i] - cy;
+        const rx = mvx - w * oy, ry = mvy + w * ox;
+        vx[i] += (rx - vx[i]) * k;
+        vy[i] += (ry - vy[i]) * k;
+        // No particle races about inside him: splashes stay soft, and the faces of a fresh
+        // cut don't spray off when he lands.
+        const dx = vx[i] - rx, dy = vy[i] - ry, d2 = dx * dx + dy * dy;
+        const cap = RELMAX * (1 + 4 * r);
+        if (d2 > cap * cap) { const c = cap / Math.sqrt(d2); vx[i] = rx + dx * c; vy[i] = ry + dy * c; }
+      }
+    }
+  }
+
   /** Hard hits tear him: sharp things slice, frozen Bob cracks, anything else splashes off droplets. */
   private impacts(): void {
     const tw = this.tweaks, { hit, cmat, fz, alive, piece, x, y, cnx, cny } = this;
-    let cracks = 0;
+    let cracks = 0, slices = 0;
     for (let i = 0; i < this.cap; i++) {
       if (!alive[i] || !hit[i]) continue;
       const sharp = SHARP[cmat[i]], f = fz[i];
       const limit = (140 + 520 * tw.cohesion) * (1 - 0.85 * sharp) * (1 - 0.7 * f);
-      if (hit[i] < limit) continue;
-      this.breaks.impact++;
       const p = this.pieces[piece[i]];
+      // Judge a hit by how fast the whole piece was moving into the surface, not by one
+      // particle's speed: particles jiggle (more so on a bumpy floor) even when he sits still.
+      let speed = hit[i];
+      if (p) {
+        const l = Math.hypot(cnx[i], cny[i]) || 1;
+        speed = Math.min(speed, Math.max(0, -(p.vx * cnx[i] + p.vy * cny[i]) / l));
+      }
+      if (speed < limit) continue;
+      this.breaks.impact++;
       const r = p ? p.radius : 4;
       if (sharp > 0.5) {
-        // A spike pokes in along the contact normal and splits him around it.
-        const l = Math.hypot(cnx[i], cny[i]) || 1;
-        this.cut(piece[i], x[i], y[i], -cnx[i] / l, -cny[i] / l, r * 0.9 * sharp);
-        this.tear(i);
+        // A spike pokes in along the contact normal and slices him around it: a cut, not
+        // shredding, so a few per step at most and not where it just cut.
+        if (slices > 3 || this.cool[i] > 0) continue;
+        // The cut runs from where it went in right through him.
+        const l = Math.hypot(cnx[i], cny[i]) || 1, dx = cnx[i] / l, dy = cny[i] / l;
+        this.cut(piece[i], x[i] + dx * r, y[i] + dy * r, dx, dy, r * 1.3);
+        // The cut stays open for a while (bits left on spikes are bits lost, until he goes back for them).
+        if (p) for (let k = p.start; k < p.start + p.len; k++) if (Math.abs(this.x[this.order[k]] - x[i]) < 3) this.cool[this.order[k]] = 1.5;
+        slices++;
       } else if (f > 0.5) {
         // Brittle: a crack runs right across him (one per piece per impact).
         if (cracks > 2 || this.cool[i] > 0) continue;
@@ -590,6 +707,10 @@ export class Blob {
         const c = ccell[i];
         if (c >= 0) t[i] += (world.temp[c] - t[i]) * Math.min(0.5, 0.02 + CONDUCT[world.mat[c]] * 0.5);
       }
+      // Trying to move in the cold, he shivers: a little body heat (only the main piece is trying).
+      const p = this.pieces[0];
+      if (this.effort && p)
+        for (let k = p.start; k < p.start + p.len; k++) { const i = this.order[k]; if (t[i] < 20) t[i] += SHIVER; }
       // Heat spreads through him along his bonds.
       for (let k = 0; k < this.nb; k++) {
         const a = ba[k], b = bb[k], d = (t[b] - t[a]) * 0.12;
@@ -667,7 +788,8 @@ export class Blob {
     let o = 0;
     for (const [pi, members] of list.entries()) {
       const prev = piece[members[0]];
-      const same = keepAll || (old[prev] !== undefined && old[prev].len === members.length && members.every((i) => piece[i] === prev));
+      // Unchanged: same members, and still (or still not) the main piece, whose target gets squashed.
+      const same = keepAll || (old[prev] !== undefined && old[prev].len === members.length && (prev === 0) === (pi === 0) && members.every((i) => piece[i] === prev));
       const p: Piece = { start: o, len: members.length, cx: 0, cy: 0, vx: 0, vy: 0, temp: 20, radius: 1, ground: old[prev]?.ground ?? 0, nx: 0, ny: -1, wet: 0 };
       for (const i of members) this.order[o++] = i;
       // The main piece's target gets squashed by sx, sy: undo that so it starts where it is.
@@ -676,6 +798,10 @@ export class Blob {
     }
     this.pieces.forEach((p, pi) => { for (let k = p.start; k < p.start + p.len; k++) piece[this.order[k]] = pi; });
     this.stats();
+  }
+
+  private reshapePiece(p: Piece): void {
+    this.reshape(Array.from(this.order.subarray(p.start, p.start + p.len)), 1, 1);
   }
 
   /** New rest shape for a changed piece: its current shape, relaxing towards a round blob of the same size. */

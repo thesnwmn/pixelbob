@@ -16,7 +16,8 @@ How Bob is built, how he moves, and what every material and effect does to him. 
 - **Collision:** particles are points against solid cells (static or powder), resolved one axis at a time.
   - Friction comes from the material under him.
   - He can step up a single pixel. Smooth slopes (staircases of 1 px steps) roll freely, while 2 px or larger bumps snag his underside. That difference is the whole of "rough terrain".
-- **Liquids:** buoyancy by density (he's 11 to water's 10, so he sinks slowly) and drag by viscosity. He doesn't push liquid cells aside yet.
+- **Liquids:** buoyancy by density (he's 10.5 to water's 10, so he sinks slowly, about 2 px/s) and heavy drag by viscosity. He doesn't push liquid cells aside yet.
+- **Keeping it calm.** Pieces pushing apart, and bits drifting together, move particles without giving them speed, and no particle may move faster than 120 px/s relative to its piece. Without this, stiff or freshly cut pieces fling bits across the screen.
 
 ## How he moves: everything is deformation
 
@@ -27,9 +28,9 @@ Bob has no feet, wheels or jetpack. **Every action is Bob changing his own shape
 | **Roll** (default drive) | Turns his body like a tank tread (a torque about his centre). Friction at the bottom turns the spin into travel. | Muscle (he can deform), grip (friction underneath), ground | Frozen (can't deform). Ice: he spins in place. In the air: only a weak spin. |
 | **Crawl / ooze** | His underside runs like a conveyor along whatever it touches, and friction does the pushing. Runny Bob uses this automatically because he can't hold a shape to roll with. | Muscle, grip | Same as rolling. Also, walls aren't climbed (yet). |
 | **Coast** | Momentum. Letting go, he grips gently and slows over about a second. | Nothing | Sticky ground stops him sooner, ice later. |
-| **Jump** | Hold to squash (the wind-up is him holding a deformed shape), release to spring. Pushes off along the average contact normal, so slopes and walls angle the jump. | Muscle to wind up; **footing**: only what he's touching can push back, so jumps from a point (a spike tip, a corner) are weak | Frozen: can't squash, so can't jump. In the air: there's nothing to push. Coyote time is 0.1 s. |
+| **Jump** | Hold to squash (the wind-up is him holding a deformed shape), release to spring. Pushes off along the average contact normal, so slopes and walls angle the jump. | Muscle to wind up; **footing**: only what he's touching can push back, so jumps from a point (a spike tip, a corner) are weak | Frozen: can't squash, so can't jump. In the air: there's nothing to push. Forgiving timing: coyote time 0.15 s, and a jump released up to 0.15 s before landing fires on touchdown. |
 | **Steer in the air** | A small sideways push (`air`). Physically a cheat, kept small. | | |
-| **Swim** | Holding jump in liquid paddles upward; move steers. | Muscle | Frozen sinks like a stone. |
+| **Swim** | Holding jump in liquid paddles upward; move steers. Let go to leap out: with no ground to squash against, the leap is uncharged and only 60% of a land jump, so water is a trap you can climb out of but not one you leave easily. | Muscle | Frozen sinks like a stone. |
 | **Squeeze** | No collider, so particles go wherever there's room. But bonds and shape memory resist big deformations, so at room temperature he won't fit through a slot much smaller than him. | Low memory (heat) | Normal Bob is blocked by a 4 px slot; runny Bob pours through it in about 2 s. |
 
 So **muscle** (how hard he can deform himself) and **grip** (what the surface gives back) are the two halves of every move. Temperature mostly acts on muscle and memory, and materials mostly act on grip and on what touching them does to him.
@@ -40,11 +41,15 @@ Each particle has its own temperature. It exchanges heat with the cell it's in a
 
 | State | Range | Muscle | Shape | Bonds | What it means |
 |---|---|---|---|---|---|
-| Frozen | below −8 °C | none | rigid (memory takes over) and set in the pose he froze in | don't stretch-tear, but **crack** on impact | Can't roll or jump; slides on momentum, rolls downhill like a rock, and shatters into chunks if dropped about 20 px |
+| Frozen | below −8 °C | none | rigid, set in the pose he froze in | don't stretch-tear, but **crack** on impact | Can't roll or jump; slides on momentum like a block (friction from his weight; long on ice, short on rock), doesn't bounce, and cracks into chunks if dropped about 20 px |
 | Cold | −8 to 8 °C | ramps 0 → full | stiffening | stiffening | Sluggish |
 | Normal | 8 to 40 °C | full | bouncy jelly | stretchy | Default |
 | Warm / runny | 40 to 70 °C | weakening | memory fades to almost none | **taffy**: bonds take on whatever length they're pulled to | Switches from rolling to oozing; spreads into a puddle; pours through gaps; stays poured until cool |
 | Boiling | above 100 °C | weak | | | Particles boil off as steam cells: he shrinks |
+
+**Shivering.** Below room temperature, trying to move or jump warms him a little (0.15 °C a frame). In mild cold (the course's −15 °C air) that keeps a moving Bob cold and sluggish but able to crawl out; if he stops, he freezes. Without it, a Bob frozen in a cold zone could never move or thaw.
+
+**Thawing.** Frozen, his main piece's target stops being squashed in world space (a frozen dome rolling would otherwise be forced to change shape every frame and shake itself apart). On thawing he takes his current shape as a fresh start, and both his rest shape and his bonds' lengths relax back to a round blob over a second or two.
 
 Colours follow the stills: icy blue with facets and squinting eyes when frozen, orange and glowing when hot with drooping eyes.
 
@@ -54,8 +59,10 @@ Bonds break in four ways:
 
 1. **Overstretched**: past the break strain set by `cohesion`. Judged once a frame, so a hard landing's momentary squeeze doesn't count.
 2. **Blunt impact**: a particle hitting anything faster than a threshold (lower with low cohesion) splashes off as a droplet. At default cohesion only very hard hits do this.
-3. **Sharp**: materials have a `sharp` value. Hitting spikes cuts along the line of the spike, slicing him around it, at a fraction of the blunt threshold.
+3. **Sharp**: materials have a `sharp` value. Landing on or rolling into spikes (at a fraction of the blunt threshold) cuts a line right through him from each spike that went in, a few cuts at most per frame, leaving strips and bits. The cut stays open for 1.5 s, so bits left on the spikes stay behind until he goes back for them.
 4. **Brittle**: a frozen piece hit hard cracks radially from the impact point through its middle, into chunks rather than crumbs.
+
+All impacts are judged by how fast the **whole piece** was moving into the surface, not by single particles, which jiggle even when he sits still. So resting on spikes doesn't keep cutting him, and a frozen lump grinding over bumps doesn't crack.
 
 Every connected group is a **piece**. The biggest has the eyes and takes input; the rest sit where they are. Pieces draw together when close (surface tension, scaled by `cohesion`) and re-bond when they touch, unless frozen.
 
@@ -74,11 +81,11 @@ Every slider is in the playground's panel and saved in the URL, so a good feel c
 | grip | 1 | Multiplies every material's friction |
 | speed | 70 px/s | Top rolling speed |
 | jump | 190 px/s | Take-off speed at full charge (a tap is 55%) |
-| air ctrl | 0.25 | Steering in the air and in water |
+| air ctrl | 0.35 | Steering in the air and in water |
 | size | 9 | Radius in particles (respawn to apply) |
 | gravity | 420 px/s² | |
 
-Also: `drive` (roll or crawl), and a fixed temperature to try a state without walking into it.
+Also: `drive` (roll or crawl), a fixed temperature to try a state without walking into it, and `?at=<x>` in the link to start him partway along the course (the ice is at about 460, the spikes at 600).
 
 ## Materials and effects on Bob
 
@@ -96,7 +103,7 @@ The whole range, built or not. **Built** means it works in the playground today.
 | snow | Low grip, cold | Built. Later: soft landing, he sinks in a little |
 | sand, salt, rubble | Powders: solid to him, grippy (rubble a bit sharp). Powder falling on him pushes particles aside; buried too deep and they're crushed | Built. Later: sand sticks to him and weighs him down |
 | glass | Slippery, and slightly sharp | Built (data) |
-| spikes | Sharp: slice him apart | Built (new material) |
+| spikes | Sharp: slice him into strips and bits | Built (new material). Later: a hard **edge** (a blade of steel or glass) that splits him cleanly in two, maybe into two halves you control in turn: good as well as bad |
 | rust | Grippy; crumbles under him | Built (rust's own crumbling) |
 | vine, moss | Sticky: he can cling and climb slowly | Later: needs per-material stickiness pulling particles onto the surface (the "cling" ability) |
 | mushroom cap | Springy: a bounce pad | Later: restitution per material |
@@ -106,7 +113,7 @@ The whole range, built or not. **Built** means it works in the playground today.
 | Material | Effect | Status |
 |---|---|---|
 | air | Warms or cools him towards its temperature, so cold caves freeze him and hot rooms melt him | Built |
-| water | Buoyant (he sinks slowly), drag, swim; cools him towards its temperature | Built. Later: **absorbs** water and swells (wet state: bigger, heavier, softer) and drips it out when squeezed |
+| water | Buoyant (he sinks slowly), heavy drag, swim, a weak leap out; cools him towards its temperature | Built. Later: **absorbs** water and swells (wet state: bigger, heavier, softer) and drips it out when squeezed |
 | brine | Denser, so he floats higher | Built (buoyancy). Later: salted Bob's freezing point drops, so he stays soft in the cold |
 | oil | Floats on him; drag | Built (buoyancy/drag). Later: **coats** him, giving the oily state (low friction everywhere, flammable) |
 | mud | Very thick: heavy drag | Built. Later: sticky, coats and slows him after he leaves |

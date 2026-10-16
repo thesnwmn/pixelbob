@@ -36,7 +36,7 @@ export const DEFAULTS: Tweaks = {
   grip: 1,
   speed: 70,
   jump: 190,
-  air: 0.25,
+  air: 0.35,
   drive: "roll",
   size: 9,
   gravity: 420,

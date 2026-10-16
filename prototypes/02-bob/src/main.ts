@@ -44,10 +44,19 @@ function rebuild() {
 }
 function respawn() {
   bob.tweaks = tweaks;
-  bob.spawn(world, course.spawn.x, course.spawn.y);
+  // ?at=<x> starts him somewhere else along the course, to practise one section.
+  const at = Number(params.get("at"));
+  let sx = course.spawn.x, sy = course.spawn.y;
+  if (at > 0 && at < W) {
+    sx = Math.round(at);
+    let top = 0;
+    while (top < H - 1 && (world.mat[top * W + sx] === M.air || CAT[world.mat[top * W + sx]] === Cat.Gas)) top++;
+    sy = top - tweaks.size - 3;
+  }
+  bob.spawn(world, sx, sy);
   bob.fixedTemp = fixedTemp;
   startAt = frame; finishedAt = 0;
-  cam.x = course.spawn.x; cam.y = course.spawn.y;
+  cam.x = sx; cam.y = sy;
 }
 
 let gl: GLRenderer;

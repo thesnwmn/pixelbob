@@ -75,6 +75,24 @@ describe("moving", () => {
     expect(c.main!.cx - x1).toBeLessThan((a.main!.cx - x0) * 0.4);
   });
 
+  it("jumps out of water, but not as high as off the ground", () => {
+    const pool = (w: World) => { for (let y = FLOOR - 30; y < FLOOR; y++) for (let x = 0; x < 320; x++) w.set(x, y, M.water); };
+    const w = ground(M.rock, pool), b = new Blob(DEFAULTS);
+    b.spawn(w, 60, FLOOR - 14);
+    run(b, w, 120);
+    expect(b.main!.cy).toBeGreaterThan(FLOOR - 15); // sank
+    // Hold to swim up, let go at the surface to leap.
+    let top = Infinity;
+    for (let i = 0; i < 240; i++) {
+      b.step(w, { move: 0, jump: b.main!.wet > 0.2 });
+      top = Math.min(top, b.main!.cy);
+    }
+    const waterLeap = FLOOR - 30 - top;
+    expect(waterLeap).toBeGreaterThan(4);
+    const g = ground();
+    expect(jump(bob(g), g, 30)).toBeGreaterThan(waterLeap * 1.5);
+  });
+
   it("charging a jump makes it higher", () => {
     const tap = jump(bob(ground()), ground(), 3);
     const w = ground();
@@ -91,6 +109,23 @@ describe("temperature", () => {
     run(b, w, 60, { move: 1, jump: false });
     expect(Math.abs(b.main!.cx - x0)).toBeLessThan(1);
     expect(jump(b, w, 20)).toBeLessThan(1);
+  });
+
+  it("frozen, he slides across ice in one piece, and thaws back into a blob", () => {
+    const w = ground(M.ice), b = bob(w);
+    run(b, w, 60, { move: 1, jump: false });
+    b.fixedTemp = -20;
+    run(b, w, 120, { move: 1, jump: false });
+    expect(b.pieces.length).toBe(1);
+    let fast = 0;
+    for (let i = 0; i < b.cap; i++) if (b.alive[i]) fast = Math.max(fast, Math.hypot(b.vx[i] - b.main!.vx, b.vy[i] - b.main!.vy));
+    expect(fast).toBeLessThan(60); // rigid: no particle racing round him
+    b.fixedTemp = 20;
+    run(b, w, 240);
+    const s = size(b);
+    expect(b.pieces.length).toBe(1);
+    expect(s.w).toBeGreaterThan(s.h + 2);
+    expect(s.w).toBeLessThan(28);
   });
 
   it("frozen, a drop cracks him into chunks; at room temperature he survives it", () => {
@@ -127,12 +162,16 @@ describe("temperature", () => {
 });
 
 describe("tearing", () => {
-  it("spikes cut him apart", () => {
+  it("spikes slice him into a few pieces, not crumbs", () => {
     const w = ground(M.rock, (w) => { for (let x = 30; x < 90; x += 2) for (let y = FLOOR - 3; y < FLOOR; y++) w.set(x, y, M.spike); });
     const b = new Blob(DEFAULTS);
     b.spawn(w, 60, FLOOR - 40);
     run(b, w, 120);
     expect(b.pieces.length).toBeGreaterThan(1);
+    expect(b.main!.len).toBeGreaterThan(b.total * 0.2);
+    let fast = 0;
+    for (let i = 0; i < b.cap; i++) if (b.alive[i]) fast = Math.max(fast, Math.hypot(b.vx[i], b.vy[i]));
+    expect(fast).toBeLessThan(100); // the bits settle instead of buzzing about
   });
 
   it("cohesion decides whether a hard landing splashes bits off", () => {
@@ -167,7 +206,7 @@ describe("course", () => {
     for (let f = 0; f < 60 * 30 && b.main!.cx < 900; f++) {
       const p = b.main!;
       // Wind up just before the gap, the spike pit and the lava pit; swim when in water.
-      if (!hold && [362, 585, 655].some((x) => Math.abs(p.cx - x) < 2)) hold = 20;
+      if (!hold && [362, 612, 660].some((x) => Math.abs(p.cx - x) < 2)) hold = 20;
       if (hold) hold--;
       world.step();
       b.step(world, { move: 1, jump: hold > 0 || p.wet > 0.2 });

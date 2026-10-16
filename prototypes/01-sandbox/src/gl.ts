@@ -9,6 +9,9 @@
  * World textures have row 0 = top of the world; only the final pass flips to screen space.
  */
 
+/** Visible part of the world, in cells. */
+export interface View { x0: number; y0: number; w: number; h: number }
+
 export interface LampDef { x: number; y: number; color: [number, number, number]; radius: number }
 
 export interface Look {
@@ -122,12 +125,14 @@ precision highp float;
 in vec2 uv; out vec4 o;
 uniform sampler2D uCol, uEO, uL, uB1, uB2;
 uniform vec2 uWorld;
+uniform vec4 uView; // camera: x0, y0, width, height in cells
 uniform float uGlow, uBloom, uDepth, uExp;
 uniform vec3 uTint, uSkyTint;
 float soft(float c) { return c < 0.8 ? c : 0.8 + 0.2 * (1.0 - exp(-(c - 0.8) * 4.0)); }
 void main() {
-  vec2 wv = vec2(uv.x, 1.0 - uv.y);
-  ivec2 c = clamp(ivec2(floor(wv * uWorld)), ivec2(0), ivec2(uWorld) - 1);
+  vec2 sv = vec2(uv.x, 1.0 - uv.y);
+  vec2 wv = uView.xy + sv * uView.zw;
+  ivec2 c = clamp(ivec2(floor(wv)), ivec2(0), ivec2(uWorld) - 1);
   vec4 col = texelFetch(uCol, c, 0);
   vec3 e = texelFetch(uEO, c, 0).rgb * 2.0;
   vec2 cuv = (vec2(c) + 0.5) / uWorld;
@@ -143,7 +148,7 @@ void main() {
     lit = col.rgb * light;
   }
   vec3 rgb = (lit + e + (b1.rgb * 0.8 + b2.rgb * 1.4) * uBloom) * uExp * uTint;
-  vec2 v = wv - 0.5;
+  vec2 v = sv - 0.5;
   rgb *= 1.0 - dot(v, v) * 0.55;
   int bx = c.x & 3, by = c.y & 3;
   float bayer = float((bx ^ by) * 4 + (by & 1) * 2 + (bx & 1)) / 16.0 - 0.5;
@@ -244,7 +249,7 @@ export class GLRenderer {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  render(color: Uint8Array, emit: Uint8Array, lamps: LampDef[], look: Look): void {
+  render(color: Uint8Array, emit: Uint8Array, lamps: LampDef[], look: Look, view: View): void {
     const gl = this.gl, { W, H } = this;
     gl.bindTexture(gl.TEXTURE_2D, this.colTex);
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, color);
@@ -273,6 +278,7 @@ export class GLRenderer {
     this.pass("BLUR", e0, { uSrc: e1.tex }, (u) => gl.uniform2f(u.uDir, 0, 1 / e0.h));
     this.pass("COMPOSITE", null, { uCol: this.colTex, uEO: this.eoTex, uL: this.light.tex, uB1: q0.tex, uB2: e0.tex }, (u) => {
       gl.uniform2f(u.uWorld, W, H);
+      gl.uniform4f(u.uView, view.x0, view.y0, view.w, view.h);
       gl.uniform1f(u.uGlow, look.glow);
       gl.uniform1f(u.uBloom, look.bloom);
       gl.uniform1f(u.uDepth, look.depth);

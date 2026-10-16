@@ -34,6 +34,8 @@ button.on { background: var(--accent); color: #1a1408; border-color: var(--accen
 .mat.on { background: #e7c27a2e; border-color: var(--accent); color: var(--ink); }
 .size { display: flex; align-items: center; gap: 6px; color: var(--dim); }
 .size input { width: 110px; }
+.zoom { align-items: center; }
+.zoom span { min-width: 3.2em; text-align: center; color: var(--dim); }
 #err { padding: 2rem; max-width: 40rem; margin: auto; }
 
 /* Phones in landscape: tools in a side panel so the world gets the full height. */

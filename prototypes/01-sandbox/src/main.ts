@@ -1,5 +1,5 @@
 import { CAT, Cat, M, MATS, World, generate, type Preset } from "@pixelbob/sim";
-import { GLRenderer, LOOKS, type LampDef } from "./gl.ts";
+import { GLRenderer, LOOKS, type LampDef, type View } from "./gl.ts";
 import { Shade } from "./shade.ts";
 
 const W = 480, H = 270, STEP = 1 / 60;
@@ -28,8 +28,8 @@ try {
 
 // ---- Tools and palette ----
 
-type Tool = "paint" | "dig" | "heat" | "cool" | "lamp";
-const TOOLS: [Tool, string][] = [["dig", "Dig"], ["paint", "Paint"], ["heat", "Heat"], ["cool", "Cool"], ["lamp", "Lamp"]];
+type Tool = "paint" | "dig" | "heat" | "cool" | "lamp" | "move";
+const TOOLS: [Tool, string][] = [["dig", "Dig"], ["paint", "Paint"], ["heat", "Heat"], ["cool", "Cool"], ["lamp", "Lamp"], ["move", "Move"]];
 const state = { tool: "paint" as Tool, mat: M.sand as number, size: 5, paused: false, look: "day", replace: false };
 
 const toolEl = $("#tools");
@@ -91,12 +91,48 @@ function resize() {
 new ResizeObserver(resize).observe($("#stage"));
 resize();
 
+// ---- Camera: zoom and pan ----
+
+const ZOOM_MIN = 1, ZOOM_MAX = 6;
+const cam = { z: Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number(params.get("zoom")) || 1.5)), x: W * 0.45, y: H * 0.42 };
+const zoomEl = $("#zoomval");
+function view(): View {
+  const w = W / cam.z, h = H / cam.z;
+  return { x0: Math.max(0, Math.min(W - w, cam.x - w / 2)), y0: Math.max(0, Math.min(H - h, cam.y - h / 2)), w, h };
+}
+function clampCam() {
+  const v = view();
+  cam.x = v.x0 + v.w / 2; cam.y = v.y0 + v.h / 2;
+  zoomEl.textContent = `${cam.z.toFixed(cam.z % 1 ? 1 : 0)}×`;
+}
+/** Zoom keeping the world point under (sx, sy) (0..1 across the canvas) fixed. */
+function zoomAt(z: number, sx = 0.5, sy = 0.5) {
+  const v = view();
+  const px = v.x0 + sx * v.w, py = v.y0 + sy * v.h;
+  cam.z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+  const w = W / cam.z, h = H / cam.z;
+  cam.x = px - sx * w + w / 2; cam.y = py - sy * h + h / 2;
+  clampCam();
+}
+const STEPS = [1, 1.5, 2, 3, 4, 6];
+$<HTMLButtonElement>("#zin").onclick = () => zoomAt(STEPS.find((z) => z > cam.z + 0.01) ?? ZOOM_MAX);
+$<HTMLButtonElement>("#zout").onclick = () => zoomAt([...STEPS].reverse().find((z) => z < cam.z - 0.01) ?? ZOOM_MIN);
+$<HTMLButtonElement>("#zfit").onclick = () => zoomAt(1);
+clampCam();
+
 // ---- Pointer input ----
 
-const ptr = { down: false, x: 0, y: 0, lx: 0, ly: 0, over: false };
-const toCell = (e: PointerEvent) => {
+const ptr = { down: false, x: 0, y: 0, lx: 0, ly: 0, over: false, t0: 0 };
+// Touch strokes start after a short delay, so the first finger of a pinch doesn't paint.
+const TOUCH_DELAY = 90;
+const armed = () => ptr.down && performance.now() - ptr.t0 >= 0;
+const screen = (e: { clientX: number; clientY: number }) => {
   const r = canvas.getBoundingClientRect();
-  return [((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H] as const;
+  return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height] as const;
+};
+const toCell = (e: { clientX: number; clientY: number }) => {
+  const [u, v] = screen(e), vw = view();
+  return [vw.x0 + u * vw.w, vw.y0 + v * vw.h] as const;
 };
 const fillFor = (m: number) => (CAT[m] === Cat.Static ? 1 : CAT[m] === Cat.Gas || CAT[m] === Cat.Fire ? 0.45 : 0.55);
 
@@ -112,29 +148,81 @@ function strokeTo(x: number, y: number) {
   for (let k = 1; k <= n; k++) brush(ptr.lx + ((x - ptr.lx) * k) / n, ptr.ly + ((y - ptr.ly) * k) / n);
   ptr.lx = x; ptr.ly = y;
 }
+
+// Every active pointer, for pinch-zoom and two-finger pan.
+const touches = new Map<number, { clientX: number; clientY: number }>();
+let gesture: { d0: number; z0: number; wx: number; wy: number } | null = null;
+const mid = () => {
+  const [a, b] = [...touches.values()];
+  return { clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2, d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) };
+};
+function startGesture() {
+  ptr.down = false;
+  const m = mid(), [wx, wy] = toCell(m);
+  gesture = { d0: Math.max(10, m.d), z0: cam.z, wx, wy };
+}
+let panFrom: { u: number; v: number; x: number; y: number } | null = null;
+
 canvas.addEventListener("pointerdown", (e) => {
   canvas.setPointerCapture(e.pointerId);
+  touches.set(e.pointerId, e);
+  if (touches.size === 2) return startGesture();
+  if (touches.size > 2) return;
   const [x, y] = toCell(e);
-  Object.assign(ptr, { down: true, x, y, lx: x, ly: y });
+  Object.assign(ptr, { x, y, lx: x, ly: y });
+  if (state.tool === "move" || e.button === 1) {
+    const [u, v] = screen(e);
+    panFrom = { u, v, x: cam.x, y: cam.y };
+    return;
+  }
+  ptr.down = true;
+  ptr.t0 = performance.now() + (e.pointerType === "touch" ? TOUCH_DELAY : 0);
   state.replace = e.shiftKey || e.button === 2;
   if (state.tool === "lamp") {
+    ptr.down = false;
     const near = lamps.findIndex((l) => Math.hypot(l.x - x, l.y - y) < 8);
     if (near >= 0) lamps.splice(near, 1);
     else if (lamps.length < 16) lamps.push({ x: Math.floor(x), y: Math.floor(y), color: [1, 0.82, 0.55], radius: 110 });
     return;
   }
-  brush(x, y);
+  if (armed()) brush(x, y);
 });
 canvas.addEventListener("pointermove", (e) => {
+  if (touches.has(e.pointerId)) touches.set(e.pointerId, e);
+  if (gesture && touches.size >= 2) {
+    // Pinch zooms; the world point under the fingers' midpoint follows them.
+    const m = mid(), [u, v] = screen(m);
+    cam.z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, gesture.z0 * (m.d / gesture.d0)));
+    const w = W / cam.z, h = H / cam.z;
+    cam.x = gesture.wx - u * w + w / 2; cam.y = gesture.wy - v * h + h / 2;
+    clampCam();
+    return;
+  }
   const [x, y] = toCell(e);
   ptr.x = x; ptr.y = y; ptr.over = true;
-  if (ptr.down && state.tool !== "lamp") strokeTo(x, y);
+  if (panFrom) {
+    const [u, v] = screen(e), vw = view();
+    cam.x = panFrom.x - (u - panFrom.u) * vw.w; cam.y = panFrom.y - (v - panFrom.v) * vw.h;
+    clampCam();
+    return;
+  }
+  if (armed()) strokeTo(x, y);
+  else if (ptr.down) { ptr.lx = x; ptr.ly = y; }
 });
-const up = () => (ptr.down = false);
+const up = (e: PointerEvent) => {
+  touches.delete(e.pointerId);
+  if (touches.size < 2) gesture = null;
+  if (touches.size === 0) { ptr.down = false; panFrom = null; }
+};
 canvas.addEventListener("pointerup", up);
 canvas.addEventListener("pointercancel", up);
 canvas.addEventListener("pointerleave", () => (ptr.over = false));
 canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const [u, v] = screen(e);
+  zoomAt(cam.z * Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0015)), u, v);
+}, { passive: false });
 
 window.addEventListener("keydown", (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
@@ -146,6 +234,16 @@ window.addEventListener("keydown", (e) => {
   else if (e.key === "h") setTool("heat");
   else if (e.key === "c") setTool("cool");
   else if (e.key === "l") setTool("lamp");
+  else if (e.key === "m") setTool("move");
+  else if (e.key === "+" || e.key === "=") zoomAt(cam.z * 1.25);
+  else if (e.key === "-") zoomAt(cam.z / 1.25);
+  else if (e.key.startsWith("Arrow")) {
+    const k = 12 / cam.z;
+    cam.x += e.key === "ArrowLeft" ? -k * 4 : e.key === "ArrowRight" ? k * 4 : 0;
+    cam.y += e.key === "ArrowUp" ? -k * 4 : e.key === "ArrowDown" ? k * 4 : 0;
+    clampCam();
+    e.preventDefault();
+  }
   else if (/^[1-9]$/.test(e.key) && paletteMats[Number(e.key) - 1]) { state.mat = paletteMats[Number(e.key) - 1].id; setTool("paint"); }
 });
 
@@ -162,7 +260,7 @@ function tick(now: number) {
     const t0 = performance.now();
     while (acc >= STEP && n < 3) {
       // Holding still keeps pouring (and heating) under the pointer.
-      if (ptr.down && state.tool !== "lamp" && state.tool !== "dig") brush(ptr.x, ptr.y);
+      if (armed() && state.tool !== "lamp" && state.tool !== "dig") brush(ptr.x, ptr.y);
       world.step();
       acc -= STEP;
       n++;
@@ -171,7 +269,7 @@ function tick(now: number) {
     if (n) simMs += ((performance.now() - t0) / n - simMs) * 0.1;
   } else if (ptr.down && (state.tool === "heat" || state.tool === "cool")) brush(ptr.x, ptr.y);
   shade.update(frame++);
-  gl.render(shade.color, shade.emit, lamps, LOOKS[state.look] ?? LOOKS.day);
+  gl.render(shade.color, shade.emit, lamps, LOOKS[state.look] ?? LOOKS.day, view());
   let under = "";
   if (ptr.over) {
     const cx = Math.floor(ptr.x), cy = Math.floor(ptr.y);

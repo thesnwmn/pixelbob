@@ -34,6 +34,10 @@ export class World {
   private readonly stamp: Uint16Array;
   /** Per liquid cell: index of the highest open surface cell of its connected body (or -1). */
   private readonly src: Int32Array;
+  /** Per surface cell: where its last surge of liquid was drawn from (the far side), or -1. */
+  private readonly from: Int32Array;
+  /** Liquid surge: upward momentum carried by cells arriving on a rising surface. */
+  private readonly mom: Float32Array;
   /** Chunks that held liquid at the last pressure pass. */
   private readonly wet: Uint8Array;
   readonly cw: number;
@@ -53,6 +57,8 @@ export class World {
     this.base = new Float32Array(n).fill(AMBIENT);
     this.stamp = new Uint16Array(n);
     this.src = new Int32Array(n).fill(-1);
+    this.from = new Int32Array(n).fill(-1);
+    this.mom = new Float32Array(n);
     this.cw = (w + CHUNK - 1) >> CS;
     this.ch = (h + CHUNK - 1) >> CS;
     this.awake = new Uint8Array(this.cw * this.ch).fill(1);
@@ -101,6 +107,7 @@ export class World {
     else if (m !== M.air) this.temp[i] = this.base[i];
     this.life[i] = m === M.spore ? 600 + this.rand() * 900 : m === M.fire ? 20 + this.rand() * 30 : m === M.steam ? 240 + this.rand() * 240 : m === M.smoke ? 90 + this.rand() * 120 : 0;
     this.aux[i] = m === M.plant ? 3 : m === M.vine ? 14 : 0;
+    this.mom[i] = 0;
   }
 
   /** Change a cell in place during a step (keeps temperature unless the material has its own). */
@@ -164,6 +171,8 @@ export class World {
     const tt = temp[i]; temp[i] = temp[j]; temp[j] = tt;
     t = life[i]; life[i] = life[j]; life[j] = t;
     t = aux[i]; aux[i] = aux[j]; aux[j] = t;
+    const mm = this.mom[i]; this.mom[i] = this.mom[j]; this.mom[j] = mm;
+    const ff = this.from[i]; this.from[i] = this.from[j]; this.from[j] = ff;
     stamp[i] = stamp[j] = this.tick;
     const w = this.w;
     this.wake(i % w, (i / w) | 0);
@@ -248,11 +257,15 @@ export class World {
     else if (m === M.mud) this.bubble(i, x, y);
     if (this.mat[i] !== m) return;
     if (this.rand() > MOBILITY[m]) { this.next[(y >> CS) * this.cw + (x >> CS)] = 1; return; }
-    const g = 1, w = this.w;
+    const g = 1, w = this.w, aux = this.aux;
     if (this.canEnter(m, x, y + g, g)) return this.swap(i, i + w);
-    const d = this.rand() < 0.5 ? -1 : 1;
-    if (this.canEnter(m, x + d, y + g, g)) return this.swap(i, i + w + d);
-    if (this.canEnter(m, x - d, y + g, g)) return this.swap(i, i + w - d);
+    // Sideways inertia: keep flowing the way it was going (aux 1 = left,
+    // 2 = right), so a pour runs across a basin as a surge, not a random spread.
+    if (aux[i] && this.rand() < 0.01) aux[i] = 0;
+    const d = aux[i] === 1 ? -1 : aux[i] === 2 ? 1 : this.rand() < 0.5 ? -1 : 1;
+    const go = (j: number, dir: number) => { this.swap(i, j); aux[j] = dir < 0 ? 1 : 2; };
+    if (this.canEnter(m, x + d, y + g, g)) return go(i + w + d, d);
+    if (this.canEnter(m, x - d, y + g, g)) return go(i + w - d, -d);
     // Flow sideways as far as it can, stopping early over a hole.
     for (const dir of [d, -d]) {
       let best = 0;
@@ -261,8 +274,9 @@ export class World {
         best = s;
         if (this.canEnter(m, x + dir * s, y + g, g)) break;
       }
-      if (best) return this.swap(i, i + dir * best);
+      if (best) return go(i + dir * best, dir);
     }
+    aux[i] = 0; // boxed in: forget the direction
   }
 
   private gas(i: number, x: number, y: number, m: number): void {
@@ -621,7 +635,7 @@ export class World {
    * whole grid, as bodies span sleeping chunks; only liquid cells do work.
    */
   private pressure(): void {
-    const { w, h, mat, src, wet, awake, next, cw } = this;
+    const { w, h, mat, src, from, wet, awake, next, cw, mom } = this;
     const ltr = (this.tick & 1) === 0;
     // Visit chunks that held liquid, or that changed (liquid can only arrive by a change).
     const visit = new Uint8Array(wet.length);
@@ -642,14 +656,38 @@ export class World {
             const j = n === 0 ? i - w : n === 1 ? i + w : n === 2 ? i - 1 : i + 1;
             if (j < 0 || j >= mat.length || (n > 1 && Math.abs((j % w) - x) > 1) || mat[j] !== m) continue;
             const s = this.fix(src[j], m);
-            if (s < 0) continue;
-            const sy = (s / w) | 0;
-            if (sy < by) { by = sy; best = s; }
+            if (s >= 0) { const sy = (s / w) | 0; if (sy < by) { by = sy; best = s; } }
           }
           if (this.surface(i)) {
             src[i] = best >= 0 && by < y ? best : i;
-            // Level out: a higher connected surface pushes a cell up here.
-            if (best >= 0 && by < y - 1 && y > 0 && mat[i - w] === M.air && this.rand() < 0.35) this.swap(best, i - w);
+            // Level out: a higher connected surface pushes a cell up here. A
+            // rising surface carries momentum, so it keeps coming a little past
+            // level (overshoot) and the two sides rock before settling.
+            const mo = mom[i];
+            mom[i] = mo * 0.993;
+            const d = y - by; // how far the connected high surface sits above this one
+            if (best >= 0 && d >= 2) {
+              // Driven by height difference. A source surface that is itself still
+              // rising resists being drained: the pull brakes it instead.
+              if (mom[best] > 0.5) mom[best] *= 0.985;
+              else if (y > 0 && mat[i - w] === M.air && this.rand() < 0.35 + Math.min(0.4, mo * 0.15)) {
+                this.swap(best, i - w);
+                mom[i - w] = Math.min(12, mo * 0.92 + 1.2 * MOBILITY[m]);
+                from[i - w] = best;
+                mom[i] = 0;
+              }
+            } else if (mo > 0.6 && y > 0 && mat[i - w] === M.air) {
+              // Coasting on momentum: keep drawing from the far side it was fed
+              // from, past level (overshoot), until the climb uses the momentum up.
+              const f = this.fix(from[i], m);
+              const f2 = f >= 0 ? f : this.fix(f + w, m);
+              if (f2 >= 0 && f2 !== i && ((f2 / w) | 0) - y < mo * 1.5 + 1 && this.rand() < 0.35 + Math.min(0.4, mo * 0.1)) {
+                this.swap(f2, i - w);
+                mom[i - w] = mo * 0.9;
+                from[i - w] = f2;
+                mom[i] = 0;
+              }
+            }
             continue;
           }
           const l = x > 0 ? CAT[mat[i - 1]] : STATIC, r = x < w - 1 ? CAT[mat[i + 1]] : STATIC;

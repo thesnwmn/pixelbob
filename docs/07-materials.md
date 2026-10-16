@@ -58,7 +58,7 @@ Anything denser falls through anything lighter, with drag through liquids and po
   - gunpowder in range is lit, which is how trails chain.
 
   Methane occasionally causes a small one when it ignites. Later this is the hook for mining charges, collapsing bridges and creatures.
-- **Pressure.** Connected liquid evens out its level through U-bends and flooded caves (see [03](03-simulation.md)).
+- **Pressure.** Connected liquid evens out its level through U-bends and flooded caves, with a surge past level before it settles; pours run across basins with inertia (see [03](03-simulation.md)).
 - **Drag.** Pushing through liquids and powders is probabilistic. Sinking through water runs at about half speed, and buried light powders rise slowly instead of popping out.
 
 ## Backlog

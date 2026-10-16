@@ -60,6 +60,18 @@ describe("pressure", () => {
     expect(Math.abs(level(1, 28) - level(32, 59))).toBeLessThanOrEqual(2);
   });
 
+  it("surges past level before settling (momentum)", () => {
+    const w = box(60, 50);
+    for (let y = 0; y < 44; y++) for (let x = 28; x < 32; x++) w.set(x, y, M.rock);
+    for (let x = 2; x < 27; x++) for (let y = 10; y < 49; y++) w.set(x, y, M.water);
+    const vol = (x0: number, x1: number) => { let n = 0; for (let y = 0; y < 44; y++) for (let x = x0; x < x1; x++) if (w.get(x, y) === M.water) n++; return n; };
+    let peak = -Infinity;
+    for (let t = 0; t < 600; t++) { w.step(); peak = Math.max(peak, (vol(32, 59) - vol(1, 28)) / 26); }
+    run(w, 1500);
+    expect(peak).toBeGreaterThan(1.5); // the filling side overshot by rows
+    expect(Math.abs((vol(32, 59) - vol(1, 28)) / 26)).toBeLessThan(1.5); // and settled
+  });
+
   it("a waterfall doesn't pump the pool below up to its source", () => {
     const w = box(60, 50);
     // Upper basin on a ledge with a hole in its floor, pouring into the lower half.

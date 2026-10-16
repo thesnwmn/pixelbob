@@ -94,7 +94,7 @@ export class World {
     if (m !== M.air && d.spawnTemp !== AMBIENT) this.temp[i] = d.spawnTemp;
     else if (m !== M.air) this.temp[i] = this.base[i];
     this.life[i] = m === M.spore ? 600 + this.rand() * 900 : m === M.fire ? 20 + this.rand() * 30 : m === M.steam ? 240 + this.rand() * 240 : m === M.smoke ? 90 + this.rand() * 120 : 0;
-    this.aux[i] = m === M.plant ? 3 : 0;
+    this.aux[i] = m === M.plant ? 3 : m === M.vine ? 14 : 0;
   }
 
   /** Change a cell in place during a step (keeps temperature unless the material has its own). */
@@ -108,6 +108,17 @@ export class World {
 
   private ignite(i: number): void {
     const m = this.mat[i];
+    if (m === M.gunpowder) {
+      // Lit gunpowder fizzes for a few steps, then goes off.
+      if (this.life[i] === 0) this.life[i] = 1 + this.rand() * 4;
+      this.wake(i % this.w, (i / this.w) | 0);
+      return;
+    }
+    if (m === M.methane && this.rand() < 0.03) {
+      this.convert(i, M.air, true);
+      this.explode(i % this.w, (i / this.w) | 0, 2.5);
+      return;
+    }
     if (CAT[m] === STATIC) {
       // Solids burn in place, throwing flames until their fuel runs out.
       if (this.life[i] === 0) this.life[i] = MATS[m].burnTime * (0.6 + this.rand() * 0.8);
@@ -188,6 +199,11 @@ export class World {
 
   private powder(i: number, x: number, y: number, m: number): void {
     if (m === M.spore && this.spore(i, x, y)) return;
+    if (m === M.gunpowder && this.life[i] > 0) {
+      this.next[(y >> CS) * this.cw + (x >> CS)] = 1;
+      if (--this.life[i] === 0) { this.convert(i, M.air, true); this.explode(x, y, 5); return; }
+    }
+    if (m === M.salt && this.saltContact(i, x)) return;
     if (this.rand() > MOBILITY[m]) { this.next[(y >> CS) * this.cw + (x >> CS)] = 1; return; }
     const g = 1, w = this.w;
     if (this.canEnter(m, x, y + g, g)) return this.swap(i, i + w);
@@ -199,6 +215,8 @@ export class World {
   private liquid(i: number, x: number, y: number, m: number): void {
     if (m === M.lava) this.lavaContact(i, x, y);
     else if (m === M.acid && this.acidContact(i, x, y)) return;
+    else if (m === M.water && this.soak(i, x)) return;
+    else if (m === M.mud) this.bubble(i, x, y);
     if (this.mat[i] !== m) return;
     if (this.rand() > MOBILITY[m]) { this.next[(y >> CS) * this.cw + (x >> CS)] = 1; return; }
     const g = 1, w = this.w;
@@ -304,6 +322,129 @@ export class World {
     if (m === M.plant) this.grow(i, x, y);
     else if (m === M.stem) this.growStem(i, x, y);
     else if (m === M.cap) this.shedSpores(i, x, y);
+    else if (m === M.vine) this.growVine(i, x, y);
+    else if (m === M.steel) this.corrode(i, x, y);
+    else if (m === M.rust) this.crumble(i, x, y);
+  }
+
+  /** A random 4-neighbour index of i (or -1 off the edge). */
+  private neighbour(i: number, x: number): number {
+    const r = (this.rand() * 4) | 0, w = this.w;
+    const j = r === 0 ? i - w : r === 1 ? i + w : r === 2 ? i - 1 : i + 1;
+    if (j < 0 || j >= this.mat.length || Math.abs((j % w) - x) > 1) return -1;
+    return j;
+  }
+
+  /** Water slowly soaks into dirt, turning it to mud. Returns true if the water is used up. */
+  private soak(i: number, x: number): boolean {
+    // Water resting on dirt keeps its chunk awake so the soaking carries on.
+    if (i + this.w < this.mat.length && this.mat[i + this.w] === M.dirt) this.next[((i / this.w) >> CS) * this.cw + ((i % this.w) >> CS)] = 1;
+    const j = this.neighbour(i, x);
+    if (j < 0 || this.mat[j] !== M.dirt || this.rand() > 0.004) return false;
+    this.convert(j, M.mud, true);
+    this.convert(i, M.air, true);
+    return true;
+  }
+
+  /** Mud lets the odd bubble of methane out of its surface. */
+  private bubble(i: number, x: number, y: number): void {
+    const j = i - this.w;
+    if (j < 0 || this.mat[j] !== M.air) return;
+    this.next[(y >> CS) * this.cw + (x >> CS)] = 1;
+    if (this.rand() < 0.0003) this.set(x, y - 1, M.methane);
+  }
+
+  /** Salt dissolves into water (making brine) and melts ice and snow. Returns true if the salt is gone. */
+  private saltContact(i: number, x: number): boolean {
+    const j = this.neighbour(i, x);
+    if (j < 0) return false;
+    const t = this.mat[j];
+    if (t === M.water && this.rand() < 0.05) {
+      this.convert(j, M.brine, true);
+      this.convert(i, M.air, true);
+      return true;
+    }
+    if ((t === M.ice || t === M.snow) && this.rand() < 0.02) {
+      this.convert(j, M.brine, true);
+      if (this.rand() < 0.3) { this.convert(i, M.air, true); return true; }
+    }
+    return false;
+  }
+
+  /** Vines hang: they grow down (or along a ceiling) and drink water like plants. */
+  private growVine(i: number, x: number, y: number): void {
+    const { w, mat, aux } = this;
+    const j0 = this.neighbour(i, x);
+    if (j0 >= 0 && mat[j0] === M.water && this.rand() < 0.08) { this.convert(j0, M.air, true); aux[i] = Math.min(40, aux[i] + 6); }
+    if (aux[i] === 0) return;
+    this.next[(y >> CS) * this.cw + (x >> CS)] = 1;
+    if (this.rand() > 0.05) return;
+    const r = this.rand();
+    const dx = r < 0.15 ? -1 : r < 0.3 ? 1 : 0;
+    let j = -1;
+    if (this.get(x + dx, y + 1) === M.air) j = (y + 1) * w + x + dx;
+    else {
+      // Blocked below: creep sideways while there's something to cling to above.
+      const s = this.rand() < 0.5 ? -1 : 1;
+      if (this.get(x + s, y) === M.air && CAT[this.get(x + s, y - 1)] === STATIC) j = i + s;
+    }
+    if (j < 0) { aux[i] = 0; return; }
+    this.convert(j, M.vine, true);
+    aux[j] = aux[i] - 1;
+    aux[i] = 0;
+  }
+
+  /** Wet steel rusts; brine rusts it faster. */
+  private corrode(i: number, x: number, y: number): void {
+    const j = this.neighbour(i, x);
+    if (j < 0) return;
+    const t = this.mat[j];
+    if (t !== M.water && t !== M.brine && t !== M.steam) return;
+    this.next[(y >> CS) * this.cw + (x >> CS)] = 1;
+    if (this.rand() < (t === M.brine ? 0.012 : 0.004)) this.convert(i, M.rust, true);
+  }
+
+  /** Rust with nothing solid under it flakes away. */
+  private crumble(i: number, x: number, y: number): void {
+    const below = y + 1 < this.h ? this.mat[i + this.w] : M.rock;
+    if (CAT[below] === STATIC) return;
+    this.next[(y >> CS) * this.cw + (x >> CS)] = 1;
+    if (this.rand() < 0.004) this.convert(i, M.flakes, true);
+  }
+
+  /**
+   * A blast: carves a crater, throws loose material outward as rubble,
+   * heats and sets fire to things, and lights any gunpowder caught in it.
+   */
+  explode(cx: number, cy: number, r: number): void {
+    const { w, mat, temp } = this;
+    for (let y = Math.floor(cy - r); y <= cy + r; y++)
+      for (let x = Math.floor(cx - r); x <= cx + r; x++) {
+        if (!this.inside(x, y)) continue;
+        const d = Math.hypot(x - cx, y - cy) / r;
+        if (d > 1) continue;
+        const i = y * w + x, m = mat[i], c = CAT[m];
+        temp[i] = Math.min(2000, temp[i] + 600 * (1 - d));
+        this.wake(x, y);
+        if (m === M.gunpowder) { if (this.life[i] === 0) this.life[i] = 1 + this.rand() * 6; continue; }
+        if (m === M.steel || m === M.air) {
+          if (m === M.air && d < 0.7 && this.rand() < 0.35) { this.convert(i, M.fire, true); this.life[i] = 4 + this.rand() * 10; }
+          continue;
+        }
+        const hard = m === M.rock || m === M.stone || m === M.rust ? 0.45 : 1;
+        if (this.rand() > (1 - d * 0.6) * hard) continue;
+        if (FLAMMABLE[m] > 0 && c !== STATIC) { this.convert(i, M.fire, true); continue; }
+        if (d < 0.45) { this.convert(i, this.rand() < 0.25 ? M.smoke : M.air, true); continue; }
+        // Outer ring: throw the cell outward; solids break into rubble.
+        const thrown = c === STATIC ? (m === M.wood || m === M.plant || m === M.vine ? M.ash : m === M.ice ? M.snow : M.rubble) : m;
+        const ux = (x - cx) / (d * r || 1), uy = (y - cy) / (d * r || 1) - 0.6;
+        const n = Math.hypot(ux, uy) || 1;
+        this.convert(i, M.air, true);
+        for (let k = Math.ceil(r * 1.5); k >= 1; k--) {
+          const tx = Math.round(x + (ux / n) * k), ty = Math.round(y + (uy / n) * k);
+          if (this.inside(tx, ty) && mat[ty * w + tx] === M.air) { this.set(tx, ty, thrown); break; }
+        }
+      }
   }
 
   /**
@@ -439,6 +580,11 @@ export class World {
             if (m === M.water) {
               if (t > 100) { this.convert(i, M.steam, true); continue; }
               if (t < 0 && this.rand() < 0.02) { this.convert(i, M.ice, true); continue; }
+            } else if (m === M.brine) {
+              if (t > 100) { this.convert(i, this.rand() < 0.5 ? M.salt : M.steam, true); continue; }
+              if (t < -15 && this.rand() < 0.02) { this.convert(i, M.ice, true); continue; }
+            } else if (m === M.mud) {
+              if (t > 60 && this.rand() < 0.02) { this.convert(i, M.dirt, true); continue; }
             } else if ((m === M.ice && t > 2) || (m === M.snow && t > 1)) {
               if (this.rand() < 0.01) { this.convert(i, M.water, true); continue; }
             } else if (m === M.lava) {
@@ -484,6 +630,11 @@ export class World {
         this.temp[i] = Math.max(-80, Math.min(2500, this.temp[i] + dt * (1 - d * d)));
         this.wake(x, y);
       }
+  }
+
+  /** Wake every chunk (after editing arrays directly). */
+  wakeAll(): void {
+    this.next.fill(1);
   }
 
   /** Number of awake chunks (for the debug HUD). */

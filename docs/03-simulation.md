@@ -35,6 +35,8 @@ The first cut implements this section: `World` stores `mat`, `shade`, `temp`, `l
 - **Plants grow on water**: a plant cell next to water drinks it and passes growth energy up to a new tip.
 - **Mushrooms grow from spores**: a spore resting on dirt, wood or plants underground (rock wall behind it) sprouts a stem, far more readily near water. The stem climbs on stored energy and opens a domed, glowing cap; caps now and then drop new spores, so colonies spread. Spores that find nowhere to grow dry up.
 
+Every material and its interactions are listed in [07 Materials](07-materials.md).
+
 Settled worlds cost about 1.3 ms a step at 480×270; a busy one about 3 ms (Node, desktop CPU).
 
 ### Materials as data

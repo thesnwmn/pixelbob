@@ -133,6 +133,80 @@ describe("mushrooms", () => {
   });
 });
 
+describe("explosives and gases", () => {
+  it("lit gunpowder blasts a crater and sets off the rest of the pile", () => {
+    const w = box(60, 40);
+    for (let x = 1; x < 59; x++) for (let y = 20; y < 39; y++) w.set(x, y, M.dirt);
+    for (let x = 20; x < 40; x++) for (let y = 17; y < 20; y++) w.set(x, y, M.gunpowder);
+    const dirt = w.count(M.dirt);
+    run(w, 30); // let the pile settle
+    w.heat(30, 18, 3, 400);
+    run(w, 300);
+    expect(w.count(M.gunpowder)).toBe(0);
+    expect(w.count(M.dirt)).toBeLessThan(dirt - 40);
+    expect(w.count(M.rubble)).toBeGreaterThan(0);
+  });
+
+  it("methane burns away in a flash", () => {
+    const w = box(40, 30);
+    for (let x = 1; x < 39; x++) for (let y = 5; y < 15; y++) w.set(x, y, M.methane);
+    w.set(2, 10, M.fire);
+    run(w, 120);
+    expect(w.count(M.methane)).toBeLessThan(20);
+  });
+});
+
+describe("water chemistry", () => {
+  it("water soaks dirt into mud, and heat dries it out", () => {
+    const w = box(30, 30);
+    for (let x = 1; x < 29; x++) for (let y = 24; y < 29; y++) w.set(x, y, M.dirt);
+    for (let x = 1; x < 29; x++) for (let y = 20; y < 24; y++) w.set(x, y, M.water);
+    run(w, 900);
+    expect(w.count(M.mud)).toBeGreaterThan(5);
+    for (let i = 0; i < 300; i++) { w.heat(15, 26, 12, 20); w.step(); }
+    expect(w.count(M.mud)).toBeLessThan(5);
+  });
+
+  it("salt dissolves into brine, which stays liquid when water freezes", () => {
+    const w = box(30, 30);
+    for (let x = 1; x < 29; x++) for (let y = 22; y < 29; y++) w.set(x, y, M.water);
+    w.paint(15, 15, 3, M.salt);
+    run(w, 400);
+    expect(w.count(M.brine)).toBeGreaterThan(5);
+    w.temp.fill(-8);
+    w.base.fill(-8);
+    w.wakeAll();
+    run(w, 600);
+    expect(w.count(M.ice)).toBeGreaterThan(0);
+    expect(w.count(M.brine)).toBeGreaterThan(5);
+  });
+
+  it("boiling brine leaves salt behind", () => {
+    const w = box(20, 20);
+    for (let x = 1; x < 19; x++) for (let y = 16; y < 19; y++) w.set(x, y, M.brine);
+    for (let i = 0; i < 200; i++) { w.heat(10, 17, 10, 30); w.step(); }
+    expect(w.count(M.salt)).toBeGreaterThan(5);
+  });
+
+  it("wet steel rusts", () => {
+    const w = box(30, 30);
+    for (let x = 1; x < 29; x++) w.set(x, 28, M.steel);
+    for (let x = 1; x < 29; x++) for (let y = 25; y < 28; y++) w.set(x, y, M.water);
+    run(w, 1500);
+    expect(w.count(M.rust)).toBeGreaterThan(3);
+  });
+});
+
+describe("vines", () => {
+  it("hang down from where they're placed", () => {
+    const w = box(30, 40);
+    for (let x = 1; x < 29; x++) w.set(x, 2, M.rock);
+    w.set(15, 3, M.vine);
+    run(w, 1500);
+    expect(lowest(w, M.vine)).toBeGreaterThan(10);
+  });
+});
+
 describe("world", () => {
   it("is deterministic", () => {
     const a = new World(160, 90, 9), b = new World(160, 90, 9);

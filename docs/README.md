@@ -35,6 +35,7 @@ Target: web browser first, on phones and laptops.
 | [04 Tech and toolchain](04-tech-and-toolchain.md) | Language, build, rendering, threads, hosting and previews, testing, level format, input |
 | [05 Roadmap](05-roadmap.md) | Phases, what each prototype must prove, PR plan |
 | [06 Prior art](06-prior-art.md) | Games and toys to learn from |
+| [07 Materials](07-materials.md) | Every material in the sim and what it reacts with, plus a backlog of ideas |
 
 ## The stills
 

@@ -85,6 +85,15 @@ export const M = {
   spore: def("spores", Cat.Powder, [0x7fe8d8, 0xa8fff0, 0xd0fff8], { density: 1.3, mobility: 0.3, flammable: 0.5, ignite: 120, burnTime: 4, dissolve: 1, occ: 0.02, emit: [0.05, 0.35, 0.3] }),
   stem: def("stem", Cat.Static, [0x8aa8a0, 0xa8c4bc, 0xc0d8d0], { flammable: 0.12, ignite: 180, burnTime: 30, conduct: 0.04, dissolve: 0.6, occ: 0.25, emit: [0.03, 0.12, 0.1], palette: false }),
   cap: def("cap", Cat.Static, [0x1fb7a0, 0x3ff0d8, 0x7ffff0, 0xc8fff8], { flammable: 0.1, ignite: 180, burnTime: 30, conduct: 0.04, dissolve: 0.6, occ: 0.2, emit: [0.06, 0.45, 0.4], palette: false }),
+  gunpowder: def("gunpowder", Cat.Powder, [0x55555c, 0x64646b, 0x74747a, 0x9a8a5a], { density: 18, flammable: 1, ignite: 180, dissolve: 0.5, occ: 0.5 }),
+  methane: def("methane", Cat.Gas, [0x9a8ab8, 0xb0a0d0], { density: 0.6, mobility: 0.6, flammable: 1, ignite: 250, burnTime: 3, occ: 0.01, alpha: 0.22 }),
+  mud: def("mud", Cat.Liquid, [0x3a2a1e, 0x45321f, 0x503a24], { density: 14, flow: 1, mobility: 0.15, conduct: 0.1, dissolve: 0.3, occ: 0.6 }),
+  salt: def("salt", Cat.Powder, [0xd8d8d0, 0xe8e8e0, 0xf4f4ee], { density: 21, occ: 0.45 }),
+  brine: def("brine", Cat.Liquid, [0x2a6a8a, 0x307898, 0x3a86a6], { density: 11, flow: 4, conduct: 0.15, occ: 0.12, alpha: 0.78 }),
+  vine: def("vine", Cat.Static, [0x1d4f45, 0x26685a, 0x2f8270], { flammable: 0.15, ignite: 150, burnTime: 25, conduct: 0.05, dissolve: 0.5, occ: 0.3 }),
+  rust: def("rust", Cat.Static, [0x6f3d26, 0x83492b, 0x965632], { conduct: 0.2, dissolve: 0.4, occ: 0.7 }),
+  flakes: def("rust flakes", Cat.Powder, [0x7a4428, 0x8e5230, 0xa0603a], { density: 15, dissolve: 0.6, occ: 0.5, palette: false }),
+  rubble: def("rubble", Cat.Powder, [0x4a423b, 0x5a5048, 0x6a5e54], { density: 22, occ: 0.55, palette: false }),
   glass: def("glass", Cat.Static, [0x9fc4c8, 0xb8dadc, 0xd0eef0], { conduct: 0.1, occ: 0.08, palette: false }),
 } as const;
 export type MatId = (typeof M)[keyof typeof M];

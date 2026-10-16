@@ -71,7 +71,7 @@ export const M = {
   lava: def("lava", Cat.Liquid, [0xc2260f, 0xe24a14, 0xff7a1c, 0xffb340], { density: 30, flow: 1, mobility: 0.25, conduct: 0.01, spawnTemp: 1200, occ: 0.3, emit: [1, 0.35, 0.08] }),
   ice: def("ice", Cat.Static, [0x7fb9da, 0x9fd3ee, 0xbfe6f7, 0xe2f6ff], { conduct: 0.006, spawnTemp: -20, dissolve: 0.3, occ: 0.22 }),
   snow: def("snow", Cat.Powder, [0xc9d8e6, 0xdbe6f0, 0xecf3f9], { density: 6, mobility: 0.6, conduct: 0.01, spawnTemp: -10, dissolve: 0.5, occ: 0.45 }),
-  wood: def("wood", Cat.Static, [0x4f331f, 0x5f3e25, 0x714b2c, 0x855a33], { flammable: 0.03, ignite: 300, burnTime: 120, conduct: 0.03, dissolve: 0.15, occ: 0.6 }),
+  wood: def("wood", Cat.Static, [0x4f331f, 0x5f3e25, 0x714b2c, 0x855a33], { flammable: 0.08, ignite: 300, burnTime: 120, conduct: 0.03, dissolve: 0.15, occ: 0.6 }),
   steel: def("steel", Cat.Static, [0x59616c, 0x6a7380, 0x7d8794, 0x929cab], { conduct: 0.45, dissolve: 0.01, occ: 0.7 }),
   plant: def("plant", Cat.Static, [0x2f6e2a, 0x3f8a30, 0x57a838, 0x7cc94a], { flammable: 0.15, ignite: 150, burnTime: 25, conduct: 0.05, dissolve: 0.5, occ: 0.3 }),
   steam: def("steam", Cat.Gas, [0xc3ccd4, 0xd5dde4, 0xe3e9ee], { density: 0.4, mobility: 0.8, spawnTemp: 110, occ: 0.05, alpha: 0.4 }),

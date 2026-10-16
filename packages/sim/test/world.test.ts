@@ -115,6 +115,29 @@ describe("heat and reactions", () => {
     expect(w.count(M.wood)).toBeLessThan(wood * 0.5);
   });
 
+  it("burning wood under water goes out and stays out", () => {
+    const w = box(30, 30);
+    for (let x = 10; x < 20; x++) for (let y = 20; y < 29; y++) w.set(x, y, M.wood);
+    w.heat(15, 19, 4, 800);
+    run(w, 60); // catch
+    for (let x = 1; x < 29; x++) for (let y = 5; y < 20; y++) if (w.get(x, y) === M.air || w.get(x, y) === M.fire || w.get(x, y) === M.smoke) w.set(x, y, M.water);
+    run(w, 400);
+    let burning = 0, hot = 0;
+    for (let i = 0; i < w.mat.length; i++) if (w.mat[i] === M.wood) { if (w.life[i] > 0) burning++; if (w.temp[i] > 300) hot++; }
+    expect(burning).toBe(0);
+    expect(hot).toBe(0);
+  });
+
+  it("buried wood doesn't catch fire from heat alone", () => {
+    const w = box(30, 30);
+    for (let x = 1; x < 29; x++) for (let y = 15; y < 29; y++) w.set(x, y, M.rock);
+    for (let x = 12; x < 18; x++) for (let y = 20; y < 24; y++) w.set(x, y, M.wood);
+    for (let i = 0; i < 100; i++) { w.heat(15, 22, 4, 30); w.step(); }
+    let burning = 0;
+    for (let i = 0; i < w.mat.length; i++) if (w.mat[i] === M.wood && w.life[i] > 0) burning++;
+    expect(burning).toBe(0);
+  });
+
   it("heat melts ice; cold freezes water", () => {
     const a = box(20, 20);
     a.paint(10, 15, 3, M.ice, { replace: true });

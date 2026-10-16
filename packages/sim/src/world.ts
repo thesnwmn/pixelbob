@@ -112,6 +112,26 @@ export class World {
     this.wake(i % this.w, (i / this.w) | 0);
   }
 
+  /** Put a burning solid out and cool it, so it doesn't relight from its own heat. */
+  private douse(i: number): void {
+    this.life[i] = 0;
+    this.temp[i] = Math.min(this.temp[i], 60);
+    this.wake(i % this.w, (i / this.w) | 0);
+  }
+
+  /** Does cell i touch air, gas, fire or loose ash? Solids need that to burn. */
+  private breathes(i: number): boolean {
+    const { w, mat } = this;
+    const x = i % w;
+    for (const j of [i - w, i + w, i - 1, i + 1]) {
+      if (j < 0 || j >= mat.length || Math.abs((j % w) - x) > 1) continue;
+      const c = CAT[mat[j]];
+      // Loose ash lets air through.
+      if (c === EMPTY || c === GAS || c === FIRE || mat[j] === M.ash) return true;
+    }
+    return false;
+  }
+
   private ignite(i: number): void {
     const m = this.mat[i];
     if (m === M.gunpowder) {
@@ -126,7 +146,9 @@ export class World {
       return;
     }
     if (CAT[m] === STATIC) {
-      // Solids burn in place, throwing flames until their fuel runs out.
+      // Solids burn in place, throwing flames until their fuel runs out,
+      // but only with air to burn in: underwater or buried wood won't catch.
+      if (!this.breathes(i)) return;
       if (this.life[i] === 0) this.life[i] = MATS[m].burnTime * (0.6 + this.rand() * 0.8);
     } else {
       this.convert(i, M.fire);
@@ -320,9 +342,11 @@ export class World {
       }
       for (const j2 of [i - w, i + w, i - 1, i + 1]) {
         if (j2 < 0 || j2 >= mat.length) continue;
-        if (mat[j2] === M.water) { life[i] = 0; this.convert(j2, M.steam); return; }
+        if (mat[j2] === M.water) { this.douse(i); this.convert(j2, M.steam); return; }
         if (FLAMMABLE[mat[j2]] > 0 && this.rand() < FLAMMABLE[mat[j2]] * 0.3) this.ignite(j2);
       }
+      // Smothered: nothing to breathe, so it goes out.
+      if (!this.breathes(i)) { this.douse(i); return; }
       if (--life[i] === 0) this.convert(i, this.rand() < 0.3 ? M.ash : M.air, true);
       return;
     }

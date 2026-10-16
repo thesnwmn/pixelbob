@@ -31,9 +31,11 @@ export class Shade {
       for (let x = 0; x < w; x++) {
         const i = y * w + x, j = i * 3;
         if (back[i]) {
-          const n = fbm(x * 0.05, y * 0.05, seed + 11, 3), g = hash2(x, y, seed) * 0.08;
-          const k = 0.55 + n * 0.5 + g;
-          this.backRGB[j] = 40 * k; this.backRGB[j + 1] = 35 * k; this.backRGB[j + 2] = 32 * k;
+          // Lighter and cooler than any diggable material, with broad soft
+          // texture instead of per-pixel grain, so open space reads as open.
+          const n = fbm(x * 0.03, y * 0.03, seed + 11, 3), g = hash2(x >> 1, y >> 1, seed) * 0.04;
+          const k = 0.85 + n * 0.3 + g;
+          this.backRGB[j] = 78 * k; this.backRGB[j + 1] = 76 * k; this.backRGB[j + 2] = 80 * k;
         } else {
           const t = y / h;
           this.backRGB[j] = 70 + t * 170; this.backRGB[j + 1] = 120 + t * 90; this.backRGB[j + 2] = 200 - t * 30;

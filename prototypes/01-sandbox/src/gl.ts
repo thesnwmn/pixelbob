@@ -143,7 +143,9 @@ void main() {
   if (col.a < 0.01) lit = col.rgb * uSkyTint;
   else {
     vec3 light = L + glow;
-    if (col.a < 0.6) light *= 0.6;
+    // Back wall: dimmer than the play layer, but never pitch black, so open
+    // space always reads against solid rock.
+    if (col.a < 0.6) light = light * 0.75 + vec3(0.15, 0.15, 0.17);
     if (col.a > 0.99) light *= mix(1.0, 1.0 - uDepth, smoothstep(0.45, 0.92, b1.a));
     lit = col.rgb * light;
   }

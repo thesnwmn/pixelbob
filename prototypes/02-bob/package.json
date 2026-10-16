@@ -1,0 +1,20 @@
+{
+  "name": "@pixelbob/02-bob",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Bob playground: roll, jump, freeze, melt and get torn apart on a test course, with live sliders for his physics",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@pixelbob/bob": "workspace:*",
+    "@pixelbob/render": "workspace:*",
+    "@pixelbob/sim": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}

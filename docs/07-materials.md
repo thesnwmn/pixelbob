@@ -1,6 +1,6 @@
 # 07 Materials
 
-The material catalogue: what exists in `packages/sim` today, how each one behaves and what it reacts with, and a backlog of ideas. Behaviour numbers (density, flammability, conductivity…) live in `packages/sim/src/materials.ts`; reactions live in `packages/sim/src/world.ts`.
+The material catalogue: what exists in `packages/sim` today, how each one behaves and what it reacts with, and a backlog of ideas. Behaviour numbers (density, flammability, conductivity…, and `friction` and `sharp` for Bob) live in `packages/sim/src/materials.ts`; reactions live in `packages/sim/src/world.ts`.
 
 How to read the categories:
 - **static**: stays put unless dug, burnt, melted or blown up.
@@ -19,7 +19,8 @@ Anything denser falls through anything lighter, with drag through liquids and po
 | dirt | static | Water soaks it into mud. Melts above ~1100 °C. Acid eats it. Spores sprout on it. |
 | stone | static | Made when lava cools; behaves like rock. |
 | sand | powder | Piles. Turns to glass above ~900 °C. |
-| glass | static | Made from sand; lets most light through. |
+| glass | static | Made from sand; lets most light through. Slippery and slightly sharp to Bob. |
+| spikes | static | Doesn't react with anything; it exists to cut Bob (`sharp` 1). |
 | water | liquid | Freezes below 0 °C, boils above 100 °C. Puts out fire. Soaks dirt into mud. Plants and vines drink it. Rusts steel. Dissolves salt into brine. |
 | ice | static | Melts above ~2 °C; insulates, so it melts slowly. Salt melts it. |
 | snow | powder | Melts above ~1 °C; light, so it drifts up through water slowly. |
@@ -115,7 +116,7 @@ Ideas not built yet, grouped by what they'd add. Effort is relative to the curre
 
 ### What Bob will care about
 
-Most of this list exists so that Bob has things to react to (see [01](01-game-overview.md)):
+Most of this list exists so that Bob has things to react to (see [01](01-game-overview.md), and [08 Bob](08-bob.md#materials-and-effects-on-bob) for the full table of what each material does to him, built and planned):
 - **Mud and tar** slow him.
 - **Salt** shrinks him; **water** swells him.
 - **Electricity** jolts him.
@@ -124,4 +125,3 @@ Most of this list exists so that Bob has things to react to (see [01](01-game-ov
 - **Blasts** and **lava** split him.
 - **Ice** and **brine** set up the freezing puzzles.
 
-When Bob's playground exists, each material gets a "what does it do to Bob" line in this table.

@@ -17,7 +17,8 @@ A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer.
 
 - Prototypes are Vite apps under `prototypes/NN-name/` with `base: "./"` so they work under the GitHub Pages sub-path. `scripts/build-site.mjs` picks up any prototype that has a `dist/` after `pnpm build`.
 - `packages/sim` (the world grid) must stay renderer-agnostic: no DOM, so it runs in a Web Worker and in Node tests. Material behaviour is data in `packages/sim/src/materials.ts`; the step only knows categories.
-- `prototypes/01-sandbox` renders with WebGL2 (`src/gl.ts`), the GPU port of the stills' lighting; `src/shade.ts` turns cells into its textures.
+- `packages/render` is the WebGL2 renderer (`gl.ts`, the GPU port of the stills' lighting) and `shade.ts`, which turns cells into its textures; the sandbox and the Bob playground share it.
+- `packages/bob` is Bob (particles, bonds, shape matching, controller): renderer-agnostic like the sim. Material effects on Bob are data too (`friction`, `sharp`). See `docs/08-bob.md`.
 - Deterministic: never use `Math.random()` in generation or simulation. Use `World.rand()` in the sim and the seeded helpers in `kit/rng.ts` in the stills.
 - Hot loops use typed arrays (structure of arrays), not an object per cell. `noUncheckedIndexedAccess` is off for that reason.
 - Only erasable TypeScript syntax (no enums, no parameter properties): `erasableSyntaxOnly` is on so Node can run `.ts` files directly.

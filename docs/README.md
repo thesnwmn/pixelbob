@@ -23,7 +23,7 @@ Target: web browser first, on phones and laptops.
 - **One idea drives Bob's states.** Temperature changes his bond settings. Hot: weak bonds, little shape memory, so he puddles and drips. Cold: stiff bonds that break at small stretch, so he shatters. Splitting is bonds breaking; merging is bonds re-forming on contact.
 - **Look:** crisp unfiltered pixels, a lit and simulated play layer over a dim back wall, emissive materials feeding soft lights and bloom. Default camera about **320×180 world pixels**, with Bob about 30 px wide. See [02 Art direction](02-art-direction.md) and the stills.
 - **Stack:** TypeScript, Vite, pnpm workspace, WebGL2, Vitest, Playwright. Static site on GitHub Pages with a preview per PR. See [04 Tech and toolchain](04-tech-and-toolchain.md).
-- **Plan:** stills (this PR) → material sandbox → Bob playground → first level. See [05 Roadmap](05-roadmap.md).
+- **Plan:** stills → material sandbox → Bob playground → first level. See [05 Roadmap](05-roadmap.md).
 
 ## Documents
 
@@ -36,6 +36,7 @@ Target: web browser first, on phones and laptops.
 | [05 Roadmap](05-roadmap.md) | Phases, what each prototype must prove, PR plan |
 | [06 Prior art](06-prior-art.md) | Games and toys to learn from |
 | [07 Materials](07-materials.md) | Every material in the sim and what it reacts with, plus a backlog of ideas |
+| [08 Bob](08-bob.md) | How Bob is built and moves (every action is him deforming), temperature states, tearing and rejoining, and what every material does to him |
 
 ## The stills
 

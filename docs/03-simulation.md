@@ -70,6 +70,8 @@ Each step, a cheap diffusion between neighbours, weighted by conductivity. Air c
 
 ## Bob as particles
 
+Built in `packages/bob`; [08 Bob](08-bob.md) describes what was built and how it differs from this plan (one rest shape per piece with a world-space squash instead of overlapping clusters; movement as rolling and crawling; cracks and slices as rules on top of strain).
+
 Bob is about 300–500 particles at rest, one per pixel of his body. Two mechanisms hold him together:
 
 1. **Bonds** between neighbours (distance constraints, made with XPBD so stiffness doesn't depend on the step rate). Each has a rest length, stiffness, damping and a **break strain**. Bonds form between particles closer than a radius and break when overstretched.

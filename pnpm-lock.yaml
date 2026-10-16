@@ -15,6 +15,18 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@22.20.5)(vite@8.3.4(@types/node@22.20.5))
 
+  packages/bob:
+    dependencies:
+      '@pixelbob/sim':
+        specifier: workspace:*
+        version: link:../sim
+
+  packages/render:
+    dependencies:
+      '@pixelbob/sim':
+        specifier: workspace:*
+        version: link:../sim
+
   packages/sim: {}
 
   prototypes/00-stills:
@@ -28,6 +40,25 @@ importers:
 
   prototypes/01-sandbox:
     dependencies:
+      '@pixelbob/render':
+        specifier: workspace:*
+        version: link:../../packages/render
+      '@pixelbob/sim':
+        specifier: workspace:*
+        version: link:../../packages/sim
+    devDependencies:
+      vite:
+        specifier: ^8.3.4
+        version: 8.3.4(@types/node@22.20.5)
+
+  prototypes/02-bob:
+    dependencies:
+      '@pixelbob/bob':
+        specifier: workspace:*
+        version: link:../../packages/bob
+      '@pixelbob/render':
+        specifier: workspace:*
+        version: link:../../packages/render
       '@pixelbob/sim':
         specifier: workspace:*
         version: link:../../packages/sim

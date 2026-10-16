@@ -14,13 +14,14 @@
 
 Not now: game engines (Phaser, Pixi, Godot web). The sim *is* the engine, and we'd fight their scene graphs and physics. WebGPU only once Safari support is solid enough for phones; the renderer should keep WebGL2 as a baseline.
 
-## Packages (planned)
+## Packages
 
 ```
 packages/
-  sim/        grid CA, materials, temperature, reactions (built); particles/XPBD and Bob controller (phase 2). No DOM.
-  render/     WebGL2 renderer: lives in prototypes/01-sandbox/src/gl.ts for now; moves here when Bob's playground needs it too.
-  levels/     level format, loading/saving, generation helpers.
+  sim/        grid CA, materials, temperature, reactions. No DOM.
+  bob/        Bob: particles, XPBD bonds, shape matching, controller, temperature states, the test course, his painter. No DOM.
+  render/     WebGL2 renderer and the CPU pass that turns cells into its textures (shared by the sandbox and the playground).
+  levels/     (planned) level format, loading/saving, generation helpers.
 prototypes/
   00-stills/      art direction stills (CPU renderer, this PR)
   01-sandbox/     world sandbox: dig, paint materials, heat, light

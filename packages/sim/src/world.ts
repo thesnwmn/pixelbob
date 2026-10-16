@@ -266,17 +266,23 @@ export class World {
     const go = (j: number, dir: number) => { this.swap(i, j); aux[j] = dir < 0 ? 1 : 2; };
     if (this.canEnter(m, x + d, y + g, g)) return go(i + w + d, d);
     if (this.canEnter(m, x - d, y + g, g)) return go(i + w - d, -d);
-    // Flow sideways as far as it can, stopping early over a hole.
+    // Flow sideways towards a drop within reach. On a flat surface with
+    // nowhere lower to go, rest (with the odd nudge so thin films still
+    // spread): that's what lets pools go still and their chunks sleep.
+    let fallback = 0, fdir = 0;
     for (const dir of [d, -d]) {
-      let best = 0;
+      let best = 0, drop = false;
       for (let s = 1; s <= FLOW[m]; s++) {
         if (!this.canEnter(m, x + dir * s, y, g)) break;
         best = s;
-        if (this.canEnter(m, x + dir * s, y + g, g)) break;
+        // Displacing a lighter liquid counts as downhill (oil floats up past it).
+        if (CAT[this.mat[i + dir * s]] === LIQUID || this.canEnter(m, x + dir * s, y + g, g)) { drop = true; break; }
       }
-      if (best) return go(i + dir * best, dir);
+      if (drop) return go(i + dir * best, dir);
+      if (best && !fallback) { fallback = best; fdir = dir; }
     }
-    aux[i] = 0; // boxed in: forget the direction
+    aux[i] = 0; // nowhere downhill: forget the direction
+    if (fallback && this.rand() < 0.05) this.swap(i, i + fdir * fallback);
   }
 
   private gas(i: number, x: number, y: number, m: number): void {
@@ -664,7 +670,7 @@ export class World {
             // rising surface carries momentum, so it keeps coming a little past
             // level (overshoot) and the two sides rock before settling.
             const mo = mom[i];
-            mom[i] = mo * 0.993;
+            mom[i] = mo * 0.985;
             const d = y - by; // how far the connected high surface sits above this one
             if (best >= 0 && d >= 2) {
               // Driven by height difference. A source surface that is itself still

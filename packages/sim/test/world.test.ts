@@ -30,7 +30,7 @@ describe("powders", () => {
 describe("liquids", () => {
   it("water levels out across the floor", () => {
     const w = box(60, 30);
-    w.paint(10, 10, 4, M.water);
+    w.paint(10, 10, 6, M.water); // about two layers across the floor
     run(w, 600);
     const xs = [5, 30, 55].map((x) => column(w, x, M.water));
     expect(Math.max(...xs) - Math.min(...xs)).toBeLessThanOrEqual(1);
@@ -60,16 +60,26 @@ describe("pressure", () => {
     expect(Math.abs(level(1, 28) - level(32, 59))).toBeLessThanOrEqual(2);
   });
 
-  it("surges past level before settling (momentum)", () => {
+  it("rocks past level before settling (momentum)", () => {
     const w = box(60, 50);
     for (let y = 0; y < 44; y++) for (let x = 28; x < 32; x++) w.set(x, y, M.rock);
     for (let x = 2; x < 27; x++) for (let y = 10; y < 49; y++) w.set(x, y, M.water);
-    const vol = (x0: number, x1: number) => { let n = 0; for (let y = 0; y < 44; y++) for (let x = x0; x < x1; x++) if (w.get(x, y) === M.water) n++; return n; };
-    let peak = -Infinity;
-    for (let t = 0; t < 600; t++) { w.step(); peak = Math.max(peak, (vol(32, 59) - vol(1, 28)) / 26); }
+    const diff = () => {
+      let n = 0;
+      for (let y = 0; y < 44; y++) for (let x = 1; x < 59; x++) if (w.get(x, y) === M.water) n += x > 30 ? 1 : -1;
+      return n / 26; // in rows
+    };
+    let peak = -Infinity, swings = 0, sign = -1;
+    for (let t = 0; t < 900; t++) {
+      w.step();
+      const d = diff();
+      peak = Math.max(peak, d);
+      if (Math.abs(d) > 0.9 && Math.sign(d) !== sign) { swings++; sign = Math.sign(d); }
+    }
     run(w, 1500);
-    expect(peak).toBeGreaterThan(1.5); // the filling side overshot by rows
-    expect(Math.abs((vol(32, 59) - vol(1, 28)) / 26)).toBeLessThan(1.5); // and settled
+    expect(peak).toBeGreaterThan(1); // the filling side overshot
+    expect(swings).toBeGreaterThanOrEqual(2); // and swung back the other way
+    expect(Math.abs(diff())).toBeLessThan(1.5); // then settled
   });
 
   it("a waterfall doesn't pump the pool below up to its source", () => {

@@ -9,9 +9,11 @@ Each phase is a prototype with a preview link, and is "done" when it answers its
 - Docs: overview, art direction, simulation plan, toolchain.
 - **Questions:** camera size, Bob's look and colour, how dark, how much bloom. See [02](02-art-direction.md#what-we-want-to-settle).
 
-## Phase 1: material sandbox (`prototypes/01-sandbox`)
+## Phase 1: world sandbox (`prototypes/01-sandbox`)
 
-A toy: start from solid rock, dig, paint materials, heat and cool, place lights.
+A toy: start from solid rock, dig, paint materials, heat and cool, place lights. Bob is deliberately not in it: he gets his own playground in phase 2 so the two can be tuned separately.
+
+**Status (first cut):** grid, sleeping chunks, powders, liquids, gases, fire and burning solids, temperature with phase changes, reactions (lava + water, acid, plants drinking water and growing, mushrooms sprouting from spores in damp dark places, gunpowder blasts and chains, methane flashes, mud, salt and brine, hanging vines, rust; full list in [07](07-materials.md)), a per-cell ambient temperature for cold/hot biomes, and the WebGL2 renderer with day/dusk/night/work-light looks. Brushes: dig, paint, heat, cool, lamps. Camera: zoom 1–6× (default 1.5×, the 320×180 game camera) with buttons, wheel, pinch, two-finger or middle-drag pan, and a Move tool. Not yet: save/load, chunk overlay, velocity for splashes.
 
 1. `packages/sim`: grid, chunks with sleeping, powders, liquids, gases, fire; material table; reactions; temperature.
 2. `packages/render`: WebGL2 port of the stills renderer (cells, back wall, lights, bloom).

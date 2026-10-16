@@ -1,0 +1,13 @@
+{
+  "name": "@pixelbob/sim",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "World simulation: falling-sand grid with materials, temperature and reactions. No DOM.",
+  "main": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  }
+}

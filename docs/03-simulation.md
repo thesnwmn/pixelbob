@@ -24,6 +24,23 @@ In both cases **material properties drive behaviour**: the "bond strength" idea 
   - *Static*: doesn't move; has `integrity` so it can crumble or break off.
 - **Velocity for fluids** (later): a per-cell or per-particle velocity field lets splashes and jets carry momentum. Noita's trick of throwing cells out as free particles that land back in the grid gives most of the look.
 
+### What's built (`packages/sim`)
+
+The first cut implements this section: `World` stores `mat`, `shade`, `temp`, `life`, `aux`, `base` and `back` as typed arrays, with 32×32 sleeping chunks. A few decisions from building it:
+
+- **Gravity direction comes from density.** Anything denser than air (1) falls, anything lighter rises; the same move code handles sand, water, smoke and steam. Rising gases bubble up through liquids but never through powders.
+- **Pressure, as levelling.** Each step every liquid cell learns the highest open surface of its connected body (passed down and sideways; stale pointers are repaired locally). A surface two or more cells lower than that pulls a cell across from the high surface, so U-bends and flooded caves even out like connected vessels. Cells with open space at their sides (falling streams) don't pass pressure on, so waterfalls don't pump pools up to their source. Only chunks holding liquid, or that changed, are visited.
+- **Surge and inertia.** Liquid arriving on a rising surface carries upward momentum (scaled by how runny the liquid is), remembers which far-side surface fed it, and keeps drawing from there past level, so a filling side overshoots and the two sides rock a few times before settling (lava and mud don't surge). A surface still rising resists being drained, which is what lets it overshoot. Sideways, a liquid cell remembers which way it was flowing and keeps going, so pours run across a basin as a surge. But it only flows sideways towards somewhere lower (a drop within reach, or a lighter liquid to displace); a surface cell also looks further along the top of its own pool (up to 96 cells) for where the layer below ends, so stacked water slumps out into an even film. With nowhere lower to go it rests, so pools go still and their chunks sleep; a stacked cell with room beside it keeps its chunk awake, since the layer below may still be spreading elsewhere. Bigger, wave-like sloshing would need per-cell velocity: on the backlog.
+- **Drag.** Pushing through a liquid or powder only succeeds some of the time: things sink through water at about half speed, liquids separate gradually, and a light powder under water drifts up slowly rather than swapping straight to the top.
+- **Solids burn in place.** A burning log stays wood, throws short-lived fire cells into open neighbours and runs down its `life` before turning to ash. It needs air next to it to catch or keep burning, so fire eats in from exposed surfaces and buried or flooded wood smothers. Fluids that burn (oil, toxic gas) turn straight into fire.
+- **Ambient temperature per cell (`base`).** Air relaxes towards it, so a cave can be a cold biome where ice lasts, without fighting the heat model.
+- **Plants grow on water**: a plant cell next to water drinks it and passes growth energy up to a new tip.
+- **Mushrooms grow from spores**: a spore resting on dirt, wood or plants underground (rock wall behind it) sprouts a stem, far more readily near water. The stem climbs on stored energy and opens a domed, glowing cap; caps now and then drop new spores, so colonies spread. Spores that find nowhere to grow dry up.
+
+Every material and its interactions are listed in [07 Materials](07-materials.md).
+
+Settled worlds cost about 1.3 ms a step at 480×270; a busy one about 3 ms (Node, desktop CPU).
+
 ### Materials as data
 
 ```ts

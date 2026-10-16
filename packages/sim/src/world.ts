@@ -267,9 +267,9 @@ export class World {
     if (this.canEnter(m, x + d, y + g, g)) return go(i + w + d, d);
     if (this.canEnter(m, x - d, y + g, g)) return go(i + w - d, -d);
     // Flow sideways towards a drop within reach. On a flat surface with
-    // nowhere lower to go, rest (with the odd nudge so thin films still
-    // spread): that's what lets pools go still and their chunks sleep.
-    let fallback = 0, fdir = 0;
+    // nowhere lower to go, rest: that's what lets pools go still and their
+    // chunks sleep.
+    let fallback = 0;
     for (const dir of [d, -d]) {
       let best = 0, drop = false;
       for (let s = 1; s <= FLOW[m]; s++) {
@@ -279,10 +279,17 @@ export class World {
         if (CAT[this.mat[i + dir * s]] === LIQUID || this.canEnter(m, x + dir * s, y + g, g)) { drop = true; break; }
       }
       if (drop) return go(i + dir * best, dir);
-      if (best && !fallback) { fallback = best; fdir = dir; }
+      // Look further along the top of this pool (up to 96 cells) for a drop,
+      // so small puddles keep spreading into an even film instead of
+      // stalling with a bump.
+      if (best && this.surfaceDrop(m, x, y, dir, best)) return go(i + dir * best, dir);
+      if (best) fallback = best;
     }
-    aux[i] = 0; // nowhere downhill: forget the direction
-    if (fallback && this.rand() < 0.05) this.swap(i, i + fdir * fallback);
+    aux[i] = 0; // nowhere downhill: forget the direction, and rest
+    // A cell stacked on its own liquid with open space beside it may only be
+    // waiting for the layer below to finish spreading (often in another
+    // chunk), so keep checking rather than sleeping and missing it.
+    if (fallback && y + 1 < this.h && this.mat[i + w] === m) this.next[(y >> CS) * this.cw + (x >> CS)] = 1;
   }
 
   private gas(i: number, x: number, y: number, m: number): void {
@@ -395,6 +402,26 @@ export class World {
     this.convert(j, M.mud, true);
     this.convert(i, M.air, true);
     return true;
+  }
+
+  /**
+   * Walking along the surface of a pool from x in direction dir (open space
+   * at row y over the same liquid at row y + 1), is there a drop within reach?
+   */
+  private surfaceDrop(m: number, x: number, y: number, dir: number, from: number): boolean {
+    const { w, h, mat } = this;
+    if (y + 1 >= h) return false;
+    for (let s = from + 1; s <= 96; s++) {
+      const nx = x + dir * s;
+      if (nx < 0 || nx >= w) return false;
+      const here = mat[y * w + nx], c = CAT[here];
+      if (here === m) continue; // more of the stacked layer: it slides over together
+      if (c !== EMPTY && c !== GAS) return false;
+      const below = mat[(y + 1) * w + nx];
+      if (below === m) continue;
+      return this.canEnter(m, nx, y + 1, 1);
+    }
+    return false;
   }
 
   /** Mud lets the odd bubble of methane out of its surface. */

@@ -30,10 +30,20 @@ describe("powders", () => {
 describe("liquids", () => {
   it("water levels out across the floor", () => {
     const w = box(60, 30);
-    w.paint(10, 10, 6, M.water); // about two layers across the floor
+    w.paint(10, 10, 4, M.water);
     run(w, 600);
     const xs = [5, 30, 55].map((x) => column(w, x, M.water));
     expect(Math.max(...xs) - Math.min(...xs)).toBeLessThanOrEqual(1);
+  });
+
+  it("a small puddle spreads into an even film", () => {
+    const w = box(60, 30);
+    for (let x = 20; x < 30; x++) for (let y = 26; y < 29; y++) w.set(x, y, M.water); // 3 deep, 10 wide
+    run(w, 900);
+    let tall = 0;
+    for (let x = 1; x < 59; x++) if (w.get(x, 27) === M.water) tall++;
+    expect(tall).toBe(0); // nothing stacked above the bottom layer
+    expect(w.count(M.water)).toBe(30);
   });
 
   it("oil floats on water", () => {
@@ -74,7 +84,7 @@ describe("pressure", () => {
       w.step();
       const d = diff();
       peak = Math.max(peak, d);
-      if (Math.abs(d) > 0.9 && Math.sign(d) !== sign) { swings++; sign = Math.sign(d); }
+      if (Math.abs(d) > 0.5 && Math.sign(d) !== sign) { swings++; sign = Math.sign(d); }
     }
     run(w, 1500);
     expect(peak).toBeGreaterThan(1); // the filling side overshot

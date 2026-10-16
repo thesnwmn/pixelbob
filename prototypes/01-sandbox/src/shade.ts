@@ -82,6 +82,11 @@ export class Shade {
           const al = def.alpha;
           er = def.emit[0] * 255 * flick * al; eg = def.emit[1] * 255 * flick * al; eb = def.emit[2] * 255 * flick * al;
         }
+        // Mushroom caps: pale tops, darker gills underneath that glow brightest.
+        if (m === M.cap) {
+          if (i + w < n && mat[i + w] !== M.cap) { r *= 0.55; g *= 0.7; b *= 0.7; er *= 1.6; eg *= 1.6; eb *= 1.6; }
+          else if (i >= w && mat[i - w] !== M.cap) { r = r * 0.6 + 90; g = g * 0.6 + 100; b = b * 0.6 + 100; }
+        }
         // Burning solids glow like embers.
         if (life[i] > 0 && c === Cat.Static) {
           const f = 0.5 + hash2(i, frame >> 1, 9) * 0.5;

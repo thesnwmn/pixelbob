@@ -82,6 +82,9 @@ export const M = {
   acid: def("acid", Cat.Liquid, [0x9ad820, 0xb0ec30, 0xc8ff50], { density: 11, flow: 3, occ: 0.12, emit: [0.15, 0.3, 0], alpha: 0.8 }),
   ash: def("ash", Cat.Powder, [0x4a4644, 0x5a5552, 0x6a6460], { density: 11, mobility: 0.7, dissolve: 0.5, occ: 0.5 }),
   stone: def("stone", Cat.Static, [0x272a31, 0x30343d, 0x3a3f4a], { conduct: 0.1, palette: false }),
+  spore: def("spores", Cat.Powder, [0x7fe8d8, 0xa8fff0, 0xd0fff8], { density: 1.3, mobility: 0.3, flammable: 0.5, ignite: 120, burnTime: 4, dissolve: 1, occ: 0.02, emit: [0.05, 0.35, 0.3] }),
+  stem: def("stem", Cat.Static, [0x8aa8a0, 0xa8c4bc, 0xc0d8d0], { flammable: 0.12, ignite: 180, burnTime: 30, conduct: 0.04, dissolve: 0.6, occ: 0.25, emit: [0.03, 0.12, 0.1], palette: false }),
+  cap: def("cap", Cat.Static, [0x1fb7a0, 0x3ff0d8, 0x7ffff0, 0xc8fff8], { flammable: 0.1, ignite: 180, burnTime: 30, conduct: 0.04, dissolve: 0.6, occ: 0.2, emit: [0.06, 0.45, 0.4], palette: false }),
   glass: def("glass", Cat.Static, [0x9fc4c8, 0xb8dadc, 0xd0eef0], { conduct: 0.1, occ: 0.08, palette: false }),
 } as const;
 export type MatId = (typeof M)[keyof typeof M];

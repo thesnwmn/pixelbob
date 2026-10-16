@@ -93,7 +93,7 @@ export class World {
     this.shade[i] = this.rand() * 256;
     if (m !== M.air && d.spawnTemp !== AMBIENT) this.temp[i] = d.spawnTemp;
     else if (m !== M.air) this.temp[i] = this.base[i];
-    this.life[i] = m === M.fire ? 20 + this.rand() * 30 : m === M.steam ? 240 + this.rand() * 240 : m === M.smoke ? 90 + this.rand() * 120 : 0;
+    this.life[i] = m === M.spore ? 600 + this.rand() * 900 : m === M.fire ? 20 + this.rand() * 30 : m === M.steam ? 240 + this.rand() * 240 : m === M.smoke ? 90 + this.rand() * 120 : 0;
     this.aux[i] = m === M.plant ? 3 : 0;
   }
 
@@ -187,6 +187,7 @@ export class World {
   }
 
   private powder(i: number, x: number, y: number, m: number): void {
+    if (m === M.spore && this.spore(i, x, y)) return;
     if (this.rand() > MOBILITY[m]) { this.next[(y >> CS) * this.cw + (x >> CS)] = 1; return; }
     const g = 1, w = this.w;
     if (this.canEnter(m, x, y + g, g)) return this.swap(i, i + w);
@@ -301,6 +302,63 @@ export class World {
       return;
     }
     if (m === M.plant) this.grow(i, x, y);
+    else if (m === M.stem) this.growStem(i, x, y);
+    else if (m === M.cap) this.shedSpores(i, x, y);
+  }
+
+  /**
+   * A spore resting on dirt, wood or plants underground (behind rock wall)
+   * may sprout a stem; damp spots (water close by) sprout far more readily.
+   * Spores that never find a home dry up. Returns true if the spore is gone.
+   */
+  private spore(i: number, x: number, y: number): boolean {
+    const { w, mat, life } = this;
+    if (--life[i] === 0) { this.convert(i, M.air, true); return true; }
+    this.next[(y >> CS) * this.cw + (x >> CS)] = 1;
+    const below = y + 1 < this.h ? mat[i + w] : M.rock;
+    if (below !== M.dirt && below !== M.wood && below !== M.plant && below !== M.ash) return false;
+    if (!this.back[i] || this.rand() > 0.02) return false;
+    let damp = false;
+    for (let dy = -3; dy <= 4 && !damp; dy++)
+      for (let dx = -4; dx <= 4; dx++) if (this.get(x + dx, y + dy) === M.water) { damp = true; break; }
+    if (!damp && this.rand() > 0.15) return false;
+    this.convert(i, M.stem, true);
+    this.aux[i] = 4 + ((this.rand() * 12) | 0);
+    return true;
+  }
+
+  /** Stems push up a cell at a time; when the energy runs out the tip opens into a cap. */
+  private growStem(i: number, x: number, y: number): void {
+    const { w, mat, aux } = this;
+    if (aux[i] === 0) return;
+    this.next[(y >> CS) * this.cw + (x >> CS)] = 1;
+    if (this.rand() > 0.08) return;
+    if (aux[i] === 1 || y === 0 || mat[i - w] !== M.air) {
+      // Open a domed cap around the tip.
+      const r = 2 + ((this.rand() * 3) | 0);
+      for (let dy = -r; dy <= 0; dy++)
+        for (let dx = -r - 1; dx <= r + 1; dx++) {
+          if ((dx * dx) / ((r + 1) * (r + 1)) + (dy * dy) / (r * r * 0.6) > 1) continue;
+          const cx = x + dx, cy = y - 1 + dy;
+          if (this.inside(cx, cy) && mat[cy * w + cx] === M.air) this.set(cx, cy, M.cap);
+        }
+      aux[i] = 0;
+      return;
+    }
+    const dx = this.rand() < 0.15 ? (this.rand() < 0.5 ? -1 : 1) : 0;
+    const j = i - w + dx;
+    if (mat[j] !== M.air) { aux[i] = 1; return; }
+    this.convert(j, M.stem, true);
+    aux[j] = aux[i] - 1;
+    aux[i] = 0;
+  }
+
+  /** Mature caps now and then drop a spore from their underside. */
+  private shedSpores(i: number, x: number, y: number): void {
+    this.next[(y >> CS) * this.cw + (x >> CS)] = 1;
+    if (this.rand() > 0.0002) return;
+    const j = i + this.w;
+    if (j < this.mat.length && this.mat[j] === M.air) this.set(x, y + 1, M.spore);
   }
 
   /** Plants drink adjacent water and push growth energy up to a new tip. */

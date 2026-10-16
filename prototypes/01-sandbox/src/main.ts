@@ -94,7 +94,7 @@ resize();
 // ---- Camera: zoom and pan ----
 
 const ZOOM_MIN = 1, ZOOM_MAX = 6;
-const cam = { z: Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number(params.get("zoom")) || 1.5)), x: W * 0.45, y: H * 0.42 };
+const cam = { z: Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number(params.get("zoom")) || 1.5)), x: Number(params.get("x")) || W * 0.45, y: Number(params.get("y")) || H * 0.42 };
 const zoomEl = $("#zoomval");
 function view(): View {
   const w = W / cam.z, h = H / cam.z;

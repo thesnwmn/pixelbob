@@ -112,6 +112,27 @@ describe("heat and reactions", () => {
   });
 });
 
+describe("mushrooms", () => {
+  it("spores on damp dirt underground grow stems and glowing caps", () => {
+    const w = box(40, 30);
+    w.back.fill(1); // underground
+    for (let x = 1; x < 39; x++) for (let y = 26; y < 29; y++) w.set(x, y, M.dirt);
+    for (let x = 30; x < 39; x++) w.set(x, 25, M.water);
+    for (let x = 5; x < 28; x += 3) w.set(x, 25, M.spore);
+    run(w, 1500);
+    expect(w.count(M.stem)).toBeGreaterThan(3);
+    expect(w.count(M.cap)).toBeGreaterThan(5);
+  });
+
+  it("spores with nowhere to grow dry up", () => {
+    const w = box(30, 30);
+    w.paint(15, 5, 3, M.spore);
+    run(w, 1800);
+    expect(w.count(M.spore)).toBe(0);
+    expect(w.count(M.stem)).toBe(0);
+  });
+});
+
 describe("world", () => {
   it("is deterministic", () => {
     const a = new World(160, 90, 9), b = new World(160, 90, 9);

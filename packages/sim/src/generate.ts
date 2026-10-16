@@ -60,7 +60,8 @@ export function generate(world: World, preset: Preset, seed: number): Lamp[] {
   const px = Math.round(w * 0.3), py = Math.round(h * 0.68);
   const lx = Math.round(w * 0.78), ly = Math.round(h * 0.86);
   const ix = Math.round(w * 0.08), iy = Math.round(h * 0.55);
-  const keepOut: [number, number, number, number][] = [[px, py + 4, 70, 30], [px + 70, py - 30, 26, 14], [lx, ly, 58, 24], [ix, iy, 44, 24], [w * 0.55, h * 0.5, 36, 18]];
+  const gx = Math.round(w * 0.6), gyc = Math.round(h * 0.74);
+  const keepOut: [number, number, number, number][] = [[gx, gyc, 46, 20], [px, py + 4, 70, 30], [px + 70, py - 30, 26, 14], [lx, ly, 58, 24], [ix, iy, 44, 24], [w * 0.55, h * 0.5, 36, 18]];
   const kept = (x: number, y: number) => keepOut.some(([cx, cy, rx, ry]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 < 1);
   // Winding caves from noise, kept below the soil.
   for (let y = 0; y < h; y++)
@@ -73,6 +74,25 @@ export function generate(world: World, preset: Preset, seed: number): Lamp[] {
   carve(px, py, 42, 16);
   for (let y = py; y < py + 22; y++) for (let x = px - 60; x < px + 60; x++) if (world.get(x, y) === M.air) set(x, y, M.water);
   lamps.push({ x: px, y: py - 12, color: WARM, radius: 120 });
+  // Mushroom grotto: a low cave with a damp dirt floor, a puddle and glowing mushrooms.
+  carve(gx, gyc, 32, 10, 0.3);
+  const floor = (x: number) => { let y = gyc; if (world.get(x, y) !== M.air) return h; while (y < h && world.get(x, y) === M.air) y++; return y; };
+  for (let x = gx - 40; x < gx + 40; x++) {
+    const f = floor(x);
+    if (f >= h || f > gyc + 14) continue;
+    for (let k = 0; k < 3; k++) set(x, f - 1 - k, M.dirt);
+  }
+  for (let x = gx + 8; x < gx + 18; x++) { const f = floor(x); if (f < h) set(x, f - 1, M.water); }
+  for (const [dx, sh, r] of [[-22, 6, 2], [-14, 11, 4], [-6, 4, 2], [2, 8, 3], [24, 7, 3]] as const) {
+    const x = gx + dx, f = floor(x);
+    if (f >= h || world.get(x, f) !== M.dirt) continue;
+    for (let k = 1; k <= sh; k++) set(x, f - k, M.stem);
+    const top = f - sh - 1;
+    for (let dy = -r; dy <= 0; dy++)
+      for (let ex = -r - 1; ex <= r + 1; ex++)
+        if ((ex * ex) / ((r + 1) * (r + 1)) + (dy * dy) / (r * r * 0.6) <= 1 && world.get(x + ex, top + dy) === M.air) set(x + ex, top + dy, M.cap);
+  }
+
   // Oil seep above the pond.
   carve(px + 70, py - 30, 12, 6);
   for (let y = py - 30; y < py - 22; y++) for (let x = px + 55; x < px + 85; x++) if (world.get(x, y) === M.air) set(x, y, M.oil);

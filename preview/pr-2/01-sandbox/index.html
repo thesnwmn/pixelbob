@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="theme-color" content="#121014" />
+    <title>Pixelbob sandbox</title>
+    <script type="module" crossorigin src="./assets/index-CztrgFdO.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-B6FK2L3X.css">
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage">
+        <canvas id="view"></canvas>
+        <div id="hud"></div>
+        <div id="hint">Rotate to landscape for a bigger world</div>
+      </div>
+      <div id="bar">
+        <div id="mats" class="row scroll"></div>
+        <div class="row">
+          <div id="tools" class="seg"></div>
+          <label class="size">size <input id="size" type="range" min="1" max="24" value="5" /></label>
+          <select id="look" aria-label="Lighting">
+            <option value="day">Day</option>
+            <option value="dusk">Dusk</option>
+            <option value="night">Night</option>
+            <option value="work">Work light</option>
+          </select>
+          <button id="pause" title="Pause (space)">Pause</button>
+          <button id="stepbtn" title="Step one tick (.)">Step</button>
+          <select id="reset" aria-label="Reset world">
+            <option value="">Reset…</option>
+            <option value="demo">Demo world</option>
+            <option value="rock">Solid rock</option>
+          </select>
+          <button id="fs" title="Full screen">Full screen</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

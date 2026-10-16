@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pixelbob stills</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Pixelbob <span>art direction stills</span></h1>
+      <p>
+        Every screen here is drawn procedurally, pixel by pixel, with the same lighting model the game would use.
+        Nothing is a hand-drawn sprite. Use the controls to compare Bob colours, camera zoom and lighting.
+        Tap a still to enlarge it.
+      </p>
+      <form id="controls">
+        <label>Bob <select name="bob"></select></label>
+        <label>Zoom <select name="zoom">
+          <option value="1">480×270 (whole still)</option>
+          <option value="1.5" selected>320×180 (proposed game camera)</option>
+          <option value="2">240×135 (chunky)</option>
+        </select></label>
+        <label>View <select name="view">
+          <option value="final">Final</option>
+          <option value="nobloom">No bloom</option>
+          <option value="flat">Unlit albedo</option>
+          <option value="light">Light only</option>
+        </select></label>
+        <label><input type="checkbox" name="animate" checked /> Animate</label>
+        <label>Seed <input name="seed" type="number" value="7" min="1" max="9999" /></label>
+      </form>
+    </header>
+    <main id="grid"></main>
+    <footer>
+      <p>Design notes: <a href="https://github.com/thesnwmn/pixelbob/tree/main/docs">docs/</a> in the repo.</p>
+    </footer>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

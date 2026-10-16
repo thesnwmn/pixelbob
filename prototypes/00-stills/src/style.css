@@ -1,0 +1,84 @@
+:root {
+  --bg: #121014;
+  --panel: #1c1920;
+  --ink: #e9e2d6;
+  --dim: #9b9184;
+  --accent: #e7c27a;
+  --line: #2e2933;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+header, footer { max-width: 80rem; margin: 0 auto; padding: 1.25rem 1rem 0.5rem; }
+h1 { font-size: 1.4rem; margin: 0 0 0.25rem; color: var(--accent); }
+h1 span { color: var(--dim); font-weight: normal; font-size: 1rem; }
+header p { color: var(--dim); max-width: 52rem; margin: 0.25rem 0 0.75rem; }
+a { color: var(--accent); }
+#controls { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; }
+#controls label { display: flex; gap: 0.4rem; align-items: center; color: var(--dim); }
+select, input { font: inherit; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 0.2rem 0.4rem; }
+input[type="number"] { width: 5.5rem; }
+
+#grid {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0.5rem 1rem 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 34rem), 1fr));
+  gap: 1rem;
+}
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.card.big { grid-column: 1 / -1; }
+.frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #000; cursor: zoom-in; }
+.card.big .frame { cursor: zoom-out; }
+.frame canvas {
+  position: absolute;
+  image-rendering: pixelated;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+}
+.overlay { position: absolute; inset: 0; pointer-events: none; transform-origin: 0 0; }
+.card .meta { padding: 0.6rem 0.9rem 0.8rem; }
+.card h2 { margin: 0; font-size: 1.05rem; color: var(--accent); display: flex; justify-content: space-between; gap: 1rem; }
+.card h2 a { font-size: 0.8rem; font-weight: normal; color: var(--dim); }
+.card .blurb { margin: 0.15rem 0 0.4rem; }
+.card ul { margin: 0; padding-left: 1.1rem; color: var(--dim); font-size: 0.86rem; }
+.card:not(.big) ul { display: none; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); }
+footer { color: var(--dim); padding-bottom: 2rem; }
+
+/* Overlay UI mockups (sandbox) and labels (Bob sheet). Sizes in container units so they scale with the still. */
+.frame { container-type: size; }
+.lbl {
+  position: absolute;
+  font-size: 2.6cqh;
+  color: #f4ead8;
+  background: #0009;
+  padding: 0.2cqh 0.8cqh;
+  border-radius: 0.6cqh;
+  white-space: nowrap;
+}
+.mock-bar {
+  position: absolute;
+  display: flex;
+  gap: 0.8cqh;
+  padding: 0.8cqh;
+  background: #15121acc;
+  border: 1px solid #ffffff22;
+  border-radius: 1cqh;
+  font-size: 2.3cqh;
+}
+.mock-bar.v { flex-direction: column; }
+.mock-bar .sw { display: flex; align-items: center; gap: 0.8cqh; color: #e9e2d6; padding: 0.3cqh 0.8cqh; border-radius: 0.6cqh; }
+.mock-bar .sw i { width: 2.6cqh; height: 2.6cqh; border-radius: 0.4cqh; display: inline-block; box-shadow: inset 0 0 0 1px #0006; }
+.mock-bar .sw.on { background: #e7c27a33; outline: 1px solid var(--accent); }
+.mock-bar .tool { padding: 0.4cqh 1.2cqh; border-radius: 0.6cqh; color: #e9e2d6; }
+.mock-bar .tool.on { background: var(--accent); color: #1a1408; }
+.mock-cursor { position: absolute; border: 1px dashed #fff9; border-radius: 50%; }
+.mock-hud { position: absolute; font-size: 2.3cqh; color: #e9e2d6cc; line-height: 1.35; text-shadow: 0 1px 0 #000; }

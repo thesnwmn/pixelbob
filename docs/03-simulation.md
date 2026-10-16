@@ -24,6 +24,17 @@ In both cases **material properties drive behaviour**: the "bond strength" idea 
   - *Static*: doesn't move; has `integrity` so it can crumble or break off.
 - **Velocity for fluids** (later): a per-cell or per-particle velocity field lets splashes and jets carry momentum. Noita's trick of throwing cells out as free particles that land back in the grid gives most of the look.
 
+### What's built (`packages/sim`)
+
+The first cut implements this section: `World` stores `mat`, `shade`, `temp`, `life`, `aux`, `base` and `back` as typed arrays, with 32×32 sleeping chunks. A few decisions from building it:
+
+- **Gravity direction comes from density.** Anything denser than air (1) falls, anything lighter rises; the same move code handles sand, water, smoke and steam. Rising gases bubble up through liquids but never through powders.
+- **Solids burn in place.** A burning log stays wood, throws short-lived fire cells into open neighbours and runs down its `life` before turning to ash. Fluids that burn (oil, toxic gas) turn straight into fire.
+- **Ambient temperature per cell (`base`).** Air relaxes towards it, so a cave can be a cold biome where ice lasts, without fighting the heat model.
+- **Plants grow on water**: a plant cell next to water drinks it and passes growth energy up to a new tip.
+
+Settled worlds cost about 1.3 ms a step at 480×270; a busy one about 3 ms (Node, desktop CPU).
+
 ### Materials as data
 
 ```ts

@@ -18,12 +18,12 @@ Not now: game engines (Phaser, Pixi, Godot web). The sim *is* the engine, and we
 
 ```
 packages/
-  sim/        grid CA, materials, temperature, particles/XPBD, Bob controller. No DOM. Runs in worker or Node.
-  render/     WebGL2 renderer: cell texture, lights, bloom, parallax, Bob shading. Ports what kit/ does on the CPU.
+  sim/        grid CA, materials, temperature, reactions (built); particles/XPBD and Bob controller (phase 2). No DOM.
+  render/     WebGL2 renderer: lives in prototypes/01-sandbox/src/gl.ts for now; moves here when Bob's playground needs it too.
   levels/     level format, loading/saving, generation helpers.
 prototypes/
   00-stills/      art direction stills (CPU renderer, this PR)
-  01-sandbox/     material play toy
+  01-sandbox/     world sandbox: dig, paint materials, heat, light
   02-bob/         Bob playground
 ```
 
@@ -80,6 +80,7 @@ Pointer Events for mouse and touch together; the Gamepad API; keyboard. Touch la
 ```
 pnpm install
 pnpm dev:stills       # art stills at http://localhost:5180
+pnpm dev:sandbox      # world sandbox at http://localhost:5181
 pnpm typecheck
 pnpm test
 pnpm build:site       # _site/ as deployed to Pages

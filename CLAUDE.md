@@ -16,8 +16,9 @@ A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer.
 ## Conventions
 
 - Prototypes are Vite apps under `prototypes/NN-name/` with `base: "./"` so they work under the GitHub Pages sub-path. `scripts/build-site.mjs` picks up any prototype that has a `dist/` after `pnpm build`.
-- Simulation code (future `packages/sim`) must stay renderer-agnostic: no DOM, so it runs in a Web Worker and in Node tests.
-- Deterministic: never use `Math.random()` in generation or simulation. Use the seeded helpers in `kit/rng.ts` (later `packages/sim`).
+- `packages/sim` (the world grid) must stay renderer-agnostic: no DOM, so it runs in a Web Worker and in Node tests. Material behaviour is data in `packages/sim/src/materials.ts`; the step only knows categories.
+- `prototypes/01-sandbox` renders with WebGL2 (`src/gl.ts`), the GPU port of the stills' lighting; `src/shade.ts` turns cells into its textures.
+- Deterministic: never use `Math.random()` in generation or simulation. Use `World.rand()` in the sim and the seeded helpers in `kit/rng.ts` in the stills.
 - Hot loops use typed arrays (structure of arrays), not an object per cell. `noUncheckedIndexedAccess` is off for that reason.
 - Only erasable TypeScript syntax (no enums, no parameter properties): `erasableSyntaxOnly` is on so Node can run `.ts` files directly.
 - The look is defined by `prototypes/00-stills/src/kit/` (materials, lighting, Bob). Keep the game renderer consistent with it, or change both.

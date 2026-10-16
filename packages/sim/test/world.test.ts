@@ -47,6 +47,33 @@ describe("liquids", () => {
   });
 });
 
+describe("pressure", () => {
+  it("water levels out across a U-bend", () => {
+    // Two chambers joined by a gap under a dividing wall; fill only the left.
+    const w = box(60, 50);
+    for (let y = 0; y < 44; y++) for (let x = 28; x < 32; x++) w.set(x, y, M.rock);
+    for (let x = 2; x < 27; x++) for (let y = 10; y < 49; y++) w.set(x, y, M.water);
+    const level = (x0: number, x1: number) => { for (let y = 0; y < 50; y++) for (let x = x0; x < x1; x++) if (w.get(x, y) === M.water) return y; return 50; };
+    const n = w.count(M.water);
+    run(w, 3000);
+    expect(w.count(M.water)).toBe(n);
+    expect(Math.abs(level(1, 28) - level(32, 59))).toBeLessThanOrEqual(2);
+  });
+
+  it("a waterfall doesn't pump the pool below up to its source", () => {
+    const w = box(60, 50);
+    // Upper basin on a ledge with a hole in its floor, pouring into the lower half.
+    for (let x = 1; x < 40; x++) w.set(x, 20, M.rock);
+    w.set(20, 20, M.air);
+    for (let x = 2; x < 39; x++) for (let y = 8; y < 20; y++) w.set(x, y, M.water);
+    run(w, 200);
+    // While it's still pouring, the lower pool stays below the ledge.
+    let top = 50;
+    for (let y = 21; y < 50; y++) for (let x = 1; x < 59; x++) if (w.get(x, y) === M.water && w.get(x, y - 1) === M.air && x !== 20) top = Math.min(top, y);
+    expect(top).toBeGreaterThan(30);
+  });
+});
+
 describe("drag", () => {
   it("water poured on a light powder doesn't flush it straight to the top", () => {
     const w = box(30, 40);

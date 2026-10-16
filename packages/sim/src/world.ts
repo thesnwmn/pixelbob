@@ -32,6 +32,10 @@ export class World {
   readonly awake: Uint8Array;
   private next: Uint8Array;
   private readonly stamp: Uint16Array;
+  /** Per liquid cell: index of the highest open surface cell of its connected body (or -1). */
+  private readonly src: Int32Array;
+  /** Chunks that held liquid at the last pressure pass. */
+  private readonly wet: Uint8Array;
   readonly cw: number;
   readonly ch: number;
   tick = 0;
@@ -48,9 +52,11 @@ export class World {
     this.back = new Uint8Array(n);
     this.base = new Float32Array(n).fill(AMBIENT);
     this.stamp = new Uint16Array(n);
+    this.src = new Int32Array(n).fill(-1);
     this.cw = (w + CHUNK - 1) >> CS;
     this.ch = (h + CHUNK - 1) >> CS;
     this.awake = new Uint8Array(this.cw * this.ch).fill(1);
+    this.wet = new Uint8Array(this.cw * this.ch).fill(1);
     this.next = new Uint8Array(this.cw * this.ch).fill(1);
     this.seed = seed >>> 0 || 1;
     for (let i = 0; i < n; i++) this.shade[i] = this.rand() * 256;
@@ -194,6 +200,7 @@ export class World {
         }
       }
     }
+    this.pressure();
     this.thermal();
   }
 
@@ -555,6 +562,77 @@ export class World {
       if (this.rand() < 0.3) { this.convert(i, M.air, true); return true; }
     }
     return false;
+  }
+
+  /** Is i a liquid surface cell (open air or gas directly above)? */
+  private surface(i: number): boolean {
+    if (i < this.w) return true;
+    const c = CAT[this.mat[i - this.w]];
+    return c === EMPTY || c === GAS;
+  }
+
+  /**
+   * A remembered surface cell may have flowed sideways or dropped a row since
+   * it was recorded: look around it for the nearest valid surface of liquid m.
+   */
+  private fix(s: number, m: number): number {
+    if (s < 0) return -1;
+    const { w, mat } = this;
+    const x = s % w;
+    for (const d of [0, -1, 1, -2, 2, w, w - 1, w + 1]) {
+      const t = s + d;
+      if (t < 0 || t >= mat.length || Math.abs((t % w) - x) > 2) continue;
+      if (mat[t] === m && this.surface(t)) return t;
+    }
+    return -1;
+  }
+
+  /**
+   * Hydrostatic pressure, done as levelling: every liquid cell learns the
+   * highest open surface of its connected body (src), passed top-down and
+   * sideways each step. A surface at least two cells lower than that pulls a
+   * cell across, so connected vessels (U-bends, flooded caves) even out.
+   * Cells with open space at their sides (falling streams) don't pass it on,
+   * so a waterfall can't pump the pool below up to its source. Runs over the
+   * whole grid, as bodies span sleeping chunks; only liquid cells do work.
+   */
+  private pressure(): void {
+    const { w, h, mat, src, wet, awake, next, cw } = this;
+    const ltr = (this.tick & 1) === 0;
+    // Visit chunks that held liquid, or that changed (liquid can only arrive by a change).
+    const visit = new Uint8Array(wet.length);
+    for (let c = 0; c < wet.length; c++) { visit[c] = wet[c] | awake[c] | next[c]; if (visit[c]) wet[c] = 0; }
+    for (let y = 0; y < h; y++) {
+      const row = y * w, crow = (y >> CS) * cw;
+      for (let k = 0; k < cw; k++) {
+        const cx = ltr ? k : cw - 1 - k;
+        if (!visit[crow + cx]) continue;
+        const x0 = cx << CS, x1 = Math.min(w, x0 + CHUNK);
+        for (let q = 0; q < x1 - x0; q++) {
+          const x = ltr ? x0 + q : x1 - 1 - q, i = row + x, m = mat[i];
+          if (CAT[m] !== LIQUID) { src[i] = -1; continue; }
+          wet[crow + cx] = 1;
+          // Best (highest) still-valid surface among same-liquid neighbours.
+          let best = -1, by = 1e9;
+          for (let n = 0; n < 4; n++) {
+            const j = n === 0 ? i - w : n === 1 ? i + w : n === 2 ? i - 1 : i + 1;
+            if (j < 0 || j >= mat.length || (n > 1 && Math.abs((j % w) - x) > 1) || mat[j] !== m) continue;
+            const s = this.fix(src[j], m);
+            if (s < 0) continue;
+            const sy = (s / w) | 0;
+            if (sy < by) { by = sy; best = s; }
+          }
+          if (this.surface(i)) {
+            src[i] = best >= 0 && by < y ? best : i;
+            // Level out: a higher connected surface pushes a cell up here.
+            if (best >= 0 && by < y - 1 && y > 0 && mat[i - w] === M.air && this.rand() < 0.35) this.swap(best, i - w);
+            continue;
+          }
+          const l = x > 0 ? CAT[mat[i - 1]] : STATIC, r = x < w - 1 ? CAT[mat[i + 1]] : STATIC;
+          src[i] = l === EMPTY || r === EMPTY ? -1 : best;
+        }
+      }
+    }
   }
 
   /** Heat flow between neighbours and the phase changes it causes, in awake chunks. */

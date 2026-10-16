@@ -137,9 +137,18 @@ export class World {
     const t = this.mat[y * this.w + x];
     const c = CAT[t];
     if (c === STATIC) return false;
-    if (g > 0) return DENSITY[t] < DENSITY[m];
+    if (g > 0) {
+      if (DENSITY[t] >= DENSITY[m]) return false;
+      // Drag: pushing through a liquid or powder only succeeds some of the time.
+      // Sinking through water is slowed; a buried light powder (pushed up by the
+      // liquid above it) drifts up very slowly instead of popping straight out.
+      if (c === LIQUID) return this.rand() < (CAT[m] === LIQUID ? 0.3 : 0.5);
+      if (c === POWDER) return CAT[m] === POWDER || this.rand() < 0.04;
+      return true;
+    }
     // Rising gases bubble through air, other gases and liquids, never powders.
-    return c !== POWDER && DENSITY[t] > DENSITY[m];
+    if (c === POWDER || DENSITY[t] <= DENSITY[m]) return false;
+    return c !== LIQUID || this.rand() < 0.5;
   }
 
   /** Advance one step. */

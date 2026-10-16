@@ -47,6 +47,27 @@ describe("liquids", () => {
   });
 });
 
+describe("drag", () => {
+  it("water poured on a light powder doesn't flush it straight to the top", () => {
+    const w = box(30, 40);
+    for (let x = 1; x < 29; x++) for (let y = 34; y < 39; y++) w.set(x, y, M.snow);
+    for (let x = 1; x < 29; x++) for (let y = 20; y < 30; y++) w.set(x, y, M.water);
+    run(w, 60);
+    // After a second most of the snow is still near the bottom.
+    let low = 0;
+    for (let x = 1; x < 29; x++) for (let y = 30; y < 39; y++) if (w.get(x, y) === M.snow) low++;
+    expect(low).toBeGreaterThan(w.count(M.snow) * 0.7);
+  });
+
+  it("ash settles under water", () => {
+    const w = box(30, 40);
+    for (let x = 1; x < 29; x++) for (let y = 30; y < 39; y++) w.set(x, y, M.water);
+    w.paint(15, 5, 3, M.ash);
+    run(w, 600);
+    expect(lowest(w, M.ash)).toBe(38);
+  });
+});
+
 describe("heat and reactions", () => {
   it("lava and water make stone and steam", () => {
     const w = box(30, 30);

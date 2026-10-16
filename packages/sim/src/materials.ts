@@ -80,7 +80,7 @@ export const M = {
   goo: def("glow goo", Cat.Liquid, [0x1fb7a0, 0x2fd8bd, 0x5ff2d8], { density: 12, flow: 2, mobility: 0.6, occ: 0.1, emit: [0.1, 0.8, 0.65], alpha: 0.85 }),
   toxic: def("toxic gas", Cat.Gas, [0x5fd84a, 0x6fe85a, 0x8bff73], { density: 1.6, mobility: 0.5, flammable: 1, ignite: 400, burnTime: 6, occ: 0.02, emit: [0.15, 0.6, 0.1], alpha: 0.35 }),
   acid: def("acid", Cat.Liquid, [0x9ad820, 0xb0ec30, 0xc8ff50], { density: 11, flow: 3, occ: 0.12, emit: [0.15, 0.3, 0], alpha: 0.8 }),
-  ash: def("ash", Cat.Powder, [0x4a4644, 0x5a5552, 0x6a6460], { density: 5, mobility: 0.7, dissolve: 0.5, occ: 0.5 }),
+  ash: def("ash", Cat.Powder, [0x4a4644, 0x5a5552, 0x6a6460], { density: 11, mobility: 0.7, dissolve: 0.5, occ: 0.5 }),
   stone: def("stone", Cat.Static, [0x272a31, 0x30343d, 0x3a3f4a], { conduct: 0.1, palette: false }),
   glass: def("glass", Cat.Static, [0x9fc4c8, 0xb8dadc, 0xd0eef0], { conduct: 0.1, occ: 0.08, palette: false }),
 } as const;

@@ -29,6 +29,7 @@ In both cases **material properties drive behaviour**: the "bond strength" idea 
 The first cut implements this section: `World` stores `mat`, `shade`, `temp`, `life`, `aux`, `base` and `back` as typed arrays, with 32×32 sleeping chunks. A few decisions from building it:
 
 - **Gravity direction comes from density.** Anything denser than air (1) falls, anything lighter rises; the same move code handles sand, water, smoke and steam. Rising gases bubble up through liquids but never through powders.
+- **Drag.** Pushing through a liquid or powder only succeeds some of the time: things sink through water at about half speed, liquids separate gradually, and a light powder under water drifts up slowly rather than swapping straight to the top.
 - **Solids burn in place.** A burning log stays wood, throws short-lived fire cells into open neighbours and runs down its `life` before turning to ash. Fluids that burn (oil, toxic gas) turn straight into fire.
 - **Ambient temperature per cell (`base`).** Air relaxes towards it, so a cave can be a cold biome where ice lasts, without fighting the heat model.
 - **Plants grow on water**: a plant cell next to water drinks it and passes growth energy up to a new tip.

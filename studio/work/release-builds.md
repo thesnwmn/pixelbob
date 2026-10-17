@@ -5,7 +5,7 @@ role: release
 size: S
 status: shaped
 milestone: m1-green-alpha
-needs: [game-shell]
+needs: [game-shell, one-time-setup]
 ---
 
 ## Why

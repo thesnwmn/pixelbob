@@ -1,0 +1,36 @@
+name: Bug
+description: Something in the game, a build or the studio is wrong. Ideas and features go to the studio instead (/director).
+labels: [bug]
+body:
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: The link you were playing, e.g. a PR preview or an alpha.
+      placeholder: https://thesnwmn.github.io/pixelbob/preview/pr-41/game/
+    validations:
+      required: true
+  - type: input
+    id: scenario
+    attributes:
+      label: Scenario
+      description: The scenario or level, if there was one (the `?scenario=` in the link).
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: What you did, and what you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: replay
+    attributes:
+      label: Replay
+      description: Paste what the feedback button copied, if you have it. It lets the studio reproduce exactly what you did.
+      render: text

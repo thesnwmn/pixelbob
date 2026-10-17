@@ -1,0 +1,57 @@
+name: Gate
+
+# A PR that touches a gated file (.github/gated.json), or is labelled `gated` by hand, waits for the
+# producer: this labels it `gated` and stays red until it also has `producer-ok`, which only the producer adds.
+# Why: studio/README.md#github and docs/decisions/2026-10-17-gated-files.md.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      # The base branch, never the PR's code: pull_request_target runs with write access, and
+      # the gate a PR is judged by must be main's, so a PR can't loosen its own gate.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Gated files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          # A rename counts by its old path too, so moving a gated file is gated.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)' > "$RUNNER_TEMP/changed.txt"
+          node scripts/health/src/github.ts "$RUNNER_TEMP/changed.txt" > "$RUNNER_TEMP/gated.txt"
+          cat "$RUNNER_TEMP/gated.txt"
+
+      - name: Label and check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          has() { echo "$LABELS" | jq -e --arg l "$1" 'index($l) != null' > /dev/null; }
+          if [ -s "$RUNNER_TEMP/gated.txt" ] && ! has gated; then
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/labels" -f "labels[]=gated" > /dev/null
+          elif ! has gated; then
+            echo "No gated files."
+            exit 0
+          fi
+          # Gated by its files, or labelled by hand (Bob's character, an ask marked gated). The label
+          # is never taken off here: a session takes it off by hand if it was wrong.
+          if has producer-ok; then
+            echo "Gated, and the producer has let it through (producer-ok)."
+            exit 0
+          fi
+          echo "::error::This PR is gated, so it waits for the producer: they add the label producer-ok to let it through."
+          sed 's/^/  /' "$RUNNER_TEMP/gated.txt"
+          exit 1

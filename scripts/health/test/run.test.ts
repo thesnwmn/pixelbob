@@ -24,7 +24,7 @@ describe("runChecks", () => {
   });
   it("has unique ids, each in its tier", () => {
     expect(new Set(CHECKS.map((k) => k.id)).size).toBe(CHECKS.length);
-    const tiers = { tools: 1, deps: 2, repo: 3, code: 4, studio: 5, docs: 5 } as Record<string, number>;
+    const tiers = { tools: 1, deps: 2, repo: 3, code: 4, studio: 5, docs: 5, github: 5 } as Record<string, number>;
     for (const k of CHECKS) expect(k.tier).toBe(tiers[k.id.split("/")[0]]);
   });
 });

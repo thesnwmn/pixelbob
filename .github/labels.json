@@ -1,0 +1,19 @@
+{
+  "$comment": "The repo's labels, synced to GitHub by the labels workflow when this file changes on main. Uses: studio/README.md#use.",
+  "labels": [
+    { "name": "bug", "color": "d73a4a", "description": "Something is wrong: from a playtest, a bot or the nightly check" },
+    { "name": "blocker", "color": "b60205", "description": "A bug that stops a milestone build" },
+    { "name": "gated", "color": "5319e7", "description": "Touches a gated file: waits for the producer (set by the gate check)" },
+    { "name": "producer-ok", "color": "0e8a16", "description": "The producer lets a gated PR through. Only the producer adds it" },
+    { "name": "playtest", "color": "e99695", "description": "Wants the producer to play it" },
+    { "name": "think", "color": "c5def5", "description": "Unit kind: ideas, a design conversation" },
+    { "name": "shape", "color": "c5def5", "description": "Unit kind: an idea turned into specs and units" },
+    { "name": "spike", "color": "c5def5", "description": "Unit kind: a throwaway prototype answering one question" },
+    { "name": "build", "color": "c5def5", "description": "Unit kind: something new in the game" },
+    { "name": "fix", "color": "c5def5", "description": "Unit kind: something wrong made right" },
+    { "name": "test", "color": "c5def5", "description": "Unit kind: bots, replays, regression runs" },
+    { "name": "tool", "color": "c5def5", "description": "Unit kind: a tool for the producer or the studio" },
+    { "name": "tidy", "color": "c5def5", "description": "Unit kind: docs, dead code, harness upkeep" },
+    { "name": "release", "color": "c5def5", "description": "Unit kind: an alpha or beta" }
+  ]
+}

@@ -1,0 +1,27 @@
+name: Labels
+
+# The repo's labels are a file, .github/labels.json, so they change through PRs like everything else.
+# This makes GitHub match it: creates the missing labels and updates colours and descriptions.
+# It never deletes a label, so one made by hand on GitHub survives until it's added to the file.
+on:
+  push:
+    branches: [main]
+    paths: [.github/labels.json]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          jq -c '.labels[]' .github/labels.json | while read -r l; do
+            gh label create "$(echo "$l" | jq -r .name)" --force \
+              --color "$(echo "$l" | jq -r .color)" \
+              --description "$(echo "$l" | jq -r .description)"
+          done

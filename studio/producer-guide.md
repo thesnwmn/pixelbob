@@ -143,12 +143,19 @@ Gated PRs (direction, milestones, Bob's character, the colour language, the stud
 
 ## One-time setup
 
-A few GitHub settings only you can change. The studio will ask for them, with exact steps, when it builds the gate check (the github-gate unit on the board):
+A few GitHub settings only you can change; the studio asks for them in [an ask](asks/one-time-setup.md). Labels, the bug form and the gate check came in through the studio's own PRs ([github-gate](work/github-gate.md)). About five minutes on github.com:
 
-- **A ruleset on `main`**: require a PR, require the `CI`, `pr-title` and `gate` checks to pass, allow squash merge only.
-- That's all. Labels, the bug form and the gate check go in through the studio's own PRs.
+1. **Squash merge only.** *Settings → General → Pull Requests*: tick **Allow squash merging**, untick **Allow merge commits** and **Allow rebase merging**.
+2. **A ruleset on `main`.** *Settings → Rules → Rulesets → New ruleset → New branch ruleset*:
+   - **Name** `main`; **Enforcement status** *Active*; **Bypass list** empty.
+   - **Target branches**: *Add target → Include default branch*.
+   - Tick **Restrict deletions** and **Block force pushes**.
+   - Tick **Require a pull request before merging**, with **Required approvals** at 0 (the PRs are opened under your account, and GitHub won't let you approve your own), and **Allowed merge methods** *Squash*.
+   - Tick **Require status checks to pass**, and add `check` (CI's `pnpm health`), `pr-title` and `gate`. A check only shows in the picker once it has run on a PR, so if `gate` isn't there yet, add it after the next PR and save again.
+   - **Create**.
+3. Tell the studio it's done (`/needs-me` or `/director`), so it closes the ask.
 
-To let a gated PR through, add the label `producer-ok` and merge it (or say so in a session and the studio merges it).
+To let a gated PR through, add the label `producer-ok` and merge it (or say so in a session and the studio merges it). What's gated is the list in [`.github/gated.json`](../.github/gated.json), and why each is there is in [Gated files](../docs/decisions/2026-10-17-gated-files.md).
 
 ## Tools you'll get
 

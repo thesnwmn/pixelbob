@@ -28,6 +28,8 @@ export interface Tweaks {
   gravity: number;
   /** 0..2: how fast he takes on the heat or cold of a strong source nearby. */
   soak: number;
+  /** 0..1: runny, how stringy he is: 0 drips like water, 1 strings out like honey (goo model). */
+  stringy: number;
   /** 0.2..3: how long he holds a heat or chill once away from sources (higher = longer). */
   hold: number;
 }
@@ -46,6 +48,7 @@ export const DEFAULTS: Tweaks = {
   gravity: 420,
   soak: 1,
   hold: 1,
+  stringy: 0.6,
 };
 
 /** Slider ranges for the playground panel. */
@@ -62,6 +65,7 @@ export const RANGES: Record<Exclude<keyof Tweaks, "drive">, [number, number, num
   gravity: [100, 900, 20],
   soak: [0, 2, 0.05],
   hold: [0.2, 3, 0.1],
+  stringy: [0, 1, 0.05],
 };
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);

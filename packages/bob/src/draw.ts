@@ -1,5 +1,5 @@
 import { CAT, Cat, hash2, type World } from "@pixelbob/sim";
-import type { Blob } from "./blob.ts";
+import type { BobView } from "./model.ts";
 import { frozenness, runniness } from "./tweaks.ts";
 
 type RGB = [number, number, number];
@@ -26,11 +26,11 @@ export class BobPainter {
   private heat = new Float32Array(0);
   private own = new Uint8Array(0);
 
-  draw(blob: Blob, world: World, color: Uint8Array, emit: Uint8Array, frame: number): void {
+  draw(blob: BobView, world: World, color: Uint8Array, emit: Uint8Array, frame: number): void {
     blob.pieces.forEach((p, pi) => this.piece(blob, world, color, emit, frame, pi));
   }
 
-  private piece(blob: Blob, world: World, color: Uint8Array, emit: Uint8Array, frame: number, pi: number): void {
+  private piece(blob: BobView, world: World, color: Uint8Array, emit: Uint8Array, frame: number, pi: number): void {
     const p = blob.pieces[pi], { x, y, t, order } = blob, W = world.w, Hh = world.h;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (let k = p.start; k < p.start + p.len; k++) {

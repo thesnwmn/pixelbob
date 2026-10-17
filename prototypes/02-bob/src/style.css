@@ -50,6 +50,7 @@ button.on { background: var(--accent); color: #1a1408; border-color: var(--accen
 #panel .slider { display: grid; grid-template-columns: 4.6em 1fr 3.4em; align-items: center; gap: 6px; margin: 3px 0; color: var(--dim); }
 #panel .slider input { width: 100%; }
 #panel .slider span { text-align: right; color: var(--ink); }
+#panel .slider.unused { opacity: 0.35; }
 #panel .opt { display: flex; gap: 6px; align-items: center; margin: 6px 0; color: var(--dim); }
 #panel .opt.slider { display: grid; }
 #panel select { min-height: 28px; padding: 2px 6px; font-size: 12px; }

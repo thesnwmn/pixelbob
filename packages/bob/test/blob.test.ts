@@ -1,6 +1,6 @@
 import { M, World } from "@pixelbob/sim";
 import { describe, expect, it } from "vitest";
-import { Blob, COURSE_H, COURSE_W, DEFAULTS, buildCourse, muscleAt, runniness, type Input, type Tweaks } from "../src/index.ts";
+import { COURSE_H, COURSE_W, DEFAULTS, MODELS, buildCourse, createBob, muscleAt, runniness, type BobModel, type Input, type ModelKind, type Tweaks } from "../src/index.ts";
 
 const FLOOR = 150;
 /** A wide world with a floor of `m` (and anything extra painted by `extra`). */
@@ -10,33 +10,45 @@ function ground(m: number = M.rock, extra?: (w: World) => void): World {
   extra?.(w);
   return w;
 }
-function bob(world: World, o: Partial<Tweaks> = {}, temp: number | null = null, x = 60): Blob {
-  const b = new Blob({ ...DEFAULTS, ...o });
+function run(b: BobModel, world: World, steps: number, input: Input = { move: 0, jump: false }) {
+  for (let i = 0; i < steps; i++) b.step(world, input);
+}
+/** Every particle of him: position, velocity, temperature, and which piece. */
+function each(b: BobModel, f: (x: number, y: number, vx: number, vy: number, t: number, piece: number) => void) {
+  const v = b.view();
+  v.pieces.forEach((p, pi) => { for (let k = p.start; k < p.start + p.len; k++) { const i = v.order[k]; f(v.x[i], v.y[i], v.vx[i], v.vy[i], v.t[i], pi); } });
+}
+function size(b: BobModel, piece = -1) {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  each(b, (x, y, _vx, _vy, _t, p) => { if (piece < 0 || p === piece) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } });
+  return { w: x1 - x0, h: y1 - y0, x1 };
+}
+/** Fastest any particle moves relative to its piece. */
+function churn(b: BobModel) {
+  let fast = 0;
+  each(b, (_x, _y, vx, vy, _t, p) => { const q = b.pieces[p]; fast = Math.max(fast, Math.hypot(vx - q.vx, vy - q.vy)); });
+  return fast;
+}
+
+describe.each(MODELS.map((m) => m.kind))("%s", (kind: ModelKind) => {
+const make = (o: Partial<Tweaks> = {}) => createBob(kind, { ...DEFAULTS, ...o });
+function bob(world: World, o: Partial<Tweaks> = {}, temp: number | null = null, x = 60): BobModel {
+  const b = make(o);
   b.fixedTemp = temp;
   b.spawn(world, x, FLOOR - 12);
   run(b, world, 90);
   return b;
 }
-function run(b: Blob, world: World, steps: number, input: Input = { move: 0, jump: false }) {
-  for (let i = 0; i < steps; i++) b.step(world, input);
-}
-function size(b: Blob) {
-  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  for (let i = 0; i < b.cap; i++) if (b.alive[i]) { x0 = Math.min(x0, b.x[i]); x1 = Math.max(x1, b.x[i]); y0 = Math.min(y0, b.y[i]); y1 = Math.max(y1, b.y[i]); }
-  return { w: x1 - x0, h: y1 - y0 };
-}
 /** Hold jump for `hold` steps, release, and return how far his centre rose. */
-function jump(b: Blob, world: World, hold: number): number {
+function jump(b: BobModel, world: World, hold: number): number {
   const y0 = b.main!.cy;
   let top = y0;
   run(b, world, hold, { move: 0, jump: true });
   for (let i = 0; i < 90; i++) { b.step(world, { move: 0, jump: false }); top = Math.min(top, b.main!.cy); }
   return y0 - top;
 }
-/** Lift every particle by dy (to drop him from a height). */
-function lift(b: Blob, dy: number) {
-  for (let i = 0; i < b.cap; i++) { b.y[i] -= dy; b.py[i] -= dy; }
-}
+/** Lift him by dy (to drop him from a height). */
+const lift = (b: BobModel, dy: number) => b.shift(0, -dy);
 
 describe("body", () => {
   it("holds together and settles into a dome", () => {
@@ -77,7 +89,7 @@ describe("moving", () => {
 
   it("jumps out of water, but not as high as off the ground", () => {
     const pool = (w: World) => { for (let y = FLOOR - 30; y < FLOOR; y++) for (let x = 0; x < 320; x++) w.set(x, y, M.water); };
-    const w = ground(M.rock, pool), b = new Blob(DEFAULTS);
+    const w = ground(M.rock, pool), b = make();
     b.spawn(w, 60, FLOOR - 14);
     run(b, w, 120);
     expect(b.main!.cy).toBeGreaterThan(FLOOR - 15); // sank
@@ -117,9 +129,7 @@ describe("temperature", () => {
     b.fixedTemp = -20;
     run(b, w, 120, { move: 1, jump: false });
     expect(b.pieces.length).toBe(1);
-    let fast = 0;
-    for (let i = 0; i < b.cap; i++) if (b.alive[i]) fast = Math.max(fast, Math.hypot(b.vx[i] - b.main!.vx, b.vy[i] - b.main!.vy));
-    expect(fast).toBeLessThan(60); // rigid: no particle racing round him
+    expect(churn(b)).toBeLessThan(60); // rigid: no particle racing round him
     b.fixedTemp = 20;
     run(b, w, 240);
     const s = size(b);
@@ -132,7 +142,7 @@ describe("temperature", () => {
     // A staircase slope, 1 px down every 12 px (like the course's ice).
     const w = new World(320, 200, 1);
     for (let x = 0; x < 320; x++) for (let y = 120 + Math.floor(x / 12); y < 200; y++) w.set(x, y, M.ice);
-    const b = new Blob(DEFAULTS);
+    const b = make();
     b.fixedTemp = -20;
     b.spawn(w, 100, 110);
     let fastest = 0, x0 = 0;
@@ -160,7 +170,7 @@ describe("temperature", () => {
 
   it("runny Bob pours through a slot that stops him at room temperature", () => {
     const slot = (w: World) => { for (let x = 100; x < 106; x++) for (let y = 0; y < FLOOR - 4; y++) w.set(x, y, M.steel); };
-    const past = (b: Blob) => b.countIn(106, 0, 320, 200) / b.count;
+    const past = (b: BobModel) => b.countIn(106, 0, 320, 200) / b.count;
     const w1 = ground(M.rock, slot), normal = bob(w1);
     run(normal, w1, 400, { move: 1, jump: false });
     expect(past(normal)).toBe(0);
@@ -175,11 +185,11 @@ describe("temperature", () => {
     const w = ground(M.rock, (w) => {
       for (let x = 55; x <= 65; x++) for (let y = FLOOR - 26; y < FLOOR - 23; y++) { w.set(x, y, M.lava); w.base[y * w.w + x] = 1200; w.temp[y * w.w + x] = 1200; }
     });
-    const b = new Blob(DEFAULTS);
+    const b = make();
     b.spawn(w, 60, FLOOR - 12);
     run(b, w, 30);
     let lo = Infinity, hi = -Infinity;
-    for (let i = 0; i < b.cap; i++) if (b.alive[i]) { lo = Math.min(lo, b.t[i]); hi = Math.max(hi, b.t[i]); }
+    each(b, (_x, _y, _vx, _vy, t) => { lo = Math.min(lo, t); hi = Math.max(hi, t); });
     expect(hi - lo).toBeGreaterThan(8); // the side facing it is warmer
     run(b, w, 240);
     expect(b.main!.temp).toBeGreaterThan(55); // runny all through
@@ -191,7 +201,7 @@ describe("temperature", () => {
 
   it("shaking and tapping jump loosens a frozen Bob a little; sitting still doesn't", () => {
     const shake = (struggle: boolean) => {
-      const w = ground(), b = new Blob(DEFAULTS);
+      const w = ground(), b = make();
       b.spawn(w, 60, FLOOR - 12, -20);
       for (let f = 0; f < 180; f++) b.step(w, struggle ? { move: Math.floor(f / 8) % 2 ? 1 : -1, jump: f % 20 < 3 } : { move: 0, jump: false });
       return b.main!.temp;
@@ -202,34 +212,16 @@ describe("temperature", () => {
     expect(muscleAt(still)).toBe(0);
   });
 
-  it("runny, he clings and can hang down off a ledge", () => {
-    const w = new World(300, 300, 1);
-    for (let y = 100; y < 110; y++) for (let x = 0; x < 120; x++) w.set(x, y, M.rock);
-    const b = new Blob(DEFAULTS);
-    b.fixedTemp = 80;
-    b.spawn(w, 95, 88);
-    for (let f = 0; f < 240; f++) {
-      let edge = 0;
-      for (let i = 0; i < b.cap; i++) if (b.alive[i]) edge = Math.max(edge, b.x[i]);
-      b.step(w, { move: edge < 136 ? 0.5 : 0, jump: false });
-    }
-    let below = 0;
-    for (let i = 0; i < b.cap; i++) if (b.alive[i] && b.y[i] > 110) below++;
-    expect(below).toBeGreaterThan(50); // hanging down past the ledge
-    expect(b.main!.cy).toBeLessThan(115); // but still holding on
-  });
-
   it("on the course, a round Bob rolls over the pit's lost bit; a runny one pours in for it", () => {
     const attempt = (runny: boolean) => {
       const world = new World(COURSE_W, COURSE_H, 7);
       const course = buildCourse(world), pit = course.marks.pit;
-      const b = new Blob(DEFAULTS);
+      const b = make();
       if (runny) b.fixedTemp = 80;
       b.spawn(world, runny ? pit + 15 : pit - 40, 195, 20, course.bits);
       for (let f = 0; f < 300; f++) {
-        const p = b.main!;
         let left = Infinity;
-        for (let k = p.start; k < p.start + p.len; k++) left = Math.min(left, b.x[b.order[k]]);
+        each(b, (x, _y, _vx, _vy, _t, pi) => { if (pi === 0) left = Math.min(left, x); });
         const move = runny ? (left > pit - 6 ? -0.5 : 0) : 1;
         world.step();
         b.step(world, { move, jump: false, down: runny && f > 90 ? 1 : 0 });
@@ -255,7 +247,7 @@ describe("temperature", () => {
 
   it("frozen, he freezes the water around him", () => {
     const w = ground(M.rock, (w) => { for (let y = FLOOR - 30; y < FLOOR; y++) for (let x = 0; x < 320; x++) w.set(x, y, M.water); });
-    const b = new Blob(DEFAULTS);
+    const b = make();
     b.spawn(w, 60, FLOOR - 40, -25);
     for (let f = 0; f < 240; f++) { w.step(); b.step(w, { move: 0, jump: false }); }
     expect(w.count(M.ice)).toBeGreaterThan(50);
@@ -263,7 +255,7 @@ describe("temperature", () => {
 
   it("boils away on lava", () => {
     const w = ground(M.rock, (w) => { for (let x = 40; x < 90; x++) for (let y = FLOOR - 4; y < FLOOR; y++) w.set(x, y, M.lava); });
-    const b = new Blob(DEFAULTS);
+    const b = make();
     b.spawn(w, 60, FLOOR - 20);
     run(b, w, 240);
     expect(b.losses.boiled).toBeGreaterThan(b.total * 0.3);
@@ -273,13 +265,13 @@ describe("temperature", () => {
 describe("tearing", () => {
   it("spikes slice him into a few pieces, not crumbs", () => {
     const w = ground(M.rock, (w) => { for (let x = 30; x < 90; x += 2) for (let y = FLOOR - 3; y < FLOOR; y++) w.set(x, y, M.spike); });
-    const b = new Blob(DEFAULTS);
+    const b = make();
     b.spawn(w, 60, FLOOR - 40);
     run(b, w, 120);
     expect(b.pieces.length).toBeGreaterThan(1);
     expect(b.main!.len).toBeGreaterThan(b.total * 0.2);
     let fast = 0;
-    for (let i = 0; i < b.cap; i++) if (b.alive[i]) fast = Math.max(fast, Math.hypot(b.vx[i], b.vy[i]));
+    each(b, (_x, _y, vx, vy) => { fast = Math.max(fast, Math.hypot(vx, vy)); });
     expect(fast).toBeLessThan(100); // the bits settle instead of buzzing about
   });
 
@@ -296,7 +288,7 @@ describe("tearing", () => {
 
   it("after spikes cut him, he re-forms into a round Bob that rolls again", () => {
     const spikes = (w: World, m: number) => { for (let x = 40; x < 80; x += 2) for (let y = FLOOR - 3; y < FLOOR; y++) w.set(x, y, m); };
-    const w = ground(M.rock, (w) => spikes(w, M.spike)), b = new Blob(DEFAULTS);
+    const w = ground(M.rock, (w) => spikes(w, M.spike)), b = make();
     b.spawn(w, 60, FLOOR - 50);
     run(b, w, 90);
     expect(b.pieces.length).toBeGreaterThan(1);
@@ -306,10 +298,8 @@ describe("tearing", () => {
     run(b, w, 120, { move: 1, jump: false });
     expect(b.main!.cx - x0).toBeGreaterThan(40);
     // Not stuck flat: about as tall for his size as a fresh Bob.
-    let y0 = Infinity, y1 = -Infinity;
     const q = b.main!;
-    for (let k = q.start; k < q.start + q.len; k++) { const i = b.order[k]; y0 = Math.min(y0, b.y[i]); y1 = Math.max(y1, b.y[i]); }
-    expect(y1 - y0).toBeGreaterThan(Math.sqrt(q.len / Math.PI) * 1.4);
+    expect(size(b, 0).h).toBeGreaterThan(Math.sqrt(q.len / Math.PI) * 1.4);
   });
 
   it("torn-off bits rejoin when they touch", () => {
@@ -323,11 +313,69 @@ describe("tearing", () => {
   });
 });
 
+
+describe("feel", () => {
+  /** A runny Bob pushed out over a ledge until his front is `reach` px past it, then left alone. */
+  const dangle = (reach: number) => {
+    const w = new World(320, 200, 1);
+    for (let y = 120; y < 200; y++) for (let x = 0; x < 100; x++) w.set(x, y, M.rock);
+    for (let y = 195; y < 200; y++) for (let x = 0; x < 320; x++) w.set(x, y, M.rock);
+    const b = make();
+    b.fixedTemp = 62;
+    b.spawn(w, 70, 106);
+    let go = true;
+    for (let f = 0; f < 540; f++) {
+      if (size(b, 0).x1 > 100 + reach) go = false;
+      b.step(w, { move: go ? 1 : 0, jump: false });
+    }
+    let top = 0, fell = 0;
+    each(b, (_x, y) => { if (y < 120) top++; else if (y > 180) fell++; });
+    return { top: top / b.total, fell: fell / b.total };
+  };
+
+  /** v1 (the lattice) can't do these: kept as a record of what it gets wrong. */
+  const v2 = kind === "lattice" ? it.fails : it;
+
+  v2("runny, a little over a ledge he hangs down from it; further, a drop pulls away and the rest stays", () => {
+    expect(dangle(-1).fell).toBe(0);
+    const hang = dangle(2);
+    expect(hang.fell).toBe(0);
+    expect(hang.top).toBeLessThan(0.95); // some of him hangs below the lip
+    const drip = dangle(4);
+    expect(drip.fell).toBeGreaterThan(0.1);
+    expect(drip.top).toBeGreaterThan(0.15);
+  });
+
+  v2("picking up the pit's lost bit is gentle, and afterwards he sets round again", () => {
+    const world = new World(COURSE_W, COURSE_H, 7);
+    const course = buildCourse(world), pit = course.marks.pit;
+    const b = make();
+    b.fixedTemp = 62;
+    b.spawn(world, pit + 15, 195, 20, course.bits);
+    let worst = 0;
+    for (let f = 0; f < 420; f++) {
+      let left = Infinity;
+      each(b, (x, _y, _vx, _vy, _t, pi) => { if (pi === 0) left = Math.min(left, x); });
+      world.step();
+      b.step(world, { move: f < 300 && left > pit - 6 ? -0.5 : 0, jump: false, down: f > 90 && f < 300 ? 1 : 0 });
+      if (f > 90) worst = Math.max(worst, churn(b));
+    }
+    expect(b.main!.len).toBe(b.total);
+    expect(worst).toBeLessThan(150); // no burst when the bit joins
+    // Climb out and cool off: round again, not lumpy or flat.
+    b.fixedTemp = 20;
+    for (let f = 0; f < 300; f++) { world.step(); b.step(world, { move: f < 120 ? 1 : 0, jump: f > 40 && f < 60 }); }
+    const s = size(b, 0);
+    expect(s.h).toBeGreaterThan(12); // a fresh Bob of this size rests about 14 tall
+    expect(s.w).toBeLessThan(s.h * 1.8); // a dome, not a puddle
+  });
+});
+
 describe("course", () => {
   it("a scripted run gets most of him to the finish", () => {
     const world = new World(COURSE_W, COURSE_H, 7);
     const course = buildCourse(world);
-    const b = new Blob(DEFAULTS);
+    const b = make();
     b.spawn(world, course.spawn.x, course.spawn.y);
     const { jumps, thaw, melt } = course.marks, end = course.finish.x0 + 40;
     let hold = 0;
@@ -344,4 +392,5 @@ describe("course", () => {
     expect(b.main!.cx).toBeGreaterThan(end);
     expect(b.countIn(course.finish.x0, 0, COURSE_W, COURSE_H) / b.total).toBeGreaterThan(0.5);
   }, 60_000);
+});
 });

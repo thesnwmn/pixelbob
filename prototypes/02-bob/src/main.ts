@@ -1,4 +1,4 @@
-import { BobPainter, Blob, COURSE_H, COURSE_W, DEFAULTS, RANGES, buildCourse, frozenness, runniness, sectionAt, type Course, type Tweaks } from "@pixelbob/bob";
+import { BobPainter, COURSE_H, COURSE_W, DEFAULTS, DEFAULT_MODEL, MODELS, RANGES, buildCourse, createBob, frozenness, runniness, sectionAt, type BobModel, type Course, type ModelKind, type Tweaks } from "@pixelbob/bob";
 import { GLRenderer, LOOKS, Shade, type View } from "@pixelbob/render";
 import { CAT, Cat, M, World } from "@pixelbob/sim";
 
@@ -19,12 +19,15 @@ for (const k of Object.keys(RANGES) as (keyof typeof RANGES)[]) {
 }
 if (params.get("drive") === "crawl") tweaks.drive = "crawl";
 let fixedTemp: number | null = params.has("temp") ? Number(params.get("temp")) : null;
+// Which way of modelling Bob (docs/09-bob-models.md).
+let kind: ModelKind = MODELS.find((m) => m.kind === params.get("model"))?.kind ?? DEFAULT_MODEL;
 
 function saveUrl() {
   const q = new URLSearchParams();
   for (const k of Object.keys(RANGES) as (keyof typeof RANGES)[]) if (tweaks[k] !== DEFAULTS[k]) q.set(k, String(tweaks[k]));
   if (tweaks.drive !== DEFAULTS.drive) q.set("drive", tweaks.drive);
   if (fixedTemp !== null) q.set("temp", String(fixedTemp));
+  if (kind !== DEFAULT_MODEL) q.set("model", kind);
   if (state.look !== "day") q.set("look", state.look);
   const s = q.toString();
   history.replaceState(null, "", s ? `?${s}` : location.pathname);
@@ -33,7 +36,7 @@ function saveUrl() {
 // ---- World, course and Bob ----
 
 let world: World, shade: Shade, course: Course;
-const bob = new Blob(tweaks, seed);
+let bob: BobModel = createBob(kind, tweaks, seed);
 const painter = new BobPainter();
 let best = 0, startAt = 0, finishedAt = 0;
 function rebuild() {
@@ -61,7 +64,7 @@ function respawn() {
 }
 
 // For debugging and scripted playthroughs from the browser console.
-(window as unknown as { pixelbob: unknown }).pixelbob = { bob, get world() { return world; }, get course() { return course; } };
+(window as unknown as { pixelbob: unknown }).pixelbob = { get bob() { return bob; }, get world() { return world; }, get course() { return course; } };
 
 let gl: GLRenderer;
 try {
@@ -75,7 +78,7 @@ try {
 
 const LABELS: Record<keyof typeof RANGES, string> = {
   cohesion: "cohesion", memory: "memory", softness: "softness", muscle: "muscle", grip: "grip",
-  speed: "speed", jump: "jump", air: "air ctrl", size: "size", gravity: "gravity", soak: "heat soak", hold: "heat hold",
+  speed: "speed", jump: "jump", air: "air ctrl", size: "size", gravity: "gravity", soak: "heat soak", hold: "heat hold", stringy: "stringy",
 };
 const panel = $("#panel"), sliders = $("#sliders");
 const inputs = new Map<string, HTMLInputElement>();
@@ -95,6 +98,24 @@ for (const k of Object.keys(RANGES) as (keyof typeof RANGES)[]) {
 const driveEl = $<HTMLSelectElement>("#drive");
 driveEl.value = tweaks.drive;
 driveEl.onchange = () => { tweaks.drive = driveEl.value === "crawl" ? "crawl" : "roll"; saveUrl(); };
+// Model picker: a new Bob of the chosen kind, at the start (or ?at=).
+const modelEl = $<HTMLSelectElement>("#model");
+for (const m of MODELS) modelEl.append(new Option(m.name, m.kind));
+modelEl.value = kind;
+const showModel = () => {
+  const m = MODELS.find((x) => x.kind === kind)!;
+  modelEl.title = m.blurb;
+  for (const [k, inp] of inputs) inp.closest("label")!.classList.toggle("unused", m.ignores.includes(k as keyof Tweaks));
+};
+modelEl.onchange = () => {
+  kind = modelEl.value as ModelKind;
+  bob = createBob(kind, tweaks, seed);
+  respawn();
+  showModel();
+  saveUrl();
+  modelEl.blur();
+};
+showModel();
 const worldTempEl = $<HTMLInputElement>("#worldtemp"), tempEl = $<HTMLInputElement>("#temp"), tempVal = $("#tempval");
 const syncTemp = () => {
   worldTempEl.checked = fixedTemp === null;
@@ -295,7 +316,7 @@ function tick(now: number) {
     cam.x += (tx - cam.x) * 0.08; cam.y += (ty - cam.y) * 0.08;
   }
   shade.update(frame);
-  painter.draw(bob, world, shade.color, shade.emit, frame);
+  painter.draw(bob.view(), world, shade.color, shade.emit, frame);
   // Less fade into solid ground than the sandbox: here the terrain's shape is what matters.
   const look = LOOKS[state.look] ?? LOOKS.day;
   gl.render(shade.color, shade.emit, course.lamps, { ...look, depth: look.depth * 0.55 }, view());
@@ -307,7 +328,7 @@ function tick(now: number) {
   const lost = Object.entries(bob.losses).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(", ");
   const time = ((finishedAt || frame) - startAt) / 60;
   hud.textContent =
-    `${fps.toFixed(0)} fps · sim ${simMs.toFixed(1)} ms\n` +
+    `${fps.toFixed(0)} fps · sim ${simMs.toFixed(1)} ms · ${MODELS.find((m) => m.kind === kind)!.name}\n` +
     (p ? `Bob ${alive}% · ${bob.pieces.length} piece${bob.pieces.length > 1 ? "s" : ""} · main ${Math.round((p.len / bob.total) * 100)}% · ${p.temp.toFixed(0)}°C ${stateName(p.temp)}\n` : "Bob is gone. R to respawn.\n") +
     (lost ? `lost: ${lost}\n` : "") +
     `at the finish: ${pct}% (best ${best}%)${finishedAt ? ` in ${time.toFixed(1)} s` : ""}`;

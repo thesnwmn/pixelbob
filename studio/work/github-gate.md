@@ -3,7 +3,7 @@ title: The gate check and GitHub setup
 kind: tool
 role: release
 size: S
-status: doing
+status: done
 pr: 12
 milestone: m0-studio
 ---
@@ -18,3 +18,6 @@ Gated changes (direction, milestones, the colour language, the harness's own rul
 
 ## Not this
 Releases (release-builds).
+
+## Log
+- 2026-10-17 done, #12: [session](../sessions/2026-10-17-github-gate.md). The gate check from `.github/gated.json`, labels as a file with a sync workflow, the bug form, two health checks, and the one-time setup as an ask.

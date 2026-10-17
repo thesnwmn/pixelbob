@@ -3,7 +3,8 @@ title: Roles and commands
 kind: tool
 role: toolsmith
 size: M
-status: ready
+status: doing
+pr: 0
 milestone: m0-studio
 ---
 

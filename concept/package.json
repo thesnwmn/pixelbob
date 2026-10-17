@@ -1,0 +1,20 @@
+{
+  "name": "@pixelbob/concept",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Concept doc: what Pixelbob is, how it looks and feels, the worlds, menus, settings and the plan, with the shots rendered live",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@pixelbob/00-stills": "workspace:*",
+    "@pixelbob/bob": "workspace:*",
+    "@pixelbob/sim": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Bob as particles: bonds, shape matching, a controller that moves him by deforming, temperature states. No DOM.",
+  "description": "Bob as goo: a viscoelastic particle fluid, how his particles meet the world, his controller, temperature states and his painter. No DOM.",
   "main": "src/index.ts",
   "exports": { ".": "./src/index.ts" },
   "scripts": {

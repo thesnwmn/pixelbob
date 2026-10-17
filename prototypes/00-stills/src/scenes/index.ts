@@ -1,9 +1,11 @@
 import type { SceneDef } from "../scene.ts";
 import { bobsheet } from "./bobsheet.ts";
-import { cavern } from "./cavern.ts";
-import { foundry } from "./foundry.ts";
-import { grotto } from "./grotto.ts";
-import { meadow } from "./meadow.ts";
-import { sandbox } from "./sandbox.ts";
+import { caverns } from "./worlds/caverns.ts";
+import { foundry } from "./worlds/foundry.ts";
+import { green } from "./worlds/green.ts";
+import { grotto } from "./worlds/grotto.ts";
+import { ruins } from "./worlds/ruins.ts";
+import { sump } from "./worlds/sump.ts";
 
-export const SCENES: SceneDef[] = [meadow, cavern, foundry, grotto, bobsheet, sandbox];
+/** One shot per world (docs/11-worlds.md), in the order you play them, then Bob's states. */
+export const SCENES: SceneDef[] = [green, caverns, ruins, grotto, foundry, sump, bobsheet];

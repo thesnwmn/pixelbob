@@ -79,7 +79,7 @@ So he can be half frozen, with a cold side lagging behind the warm side.
 
 **Thawing.** Frozen, his main piece isn't squashed in the world frame (a frozen dome rolling would otherwise be forced to change shape every frame), and he's held to the shape he froze in. Thawing, he lets go of it and rounds up.
 
-Colours follow the stills: icy blue with facets and squinting eyes when frozen, orange and glowing when hot with drooping eyes.
+Colours follow the stills (the stills and the game share his painter, `paintBob`): icy blue with facets and squinting eyes when frozen, orange and glowing when hot with drooping eyes.
 
 ## Coming apart and coming back
 

@@ -15,6 +15,22 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@22.20.5)(vite@8.3.4(@types/node@22.20.5))
 
+  concept:
+    dependencies:
+      '@pixelbob/00-stills':
+        specifier: workspace:*
+        version: link:../prototypes/00-stills
+      '@pixelbob/bob':
+        specifier: workspace:*
+        version: link:../packages/bob
+      '@pixelbob/sim':
+        specifier: workspace:*
+        version: link:../packages/sim
+    devDependencies:
+      vite:
+        specifier: ^8.3.4
+        version: 8.3.4(@types/node@22.20.5)
+
   packages/bob:
     dependencies:
       '@pixelbob/sim':
@@ -30,6 +46,13 @@ importers:
   packages/sim: {}
 
   prototypes/00-stills:
+    dependencies:
+      '@pixelbob/bob':
+        specifier: workspace:*
+        version: link:../../packages/bob
+      '@pixelbob/sim':
+        specifier: workspace:*
+        version: link:../../packages/sim
     devDependencies:
       '@types/node':
         specifier: ^22.10.0

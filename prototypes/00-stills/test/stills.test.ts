@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { PALETTES } from "../src/kit/bob.ts";
+import { PALETTES } from "../src/kit/goo.ts";
 import { Renderer } from "../src/kit/render.ts";
 import { SCENES } from "../src/scenes/index.ts";
 
 const frame = (id: string, seed: number, t: number) => {
   const def = SCENES.find((s) => s.id === id)!;
-  const r = new Renderer(def.build({ seed, palette: PALETTES.coral }));
+  const r = new Renderer(def.build({ seed, palette: PALETTES.rose }));
   const img = { width: def.w, height: def.h, data: new Uint8ClampedArray(def.w * def.h * 4) } as ImageData;
   r.render(img, t);
   return img.data;
@@ -25,10 +25,10 @@ describe("stills", () => {
   });
 
   it("is deterministic for a seed and time", () => {
-    expect(frame("cavern", 3, 1.25)).toEqual(frame("cavern", 3, 1.25));
+    expect(frame("caverns", 3, 1.25)).toEqual(frame("caverns", 3, 1.25));
   });
 
   it("animates over time", () => {
-    expect(frame("meadow", 7, 1)).not.toEqual(frame("meadow", 7, 2));
+    expect(frame("green", 7, 1)).not.toEqual(frame("green", 7, 2));
   });
 });

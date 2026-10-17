@@ -9,7 +9,7 @@
 
 ## Bob
 
-A coral-pink jelly about 20 world pixels wide, made of about 280 particles (one per pixel of his body). He's a **viscoelastic fluid**, goo, not a shape: see [08 Bob](08-bob.md) for how he works and [09 Bob models](09-bob-models.md) for why. The playground (`prototypes/02-bob`) has everything marked built below.
+A rose-pink jelly about 20 world pixels wide, made of about 280 particles (one per pixel of his body). He's a **viscoelastic fluid**, goo, not a shape: see [08 Bob](08-bob.md) for how he works and [09 Bob models](09-bob-models.md) for why. The playground (`prototypes/02-bob`) has everything marked built below.
 
 | Ability | How it works in the sim | Feel | Built |
 |---|---|---|---|
@@ -51,12 +51,9 @@ Temperature comes only from things you can see (braziers, lava, ice, snow). He s
 
 Interactions worth building first: water + lava → steam + rock; fire + wood → fire + smoke + ash; water at < 0 °C → ice; ice at > 0 °C → water; oil floats on water and burns; acid dissolves most things (Bob included); salt on Bob shrinks him; electricity runs through water and metal.
 
-## Biomes
+## Worlds
 
-- **Meadows and hills**: grass, trees bending in the wind, ponds, floating ledges. Gentle; teaches movement.
-- **Glow caverns**: dark rock lit by mushrooms, crystals and glow goo pools. Light is a resource.
-- **Frozen grottos**: snow, ice and icicles; warmth (campfires, steam vents) is safety.
-- **Industry**: foundries, pipes, conveyors, pistons, molten metal, steam. Hard angles and machines you rewire.
+Seven worlds, each a biome with its own materials and light, each teaching one new thing: The Green (rolling, momentum, grip), Glow Caverns (runny: pour, dangle, drip), Sticky Ruins (climbing), Frozen Grotto (cold: rigid, freezing water), The Foundry (splitting on purpose, machines), The Sump (absorbing) and The Core (everything at once). See [11 Worlds](11-worlds.md).
 
 ## Puzzle seeds
 

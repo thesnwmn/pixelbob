@@ -53,7 +53,7 @@ input[type="number"] { width: 5.5rem; }
 .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); }
 footer { color: var(--dim); padding-bottom: 2rem; }
 
-/* Overlay UI mockups (sandbox) and labels (Bob sheet). Sizes in container units so they scale with the still. */
+/* Labels (Bob sheet). Sizes in container units so they scale with the still. */
 .frame { container-type: size; }
 .lbl {
   position: absolute;

@@ -11,7 +11,7 @@ import { TOOLS } from "./tools.ts";
 export const CHECKS: Check[] = [...TOOLS, ...DEPS, ...REPO, ...CODE, ...STUDIO, ...GITHUB];
 
 export interface Options {
-  /** Skip the slow checks (the site build, the replays), for use while working. */
+  /** Skip the slow checks (the site build), for use while working. */
   quick: boolean;
   /** Add the end-of-session checks: tree clean, everything pushed. */
   end: boolean;

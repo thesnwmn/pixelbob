@@ -3,7 +3,7 @@ title: The gate check and GitHub setup
 kind: tool
 role: release
 size: S
-status: ready
+status: doing
 milestone: m0-studio
 ---
 

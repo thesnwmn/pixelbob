@@ -14,20 +14,24 @@ void main() {
   vec2 p = uv * uWorld;
   vec3 L = uAmb;
   if (uSky.r + uSky.g + uSky.b > 0.0) {
+    // Sky rays: straight up, two slight tilts, and two steep ones so the sides of things
+    // catch the sky too. Light seeps a few cells into solids before it's gone (it fades,
+    // rather than stopping dead at the surface).
     float sum = 0.0;
-    for (int r = 0; r < 3; r++) {
-      vec2 d = vec2(float(r - 1) * 0.4, -1.0) * 2.0;
+    for (int r = 0; r < 5; r++) {
+      float tilt = r < 3 ? float(r - 1) * 0.4 : (r == 3 ? -1.0 : 1.0);
+      vec2 d = vec2(tilt, -1.0) * 2.0;
       vec2 q = p; float T = 1.0;
       for (int s = 0; s < 140; s++) {
         q += d;
         if (q.y < 0.0) break;
-        float a = occ(q);
+        float a = occ(q) * 0.5;
         T *= (1.0 - a) * (1.0 - a);
         if (T < 0.02) { T = 0.0; break; }
       }
-      sum += T;
+      sum += T * (r < 3 ? 1.0 : 0.6);
     }
-    L += uSky * sum / 3.0;
+    L += uSky * sum / 4.2;
   }
   for (int i = 0; i < ${A}; i++) {
     if (i >= uN) break;
@@ -97,7 +101,9 @@ void main() {
     // Back wall: dimmer than the play layer, but never pitch black, so open
     // space always reads against solid rock.
     if (col.a < 0.6) light = light * 0.75 + vec3(0.15, 0.15, 0.17);
-    if (col.a > 0.99) light *= mix(1.0, 1.0 - uDepth, smoothstep(0.45, 0.92, b1.a));
+    // Deep in solid ground it fades to dark, but not right at the surface: light reaches a
+    // few cells in.
+    if (col.a > 0.99) light *= mix(1.0, 1.0 - uDepth, smoothstep(0.7, 0.99, b1.a));
     lit = col.rgb * light;
   }
   vec3 rgb = (lit + e + (b1.rgb * 0.8 + b2.rgb * 1.4) * uBloom) * uExp * uTint;

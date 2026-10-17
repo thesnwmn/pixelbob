@@ -2,7 +2,7 @@
 
 How you work with the studio: what you type, what comes back, and where to look. [The studio](README.md) is how it works inside.
 
-**Status:** in use. Everything here works except what's marked planned: the game's builds, scenarios, the feedback button and the tools come with the game's milestones ([building the studio](README.md#building-the-studio)).
+**Status:** in use. Everything here works except the alpha and beta builds, replays and the tools, which come with the game's milestones ([building the studio](README.md#building-the-studio)).
 
 ## Your two jobs
 
@@ -143,7 +143,7 @@ Gated PRs (direction, milestones, Bob's character, the colour language, the stud
 
 ## One-time setup
 
-A few GitHub settings only you can change; the studio asks for them in [an ask](asks/one-time-setup.md). Labels, the bug form and the gate check came in through the studio's own PRs ([github-gate](work/github-gate.md)). About five minutes on github.com:
+A few GitHub settings only you can change, asked for in [an ask](asks/one-time-setup.md) and done on 2026-10-17. The steps stay here in case they need redoing. Labels, the bug form and the gate check came in through the studio's own PRs ([github-gate](work/github-gate.md)). About five minutes on github.com:
 
 1. **Squash merge only.** *Settings → General → Pull Requests*: tick **Allow squash merging**, untick **Allow merge commits** and **Allow rebase merging**.
 2. **A ruleset on `main`.** *Settings → Rules → Rulesets → New ruleset → New branch ruleset*:

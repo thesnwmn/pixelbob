@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { board, loadStudio, parseFrontMatter } from "../../../studio/board.ts";
 import { ROLES } from "../../../studio/board.ts";
 import { page } from "../../../studio/page.ts";
-import { anchors, commands, pageProblems, studioPage, docsIndex, files, flying, guideCommands, landed, links, roles, slugify, tableRoles } from "../src/studio.ts";
+import { anchors, commands, docsIndex, files, flying, guideCommands, landed, links, pageProblems, roles, slugify, studioPage, tableRoles } from "../src/studio.ts";
 import { ctx, tmpDir, tmpRepo } from "./fixture.ts";
 
 const unit = (fields: string, body = "## Why\nBecause.\n\n## Done when\n- It works.\n\n## Not this\nThe rest.\n") => `---\n${fields}\n---\n\n${body}`;
@@ -167,5 +167,11 @@ describe("studio/page", () => {
     expect(html).toContain('<a href="https://github.com/thesnwmn/pixelbob/blob/main/studio/README.md#the-studios-state">');
     expect(html).toContain("on 2026-10-17 12:00 UTC");
     expect(html).toContain('<a href="https://github.com/thesnwmn/pixelbob/pull/8">#8</a> <a href="https://github.com/thesnwmn/pixelbob/pull/9">#9</a>');
+  });
+  it("never links a PR or issue title anywhere but https, and escapes it", () => {
+    const github = { prs: [], issues: [{ number: 3, title: '[click](javascript:alert(1)) <img src=x onerror=alert(1)> [ok](https://example.com)', labels: [] }] };
+    const html = page(loadStudio(tmpDir(studio())), github);
+    expect(html).not.toMatch(/javascript:|<img/);
+    expect(html).toContain('<li>#3: click) &lt;img src=x onerror=alert(1)&gt; <a href="https://example.com">ok</a></li>');
   });
 });

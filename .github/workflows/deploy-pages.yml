@@ -16,13 +16,16 @@ permissions:
   issues: read
   pull-requests: read
 
-# Main and PR previews all push to gh-pages; queue them instead of racing.
-concurrency:
-  group: gh-pages
-  cancel-in-progress: false
-
 jobs:
   deploy:
+    # A merged PR is also a push to main, which deploys anyway. Skipping it matters: GitHub keeps only
+    # one pending run per concurrency group, so a third run at merge could cancel pr-cleanup's.
+    if: github.event_name != 'pull_request_target' || !github.event.pull_request.merged
+    # Main and PR previews all push to gh-pages; queue them instead of racing. On the job, so a
+    # skipped run never takes a place in the queue.
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -4,8 +4,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { inFlight, loadStudio, parseFrontMatter, ROLES } from "../../../studio/board.ts";
-import { type Check, fail, inCI, pass } from "./check.ts";
 import { page } from "../../../studio/page.ts";
+import { type Check, fail, inCI, pass } from "./check.ts";
 import { DOC_MAP, type DocMapEntry, globRe, IN_STEP, readDocMap } from "./instep.ts";
 
 export const files: Check = {

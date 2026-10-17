@@ -2,7 +2,8 @@
 // sessions, as one HTML file. Generated from the files like the board, never committed.
 // scripts/build-site.mjs writes it; `node studio/page.ts <out.html> [--github]` writes it alone.
 // See studio/README.md#transparency.
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type GitHub, type Studio, board, fromGitHub, loadStudio } from "./board.ts";
 
@@ -11,7 +12,11 @@ export const BLOB = "https://github.com/thesnwmn/pixelbob/blob/main/studio/";
 
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
-/** One line of the board's Markdown as HTML: `code`, **bold**, [links](…). */
+/** A link's href: https as it is, a relative one to the file on GitHub, anything else (javascript:, data:) none. */
+const href = (link: string): string | undefined => (/^https?:\/\//i.test(link) ? link : /^[a-z][a-z0-9+.-]*:/i.test(link) ? undefined : BLOB + link);
+
+/** One line of the board's Markdown as HTML: `code`, **bold**, [links](…). PR and issue titles come from
+ * anyone on GitHub, so everything is escaped first and a link only ever gets an https or relative href. */
 export function inline(md: string): string {
   const parts = md.split(/(`[^`]*`)/);
   return parts
@@ -19,7 +24,10 @@ export function inline(md: string): string {
       if (i % 2) return `<code>${esc(part.slice(1, -1))}</code>`;
       return esc(part)
         .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
-        .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, text, href) => `<a href="${/^[a-z]+:/i.test(href) ? href : BLOB + href}">${text}</a>`);
+        .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, text, link) => {
+          const to = href(link);
+          return to ? `<a href="${to}">${text}</a>` : text;
+        });
     })
     .join("");
 }
@@ -85,5 +93,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const out = process.argv[2];
   if (!out) throw new Error("usage: node studio/page.ts <out.html> [--github]");
+  mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, page(loadStudio(root), process.argv.includes("--github") ? fromGitHub(root) : undefined));
 }

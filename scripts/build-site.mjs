@@ -1,6 +1,7 @@
 // Assembles the concept doc and every built prototype into one static site for GitHub Pages:
 //   _site/index.html          the concept doc's link, then the list of prototypes
 //   _site/concept/...         the concept doc's dist/
+//   _site/game/...            the game's dist/ (start it somewhere with ?scenario=<id>)
 //   _site/studio/index.html   the studio page: the board, from studio/ (STUDIO_GITHUB=1 adds open PRs and bugs)
 //   _site/<prototype>/...     each prototype's dist/
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -29,6 +30,9 @@ const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">"
 // The concept doc isn't a prototype: it's the front door, shown above them.
 const concept = existsSync(join(root, "concept", "dist"));
 if (concept) cpSync(join(root, "concept", "dist"), join(out, "concept"), { recursive: true });
+// The game, likewise: above the prototypes, since it's what they're for.
+const game = existsSync(join(root, "game", "dist"));
+if (game) cpSync(join(root, "game", "dist"), join(out, "game"), { recursive: true });
 // The studio page: generated from the files, never committed. Only the deploy asks GitHub.
 const github = process.env.STUDIO_GITHUB === "1" ? fromGitHub(root) : undefined;
 if (process.env.STUDIO_GITHUB === "1" && !github) console.warn("(couldn't ask GitHub: the studio page is without PRs and bugs)");
@@ -58,6 +62,7 @@ writeFileSync(
     <h1>Pixelbob</h1>
     <p>A 2D platformer where everything, including Bob the blob, is simulated pixels.</p>
     ${concept ? `<h2>Concept</h2>\n    <p><a href="./concept/"><b>The concept doc</b></a>: what the game is, how it looks, the worlds, menus and the plan.</p>` : ""}
+    ${game ? `<h2>Game</h2>\n    <p><a href="./game/"><b>The game</b></a>: the latest build. Playtests start it somewhere with <code>?scenario=</code>.</p>` : ""}
     <h2>Studio</h2>
     <p><a href="./studio/"><b>The studio</b></a>: the board (what's in flight, what's waiting on the producer, what's next) and the sessions so far.</p>
     <h2>Prototypes</h2>
@@ -69,4 +74,4 @@ writeFileSync(
 </html>
 `,
 );
-console.log(`Built _site with ${concept ? "the concept doc, " : ""}the studio page${github ? " (with GitHub)" : ""} and ${entries.length} prototype(s): ${entries.map((e) => e.name).join(", ")}`);
+console.log(`Built _site with ${concept ? "the concept doc, " : ""}${game ? "the game, " : ""}the studio page${github ? " (with GitHub)" : ""} and ${entries.length} prototype(s): ${entries.map((e) => e.name).join(", ")}`);

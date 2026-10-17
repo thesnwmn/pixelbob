@@ -1,0 +1,13 @@
+{
+  "title": "Runny Bob at the pit",
+  "level": "course",
+  "at": 1440,
+  "bob": { "temp": 85 },
+  "card": {
+    "changed": "Starts Bob runny (held at 85°C) beside the pit, to show a scenario can set his temperature.",
+    "try": ["Hold down to pour into the pit for the lost bit, then ooze under the slot."],
+    "lookFor": ["That he starts runny and stays runny."],
+    "known": ["He's held at 85°C whatever the world does, so the cool-off pool won't set him."],
+    "questions": []
+  }
+}

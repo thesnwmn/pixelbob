@@ -130,6 +130,7 @@ form.onsubmit = async (e) => {
   const f: Feedback = {
     build,
     commit: __COMMIT__,
+    browser: navigator.userAgent,
     scenario: scenario!.id,
     seconds: openedAt,
     fun: num("fun"),

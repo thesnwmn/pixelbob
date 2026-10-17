@@ -52,6 +52,22 @@ export const noDom: Check = {
   },
 };
 
+/** Formats read anywhere (the health check, the scripts), so they import nothing. */
+export const NO_IMPORTS = ["game/src/scenario.ts", "game/src/replay.ts"];
+
+export const noImports: Check = {
+  id: "code/no-imports",
+  tier: 4,
+  repro: `grep -n "^import" ${NO_IMPORTS.join(" ")}`,
+  hint: "The scenario and replay formats import nothing, so the health check and Node scripts can read them alone. Move what it needs into the file, or the code that needs the import elsewhere.",
+  run({ root }) {
+    const hits = NO_IMPORTS.filter((f) => existsSync(join(root, f))).flatMap((f) =>
+      readFileSync(join(root, f), "utf8").split("\n").flatMap((line, i) => (/^\s*(import|export\s.*\sfrom)\s/.test(line) ? [`${f}:${i + 1}: ${line.trim()}`] : [])),
+    );
+    return hits.length ? fail(`${hits.length} import${hits.length === 1 ? "" : "s"}`, hits.join("\n")) : pass(`${NO_IMPORTS.length} files`);
+  },
+};
+
 export const SCENARIOS = "game/scenarios";
 
 export const scenarios: Check = {
@@ -91,4 +107,4 @@ export const replays: Check = {
 };
 
 // Cheap scans first, so a broken convention shows before the slow runs.
-export const CODE = [determinism, noDom, scenarios, typecheck, test, replays, build];
+export const CODE = [determinism, noDom, noImports, scenarios, typecheck, test, replays, build];

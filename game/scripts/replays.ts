@@ -17,14 +17,19 @@ const read = (url: URL): unknown => JSON.parse(readFileSync(url, "utf8"));
 
 const scenarios = new Map<string, Scenario>();
 for (const { id, url } of json("scenarios")) {
-  const { scenario } = parseScenario(id, read(url));
+  const { scenario, errors } = parseScenario(id, read(url));
   if (scenario) scenarios.set(id, scenario);
+  else console.log(`game/scenarios/${id}.json is broken (${errors.join("; ")}): replays of it can't run`);
 }
 
 const write = (url: URL, f: ReplayFile, text: string) =>
   writeFileSync(url, JSON.stringify({ note: f.note, replay: text, expect: f.expect }, null, 2) + "\n");
 
 const [flag, ...rest] = process.argv.slice(2);
+if (flag !== undefined && flag !== "--add" && flag !== "--update") {
+  console.log(`unknown option ${flag}: --add <id> <file> <note…>, --update, or nothing to check`);
+  process.exit(1);
+}
 
 if (flag === "--add") {
   const [id, path, ...words] = rest;
@@ -35,6 +40,7 @@ if (flag === "--add") {
     : { outcome: undefined, problems: errors };
   const kept = { note: words.join(" "), replay: text, expect: outcome };
   const bad = outcome ? parseReplayFile(id ?? "", kept).errors : problems;
+  if (id && existsSync(new URL(`replays/${id}.json`, root))) bad.push(`game/replays/${id}.json is already kept: pick another id`);
   if (bad.length) {
     console.log(bad.join("\n"));
     process.exit(1);

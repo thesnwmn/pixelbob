@@ -4,7 +4,7 @@
 // Node; game/scripts/filmstrip.ts writes it to a PNG.
 import { BobPainter } from "@pixelbob/bob";
 import { Shade } from "@pixelbob/render";
-import { type Play, runReplay } from "./play.ts";
+import { Play, runReplay } from "./play.ts";
 import type { Replay } from "./replay.ts";
 import type { Scenario } from "./scenario.ts";
 
@@ -29,8 +29,13 @@ export interface StripOptions {
 const GAP = 2;
 
 /** Plays `replay` and draws `shots` key frames of it in a row. */
-export function filmstrip(scenario: Scenario, replay: Replay, { shots = 6, cw = 160, ch = 96, scale = 2 }: StripOptions = {}): Strip {
+export function filmstrip(scenario: Scenario, replay: Replay, opts: StripOptions = {}): Strip {
   const n = replay.frames.length;
+  if (!n) throw new Error("the replay has no frames");
+  const whole = (v: number | undefined, d: number) => (Number.isFinite(v) && v! >= 1 ? Math.floor(v!) : d);
+  const shots = whole(opts.shots, 6), scale = whole(opts.scale, 2);
+  const size = new Play(scenario).level.world;
+  const cw = Math.min(size.w, whole(opts.cw, 160)), ch = Math.min(size.h, whole(opts.ch, 96));
   const frames = [...new Set(Array.from({ length: shots }, (_, i) => Math.max(1, Math.round(((i + 1) * n) / shots))))];
   const sw = cw * scale, sh = ch * scale;
   const w = frames.length * sw + (frames.length - 1) * GAP, h = sh;

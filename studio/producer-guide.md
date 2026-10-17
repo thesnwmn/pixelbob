@@ -118,7 +118,7 @@ Every request to play comes with:
 
 - **A link that drops you in the right place**: the build, the level, Bob's state, the camera. No playing through to get there.
 - **A handoff card** on screen: what changed, what to try, what to look for, what's known broken. A few minutes, not a session.
-- **A feedback button**: fun, difficulty, frustration, free text, prefilled with the card's questions. It attaches a **replay** of what you did, so anything odd you saw can be reproduced exactly. It copies everything for `/feedback`.
+- **A feedback button**: fun, difficulty, frustration, free text, prefilled with the card's questions. It attaches a **replay** of what you did, so anything odd you saw can be reproduced exactly (on Chrome or Android; an iPhone's replay may drift, since its browser engine's maths can differ slightly). It copies everything for `/feedback`.
 
 Milestone builds (alpha, beta) come with release notes and a short playtest script covering the whole milestone.
 

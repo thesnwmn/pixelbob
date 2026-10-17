@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { determinism, noDom, replays, scenarios, typecheck } from "../src/code.ts";
+import { determinism, noDom, noImports, replays, scenarios, typecheck } from "../src/code.ts";
 import { ctx, fakeShell, tmpDir } from "./fixture.ts";
 
 describe("code/typecheck (and the other pnpm runs)", () => {
@@ -64,5 +64,17 @@ describe("code/replays", () => {
     expect(r.status).toBe("fail");
     expect(r.detail).toBe("1 of 1 replays differ");
     expect(r.out).toContain("home: expected 50, got 12");
+  });
+});
+
+describe("code/no-imports", () => {
+  it("passes on formats that import nothing", () => {
+    expect(noImports.run(ctx(tmpDir({ "game/src/replay.ts": "// import nothing\nexport const v = 1;\n" }))).status).toBe("pass");
+  });
+  it("fails on one that imports, naming the line", () => {
+    const r = noImports.run(ctx(tmpDir({ "game/src/replay.ts": 'export const v = 1;\nimport { World } from "@pixelbob/sim";\n', "game/src/scenario.ts": 'export { x } from "./x.ts";\n' })));
+    expect(r.status).toBe("fail");
+    expect(r.out).toContain('game/src/replay.ts:2: import { World } from "@pixelbob/sim";');
+    expect(r.out).toContain("game/src/scenario.ts:1:");
   });
 });

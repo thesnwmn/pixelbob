@@ -14,7 +14,7 @@ scenario: shell
 The sim and Bob are deterministic, so a replay is a test case. See [Automated playtesting](../README.md#automated-playtesting).
 
 ## Done when
-- `packages/play` records and plays back input frame by frame, and runs a level headless in Node.
+- The game records and plays back input frame by frame, and runs a level headless in Node (`game/src`; first written as a `packages/play`, see the log).
 - The feedback button attaches the replay; the health check replays `game/replays/` and compares outcomes.
 - Filmstrips of a run render to PNG.
 

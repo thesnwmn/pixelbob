@@ -4,6 +4,8 @@
 export interface Feedback {
   build: string;
   commit: string;
+  /** The browser's user agent: a replay is exact on the engine it was recorded on (V8 matches Node). */
+  browser: string;
   /** The scenario's id, or empty when the game started without one. */
   scenario: string;
   /** Seconds played when the form was opened. */
@@ -38,6 +40,7 @@ export function report(f: Feedback): string {
     "---",
     `build: ${f.build}`,
     `commit: ${f.commit}`,
+    `browser: ${f.browser}`,
     `scenario: ${f.scenario || "none"}`,
     `played: ${f.seconds.toFixed(0)} s`,
     `fun: ${f.fun ?? "?"}`,

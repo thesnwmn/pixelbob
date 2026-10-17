@@ -115,6 +115,7 @@ describe("the feedback report", () => {
     const text = report({
       build: "preview/pr-21",
       commit: "abc1234",
+      browser: "Mozilla/5.0 (iPhone)",
       scenario: "shell",
       seconds: 42.4,
       fun: 4,
@@ -129,6 +130,7 @@ describe("the feedback report", () => {
         "---",
         "build: preview/pr-21",
         "commit: abc1234",
+        "browser: Mozilla/5.0 (iPhone)",
         "scenario: shell",
         "played: 42 s",
         "fun: 4",

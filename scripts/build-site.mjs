@@ -1,5 +1,6 @@
-// Assembles every built prototype into one static site for GitHub Pages:
-//   _site/index.html          list of prototypes
+// Assembles the concept doc and every built prototype into one static site for GitHub Pages:
+//   _site/index.html          the concept doc's link, then the list of prototypes
+//   _site/concept/...         the concept doc's dist/
 //   _site/<prototype>/...     each prototype's dist/
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -22,10 +23,10 @@ for (const name of names) {
 }
 
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-// The concept doc is the front door; the prototypes follow.
-const concept = entries.find((e) => e.name.endsWith("-concept"));
+// The concept doc isn't a prototype: it's the front door, shown above them.
+const concept = existsSync(join(root, "concept", "dist"));
+if (concept) cpSync(join(root, "concept", "dist"), join(out, "concept"), { recursive: true });
 const items = entries
-  .filter((e) => e !== concept)
   .map((e) => `<li><a href="./${esc(e.name)}/">${esc(e.name)}</a> - ${esc(e.description)}</li>`)
   .join("\n      ");
 
@@ -40,14 +41,16 @@ writeFileSync(
     <style>
       body { font: 16px/1.5 ui-monospace, Menlo, Consolas, monospace; max-width: 44rem; margin: 2rem auto; padding: 0 1rem; color: #e9e2d6; background: #121014; }
       h1 { color: #e7c27a; }
+      h2 { color: #e9e2d6; font-size: 1.1rem; margin-top: 1.6rem; }
       a { color: #e7c27a; }
       p, li { color: #b8ae9f; }
     </style>
   </head>
   <body>
     <h1>Pixelbob</h1>
-    <p>Prototypes for a 2D platformer where everything, including Bob the blob, is simulated pixels.</p>
-    ${concept ? `<p><a href="./${esc(concept.name)}/"><b>Read the concept doc</b></a>: what the game is, how it looks, the worlds, menus and the plan.</p>` : ""}
+    <p>A 2D platformer where everything, including Bob the blob, is simulated pixels.</p>
+    ${concept ? `<h2>Concept</h2>\n    <p><a href="./concept/"><b>The concept doc</b></a>: what the game is, how it looks, the worlds, menus and the plan.</p>` : ""}
+    <h2>Prototypes</h2>
     <ul>
       ${items || "<li>No prototypes built yet.</li>"}
     </ul>
@@ -56,4 +59,4 @@ writeFileSync(
 </html>
 `,
 );
-console.log(`Built _site with ${entries.length} prototype(s): ${entries.map((e) => e.name).join(", ")}`);
+console.log(`Built _site with ${concept ? "the concept doc and " : ""}${entries.length} prototype(s): ${entries.map((e) => e.name).join(", ")}`);

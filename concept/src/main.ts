@@ -77,13 +77,13 @@ const swatch = (name: keyof typeof MAT) => hex(MAT[name].ramp[Math.floor(MAT[nam
 
 interface World { id?: string; n: number; name: string; teaches: string; mats: [string, string][]; light: [string, string, string]; puzzle: string }
 const WORLDS: World[] = [
-  { id: "green", n: 1, name: "The Green", teaches: "Roll, jump, squash, momentum; lost bits; green moss grips", mats: [["grass", swatch("grass")], ["dirt", swatch("dirt")], ["sand", swatch("sand")], ["water", swatch("water")], ["moss", swatch("moss")]], light: ["#ffcf8a", "#7a8cc8", "low sun vs cool sky"], puzzle: "Build speed down the hill to make the moss ramp, and fetch the lost bit from the ledge above the pond." },
-  { id: "caverns", n: 2, name: "Glow Caverns", teaches: "Runny Bob: pour, squeeze, dangle, drip; light as a resource", mats: [["stone", swatch("stone")], ["glow goo", swatch("goo")], ["mushrooms", "#3ff0d8"], ["crystal", swatch("crystal")]], light: ["#3ff0d8", "#a36bff", "teal glow vs violet crystal"], puzzle: "Melt at the hot spring, then lower yourself on a thread to the lost bit below. Too far and the thread snaps." },
-  { id: "ruins", n: 3, name: "Sticky Ruins", teaches: "Climbing tacky walls; choosing a route by colour; crumbs", mats: [["moss", swatch("moss")], ["resin", swatch("resin")], ["gum", swatch("gum")], ["wood", swatch("wood")]], light: ["#c8e070", "#ff9a30", "green canopy vs amber resin"], puzzle: "Gum holds you on a sheer wall if you push in. Climb to the bit on top, and lose as few crumbs as you can." },
-  { id: "grotto", n: 4, name: "Frozen Grotto", teaches: "Cold Bob: rigid, brittle, slides; freezing water into bridges", mats: [["ice", swatch("ice")], ["snow", swatch("snow")], ["water", swatch("water")], ["fire", "#ff9a30"]], light: ["#8fb4ff", "#ff9a40", "moonlight vs firelight"], puzzle: "Frozen, you can't jump, but you freeze the water you touch. Make a road across the lake to the fire." },
-  { id: "foundry", n: 5, name: "The Foundry", teaches: "Splitting on purpose; plates, gates and machines", mats: [["steel", swatch("steel")], ["rust", swatch("rust")], ["molten", swatch("molten")], ["spikes", swatch("spikes")]], light: ["#ff8a2a", "#7fb8ff", "orange pour vs blue work lamps"], puzzle: "Leave a piece of yourself on the plate to hold the gate, pour the rest through, then come back for it." },
-  { id: "sump", n: 6, name: "The Sump", teaches: "Absorbing: swell with water, glow with goo; oil, tar and gas", mats: [["mud", "#4a3524"], ["oil", swatch("oil")], ["toxic gas", swatch("toxic")], ["tar", "#16121a"]], light: ["#7cff5a", "#ff8a30", "toxic green vs methane flame"], puzzle: "Soak up water until you're heavy enough to tip the see-saw and lift the lost bit to the ledge." },
-  { n: 7, name: "The Core", teaches: "Everything at once, against the heat", mats: [["lava", swatch("lava")], ["obsidian", "#1a1620"], ["everything", "#888"]], light: ["#ff4a14", "#ffe0a0", "lava red vs the last daylight"], puzzle: "The finale: melt, freeze, climb, split and swell your way back up and out. Not shot yet." },
+  { id: "green", n: 1, name: "The Green", teaches: "Rolling, jumping, momentum, and that green means grip", mats: [["grass", swatch("grass")], ["dirt", swatch("dirt")], ["sand", swatch("sand")], ["water", swatch("water")], ["moss", swatch("moss")]], light: ["#ffcf8a", "#7a8cc8", "low sun vs cool sky"], puzzle: "A bit of you is stranded on a ledge. Rock is too steep, moss isn't. Get a run-up." },
+  { id: "caverns", n: 2, name: "Glow Caverns", teaches: "Going runny: pour, squeeze, dangle, drip", mats: [["stone", swatch("stone")], ["glow goo", swatch("goo")], ["mushrooms", "#3ff0d8"], ["crystal", swatch("crystal")]], light: ["#3ff0d8", "#a36bff", "teal glow vs violet crystal"], puzzle: "Warm up in the hot spring and lower yourself on a thread to the bit below. Reach too far and part of you goes for a swim." },
+  { id: "ruins", n: 3, name: "Sticky Ruins", teaches: "Climbing, and choosing your wall by its colour", mats: [["moss", swatch("moss")], ["resin", swatch("resin")], ["gum", swatch("gum")], ["wood", swatch("wood")]], light: ["#c8e070", "#ff9a30", "green canopy vs amber resin"], puzzle: "Violet gum holds you on a sheer wall if you push in. Climb to the top without leaving too much of yourself on the way." },
+  { id: "grotto", n: 4, name: "Frozen Grotto", teaches: "Being cold: rigid, brittle, and a one-blob bridge-builder", mats: [["ice", swatch("ice")], ["snow", swatch("snow")], ["water", swatch("water")], ["fire", "#ff9a30"]], light: ["#8fb4ff", "#ff9a40", "moonlight vs firelight"], puzzle: "Frozen, you can't jump. But you freeze whatever water you touch, so: skate across the lake, building the road as you go." },
+  { id: "foundry", n: 5, name: "The Foundry", teaches: "Splitting on purpose, and machines that don't care about you", mats: [["steel", swatch("steel")], ["rust", swatch("rust")], ["molten", swatch("molten")], ["spikes", swatch("spikes")]], light: ["#ff8a2a", "#7fb8ff", "orange pour vs blue work lamps"], puzzle: "The gate only opens while the plate is pressed. Leave a bit of yourself on it, go through, and try not to forget it." },
+  { id: "sump", n: 6, name: "The Sump", teaches: "Absorbing: drink up, swell, glow, and try not to catch fire", mats: [["mud", "#4a3524"], ["oil", swatch("oil")], ["toxic gas", swatch("toxic")], ["tar", "#16121a"]], light: ["#7cff5a", "#ff8a30", "toxic green vs methane flame"], puzzle: "Too light to tip the see-saw? Have a drink. A big one." },
+  { n: 7, name: "The Core", teaches: "Everything at once, with the floor on fire", mats: [["lava", swatch("lava")], ["obsidian", "#1a1620"], ["everything", "#888"]], light: ["#ff4a14", "#ffe0a0", "lava red vs the last daylight"], puzzle: "The finale. Melt, freeze, climb, split and swell your way back out before the heat gets you." },
 ];
 
 function worlds() {
@@ -91,7 +91,7 @@ function worlds() {
   for (const w of WORLDS) {
     const el = document.createElement("article");
     el.className = "world";
-    el.innerHTML = `${w.id ? `<div class="live" data-scene="${w.id}"></div>` : `<div class="noshot"><span>${w.name}</span><small>not shot yet</small></div>`}
+    el.innerHTML = `${w.id ? `<div class="live" data-scene="${w.id}"></div>` : `<div class="noshot"><span>${w.name}</span><small>the finale</small></div>`}
       <div class="meta">
         <h3><span class="n">${w.n}</span>${w.name}</h3>
         <p class="teaches">${w.teaches}</p>
@@ -112,14 +112,14 @@ function worlds() {
 
 function language() {
   const rows: [string, string, string][] = [
-    [swatch("moss"), "Green moss", "Grippy ground: rolls up slopes too steep for rock"],
-    [swatch("resin"), "Amber resin", "Holds you if you push in"],
-    [swatch("gum"), "Violet gum", "Holds you on a sheer wall"],
-    [swatch("ice"), "Pale blue", "Ice: no grip, and cold"],
-    [swatch("lava"), "Orange, red, yellow", "Heat: lava, fire, molten metal. Danger, and how you melt"],
-    [swatch("spikes"), "Steel teeth", "Spikes: they cut you"],
-    [swatch("goo"), "Teal glow", "Light, and glow goo"],
-    [swatch("toxic"), "Toxic green", "Gas and acid: it hurts"],
+    [swatch("moss"), "Green moss", "Grippy. Rolls you up slopes rock won't"],
+    [swatch("resin"), "Amber resin", "Holds you, if you lean in"],
+    [swatch("gum"), "Violet gum", "Holds you on a sheer wall. Gecko mode"],
+    [swatch("ice"), "Pale blue", "Ice. No grip, all chill"],
+    [swatch("lava"), "Orange, red, yellow", "Heat. It hurts, and it's how you melt"],
+    [swatch("spikes"), "Steel teeth", "Spikes. Exactly what they look like"],
+    [swatch("goo"), "Teal glow", "Light, and goo that glows"],
+    [swatch("toxic"), "Toxic green", "Gas and acid. Hold your breath"],
   ];
   document.getElementById("language")!.innerHTML = rows.map(([c, n, d]) => `<div><i style="background:${c}"></i><b>${n}</b><span>${d}</span></div>`).join("");
 }
@@ -135,7 +135,7 @@ function bobColour() {
   pick.onchange = () => setBob(pick.value);
 }
 
-const DECISION = "Rose pink is the default. Pink is the one hue the worlds don't use: nature here is green, brown and blue, light is teal and amber, hazards are orange, red and toxic green. Rose sits between coral (too close to fire and lava) and bubblegum (too close to violet gum and crystals). Try the others: each one vanishes somewhere.";
+const DECISION = "Bob is rose pink, because nothing else is. The worlds are green, brown and blue; light is teal and amber; danger is orange, red and toxic green. Coral leaned too close to fire, bubblegum too close to the violet gum. Try the others: each one vanishes somewhere.";
 
 function setBob(id: string) {
   bobId = id;

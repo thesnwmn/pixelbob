@@ -2,7 +2,7 @@
 
 The look: crisp pixels, a lit simulated layer over a dim back wall, and colour that comes from light and from things that glow rather than from saturated textures. Moody by default: most of every screen is dark, and the light tells you where to look.
 
-Everything below can be seen in `prototypes/00-stills`: one shot per world ([11 Worlds](11-worlds.md)) and a sheet of Bob's states, with controls for Bob's colour and for looking at the light on its own. The [concept doc](https://thesnwmn.github.io/pixelbob/03-concept/) shows them with the logo, menus and HUD.
+Everything below can be seen in `prototypes/00-stills`: one shot per world ([11 Worlds](11-worlds.md)) and a sheet of Bob's states, with controls for Bob's colour and for looking at the light on its own. The [concept doc](https://thesnwmn.github.io/pixelbob/concept/) shows them with the logo, menus and HUD.
 
 ## Two renderers, one look
 
@@ -115,7 +115,7 @@ Gameplay changes his colour without changing who he is, and the rose stays under
 
 ## Logo, menus and HUD
 
-Mocked up in the concept doc (`prototypes/03-concept`):
+Mocked up in the concept doc (`concept/`):
 
 - **Logo**: carved, moss-topped stone letters lit warm from above and teal from below; the O of BOB is Bob himself, the real goo, sitting in the gap.
 - **Menus** are a dark glass panel and a pixel font (Silkscreen) over the live game, never a separate screen. Rose marks the selection.

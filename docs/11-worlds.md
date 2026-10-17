@@ -1,6 +1,6 @@
 # 11 Worlds
 
-How the game is laid out: a run of worlds, each a biome with its own materials and its own light, and each teaching Bob one new thing. This is a proposal to play against, not a script. The shots in `prototypes/00-stills` (one per world, in [the concept doc](https://thesnwmn.github.io/pixelbob/03-concept/#worlds) and below) show what each one feels like.
+How the game is laid out: a run of worlds, each a biome with its own materials and its own light, and each teaching Bob one new thing. This is a proposal to play against, not a script. The shots in `prototypes/00-stills` (one per world, in [the concept doc](https://thesnwmn.github.io/pixelbob/concept/#worlds) and below) show what each one feels like.
 
 ## Principles
 

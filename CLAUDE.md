@@ -25,4 +25,4 @@ A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer.
 - Only erasable TypeScript syntax (no enums, no parameter properties): `erasableSyntaxOnly` is on so Node can run `.ts` files directly.
 - The look is defined by `prototypes/00-stills/src/kit/` (materials, lighting) and Bob's painter `paintBob` in `packages/bob/src/draw.ts`, which the stills and the game share. Keep the game renderer consistent with the kit, or change both. Bob in a still is always the real goo, posed by simulating him (`kit/goo.ts`), never a drawn shape.
 - The worlds and their colour language are in `docs/11-worlds.md` and `docs/02-art-direction.md`: moss green grips, resin amber holds, gum violet sticks, hot colours are heat. Bob is rose pink, the one hue nothing else uses.
-- `prototypes/03-concept` is the concept doc on Pages (the site index links it first); it draws the stills' shots live. Keep it in step with the docs.
+- `concept/` is the concept doc on Pages: a document, not a prototype, so it lives at the top level and the site index shows it above the prototypes. It draws the stills' shots live. Keep it in step with the docs.

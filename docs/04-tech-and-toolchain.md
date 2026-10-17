@@ -26,7 +26,7 @@ prototypes/
   00-stills/      art direction: one shot per world and Bob's states (CPU renderer, real goo Bob)
   01-sandbox/     world sandbox: dig, paint materials, heat, light
   02-bob/         Bob playground
-  03-concept/     concept doc: the game, look, worlds, menus, settings, plan (shots drawn live)
+concept/          the concept doc, not a prototype: the game, look, worlds, menus, settings, plan (shots drawn live)
 ```
 
 `prototypes/00-stills/src/kit/` is the reference implementation of the look (with Bob's painter, shared from `packages/bob/src/draw.ts`). The lighting there is deliberately structured like a GPU pipeline (half-res light grid, nearest-surface lookup, two-scale bloom) so it ports to shaders directly.

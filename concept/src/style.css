@@ -17,6 +17,11 @@ h2, h3, h4, .brand, .menu, nav { font-family: var(--pixel); font-weight: 400; }
 h2 { font-size: 1.9rem; color: var(--accent); margin: 0 0 0.6rem; }
 h3 { font-size: 1.1rem; margin: 1.6rem 0 0.4rem; }
 .lede { font-size: 1.1rem; max-width: 46rem; color: #d8d0c2; }
+.hook { font: 1.35rem/1.45 var(--pixel); color: var(--ink); max-width: 44rem; margin: 0 0 1rem; }
+.hook em { font-style: normal; color: var(--bob); }
+.moves { display: grid; grid-template-columns: auto 1fr; gap: 0.45rem 1rem; margin: 0.6rem 0; }
+.moves dt { font-family: var(--pixel); color: var(--bob); }
+.moves dd { margin: 0; color: var(--dim); }
 strong, b { color: var(--ink); }
 
 nav { position: sticky; top: 0; z-index: 10; display: flex; gap: 1.1rem; overflow-x: auto; padding: 0.55rem 1rem; background: rgb(15 13 18 / 0.88); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 0.85rem; }
@@ -51,13 +56,11 @@ footer { text-align: center; color: var(--dim); padding: 2rem 1rem 3rem; font-si
 
 /* Cards and lists. */
 .cards { display: grid; gap: 0.8rem; margin-top: 1.2rem; }
-.cards.four { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+.cards.five { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr)); }
 .cards.three { grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.9rem 1rem; }
 .card h3 { margin: 0 0 0.3rem; color: var(--accent); font-size: 0.95rem; }
 .card p { margin: 0; color: var(--dim); }
-.why { padding-left: 1.2rem; max-width: 48rem; color: var(--dim); }
-.why li { margin: 0.35rem 0; }
 
 figure { margin: 1.2rem 0; }
 figcaption { color: var(--dim); font-size: 0.9rem; margin-top: 0.4rem; }
@@ -67,7 +70,6 @@ figcaption { color: var(--dim); font-size: 0.9rem; margin-top: 0.4rem; }
 table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
 th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { color: var(--dim); font-weight: 500; }
-td.y { color: #9fe07a; } td.p { color: var(--accent); } td.n { color: var(--dim); }
 td:first-child { white-space: nowrap; }
 
 .thermo { display: grid; grid-template-columns: repeat(5, 1fr); border-radius: 8px; overflow: hidden; margin: 0.8rem 0; }

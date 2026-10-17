@@ -39,7 +39,7 @@ Bob in the sandbox.
 
 **Proves:** Bob feels good to move: momentum, hugging terrain, squeezing, splitting. This is the riskiest part of the game.
 
-## Phase 2½: concept (`prototypes/03-concept`)
+## Phase 2½: concept (`concept/`)
 
 What the whole game is, before building it: the run of worlds ([11](11-worlds.md)), one shot per world authored at the game camera with the real goo Bob posed in each, Bob's colour settled by a study across every world (rose), a logo, mocked-up menus, HUD and settings, and a concept doc on Pages that draws the shots live.
 

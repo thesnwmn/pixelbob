@@ -56,7 +56,7 @@ Copied from familiar-ground:
 - `deploy-pages.yml`: on push to main, and when a PR or issue opens or closes (for the studio page's PRs and bugs), build `_site/` and push it to the `gh-pages` branch (keeping `preview/pr-*/`).
 - `pr-preview.yml`: on each PR push, build and publish to `gh-pages:/preview/pr-N/`, and comment the URL on the PR.
 - `pr-cleanup.yml`: delete the preview folder when the PR closes.
-- `scripts/build-site.mjs`: collects the concept doc, the game and every `prototypes/*/dist` into `_site/` with an index page, and writes the [studio page](../studio/README.md#transparency) to `_site/studio/`.
+- `scripts/build-site.mjs`: collects the concept doc, the game (with a link to each scenario on the index) and every `prototypes/*/dist` into `_site/` with an index page, and writes the [studio page](../studio/README.md#transparency) to `_site/studio/`.
 
 The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at `…/pixelbob/preview/pr-N/`.
 

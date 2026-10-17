@@ -5,6 +5,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { inFlight, loadStudio, parseFrontMatter, ROLES } from "../../../studio/board.ts";
 import { type Check, fail, inCI, pass } from "./check.ts";
+import { page } from "../../../studio/page.ts";
 import { DOC_MAP, type DocMapEntry, globRe, IN_STEP, readDocMap } from "./instep.ts";
 
 export const files: Check = {
@@ -232,4 +233,24 @@ export const docMap: Check = {
   },
 };
 
-export const STUDIO = [files, flying, landed, roles, commands, docsIndex, links, docMap, ...IN_STEP];
+/** Markdown the studio page didn't turn into HTML (outside <code>), and units it doesn't show. */
+export function pageProblems(html: string, slugs: string[]): string[] {
+  const text = html.replace(/<code>[\s\S]*?<\/code>/g, "");
+  const leftovers = [...text.matchAll(/^.*(\*\*|\]\(|<p>- |<p>#).*$/gm)].map((m) => `left as Markdown: ${m[0].trim()}`);
+  const missing = slugs.filter((s) => !html.includes(`<b>${s}</b>`)).map((s) => `${s}: not on the page`);
+  return [...leftovers, ...missing];
+}
+
+export const studioPage: Check = {
+  id: "studio/page",
+  tier: 5,
+  repro: "node studio/page.ts _site/studio/index.html",
+  hint: "The studio page (studio/page.ts) shows the board as HTML: something on the board is Markdown it doesn't convert, or a unit it doesn't show. Teach page.ts the Markdown, or keep the board to what it converts.",
+  run({ root }) {
+    const studio = loadStudio(root);
+    const problems = pageProblems(page(studio), studio.units.map((u) => u.slug));
+    return problems.length ? fail(`${problems.length} problem${problems.length === 1 ? "" : "s"}`, problems.join("\n")) : pass(`${studio.units.length} units`);
+  },
+};
+
+export const STUDIO = [files, flying, landed, roles, commands, docsIndex, links, docMap, studioPage, ...IN_STEP];

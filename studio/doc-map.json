@@ -9,6 +9,7 @@
     { "paths": ["scripts/health/**"], "docs": ["studio/README.md#health"] },
     { "paths": ["scripts/build-site.mjs", ".github/workflows/deploy-pages.yml", ".github/workflows/pr-preview.yml"], "docs": ["docs/tech-and-toolchain.md#hosting-and-previews"] },
     { "paths": ["studio/board.ts"], "docs": ["studio/README.md#the-studios-state"] },
+    { "paths": ["studio/page.ts"], "docs": ["studio/README.md#transparency"] },
     { "paths": [".claude/**"], "docs": ["studio/README.md#the-roles", "studio/producer-guide.md"] },
     { "paths": [".github/**"], "docs": ["studio/README.md#github"] }
   ]

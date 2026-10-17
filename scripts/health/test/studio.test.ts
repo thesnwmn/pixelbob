@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { board, loadStudio, parseFrontMatter } from "../../../studio/board.ts";
 import { ROLES } from "../../../studio/board.ts";
-import { anchors, commands, docsIndex, files, flying, guideCommands, landed, links, roles, slugify, tableRoles } from "../src/studio.ts";
+import { page } from "../../../studio/page.ts";
+import { anchors, commands, pageProblems, studioPage, docsIndex, files, flying, guideCommands, landed, links, roles, slugify, tableRoles } from "../src/studio.ts";
 import { ctx, tmpDir, tmpRepo } from "./fixture.ts";
 
 const unit = (fields: string, body = "## Why\nBecause.\n\n## Done when\n- It works.\n\n## Not this\nThe rest.\n") => `---\n${fields}\n---\n\n${body}`;
@@ -149,5 +150,22 @@ describe("studio/commands", () => {
   it("fails on a command with no skill, and a skill not in the guide", () => {
     const r = commands.run(ctx(tmpDir({ ...skills, "studio/producer-guide.md": guide + "\n### `/status`\n", ".claude/skills/secret/SKILL.md": brief("secret") })));
     expect(r.out).toBe(["/status: in the producer guide, but no .claude/skills/status/SKILL.md", "/secret: a skill, but not in the producer guide"].join("\n"));
+  });
+});
+
+describe("studio/page", () => {
+  it("passes on a studio it can show", () => expect(studioPage.run(ctx(tmpDir(studio())))).toEqual({ status: "pass", detail: "2 units" }));
+  it("fails on Markdown it doesn't convert", () => {
+    const r = studioPage.run(ctx(tmpDir(studio({ "studio/work/jump.md": unit("title: **Jump\nkind: build\nrole: engineer\nsize: S\nstatus: ready\nmilestone: m1") }))));
+    expect(r.status).toBe("fail");
+    expect(r.out).toMatch(/^left as Markdown: .*\*\*Jump/);
+  });
+  it("fails on a unit it doesn't show", () => expect(pageProblems("<li><b>jump</b></li>", ["jump", "split"])).toEqual(["split: not on the page"]));
+  it("shows the board, its links on GitHub, and the sessions with their PRs", () => {
+    const html = page(loadStudio(tmpDir(studio())), undefined, new Date("2026-10-17T12:00:00Z"));
+    expect(html).toContain("<li><b>jump</b>: Jump (build, S, engineer)</li>");
+    expect(html).toContain('<a href="https://github.com/thesnwmn/pixelbob/blob/main/studio/README.md#the-studios-state">');
+    expect(html).toContain("on 2026-10-17 12:00 UTC");
+    expect(html).toContain('<a href="https://github.com/thesnwmn/pixelbob/pull/8">#8</a> <a href="https://github.com/thesnwmn/pixelbob/pull/9">#9</a>');
   });
 });

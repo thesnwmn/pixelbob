@@ -52,10 +52,10 @@ Copied from familiar-ground:
 
 - `ci.yml`: `pnpm health` (install, typecheck, test, build site, and the repo's conventions) on every push to main, every PR and nightly on main; a red nightly opens an issue. See [the health check](../studio/README.md#health).
 - `pr-title.yml`: checks the PR title is `type(scope)!: Summary` (see [the studio's PRs](../studio/README.md#prs)), since it becomes the squash commit.
-- `deploy-pages.yml`: on push to main, build `_site/` and push it to the `gh-pages` branch (keeping `preview/pr-*/`).
+- `deploy-pages.yml`: on push to main, and when a PR or issue opens or closes (for the studio page's PRs and bugs), build `_site/` and push it to the `gh-pages` branch (keeping `preview/pr-*/`).
 - `pr-preview.yml`: on each PR push, build and publish to `gh-pages:/preview/pr-N/`, and comment the URL on the PR.
 - `pr-cleanup.yml`: delete the preview folder when the PR closes.
-- `scripts/build-site.mjs`: collects every `prototypes/*/dist` into `_site/` with an index page.
+- `scripts/build-site.mjs`: collects the concept doc and every `prototypes/*/dist` into `_site/` with an index page, and writes the [studio page](../studio/README.md#transparency) to `_site/studio/`.
 
 The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at `…/pixelbob/preview/pr-N/`.
 

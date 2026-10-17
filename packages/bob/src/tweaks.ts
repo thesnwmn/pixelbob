@@ -68,7 +68,7 @@ const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /** How frozen (0..1) and how runny (0..1) a particle is at temperature t (°C). */
 export const frozenness = (t: number) => clamp01((2 - t) / 10);
-export const runniness = (t: number) => clamp01((t - 40) / 30);
+export const runniness = (t: number) => clamp01((t - 35) / 25);
 
 /**
  * What temperature does to Bob. Movement is something he does by deforming

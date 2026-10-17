@@ -23,7 +23,7 @@ Built unit 1 of [Building the studio](../README.md#building-the-studio): the [he
 
 ## Tried and dropped
 - **Comparing `node_modules` with the lockfile by hand.** Running `pnpm install --frozen-lockfile` is the check instead: it takes about a second when nothing changed, and it fixes a fresh container.
-- **A "PR open" end check.** The container has no GitHub API, so checking that a PR is open is left to the session.
+- **A "PR open" end check.** The container has no GitHub API, so checking that a PR is open is left to the session. *Corrected the same day: `gh api` (REST) does reach GitHub from the container; only GraphQL is blocked. The check was added as `repo/pr`, see [the PR check](2026-10-17-pr-check.md).*
 
 ## Learned
 - `pnpm -s health` sets `npm_config_loglevel=silent` for the child processes, which hid the output of a failing `pnpm test`. The shell now drops that variable.

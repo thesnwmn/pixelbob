@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { KINDS } from "../../../studio/board.ts";
-import { GATE_FILES, gate, gatedHits, LABELS, labels } from "../src/github.ts";
+import { gatedHits, verdict } from "../src/gate.ts";
+import { GATE_FILES, gate, LABELS, labels } from "../src/github.ts";
 import { ctx, tmpDir } from "./fixture.ts";
 
 const rules = [
@@ -15,6 +16,13 @@ describe("the gate's matcher", () => {
       "studio/producer.md (settings)",
       ".claude/skills/go/SKILL.md (the harness)",
     ]));
+  it("holds a gated PR until producer-ok, and labels it once", () => {
+    expect(verdict(["a (x)"], [])).toEqual({ hits: ["a (x)"], label: true, pass: false });
+    expect(verdict(["a (x)"], ["gated"])).toMatchObject({ label: false, pass: false });
+    expect(verdict(["a (x)"], ["gated", "producer-ok"])).toMatchObject({ label: false, pass: true });
+  });
+  it("holds a PR labelled gated by hand, with no gated files", () => expect(verdict([], ["gated"])).toMatchObject({ label: false, pass: false }));
+  it("passes a PR that isn't gated", () => expect(verdict([], ["build"])).toEqual({ hits: [], label: false, pass: true }));
   it("doesn't match a file that only starts like one", () => expect(gatedHits(rules, ["studio/producer.md.bak", ".claudeish"])).toEqual([]));
 });
 

@@ -1,29 +1,15 @@
 // Tier 5, GitHub: the files that set up the repo on GitHub follow their formats. The
 // gate's file list names files that exist and protects itself; the labels the studio
-// uses all exist; the bug form files with one. The gate workflow also runs this file,
-// as `node scripts/health/src/github.ts <changed-files>`, to find the gated paths.
+// uses all exist; the bug form files with one. The gate's own logic is gate.ts.
 // See studio/README.md#github.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { KINDS } from "../../../studio/board.ts";
 import { type Check, fail, pass, readJson } from "./check.ts";
-
-export interface Gated {
-  /** A file, or a folder when it ends in "/". */
-  path: string;
-  why: string;
-}
-
-/** The changed files a gate rule covers, each with why. */
-export const gatedHits = (rules: Gated[], files: string[]): string[] =>
-  files.flatMap((f) => {
-    const rule = rules.find((r) => (r.path.endsWith("/") ? f.startsWith(r.path) : f === r.path));
-    return rule ? [`${f} (${rule.why})`] : [];
-  });
+import type { Gated } from "./gate.ts";
 
 /** The gate's own files: a change to any of them changes what's gated, so it's gated too. */
-export const GATE_FILES = [".github/gated.json", ".github/workflows/gate.yml", "scripts/health/src/github.ts"];
+export const GATE_FILES = [".github/gated.json", ".github/workflows/gate.yml", "scripts/health/src/gate.ts"];
 
 /** Labels the studio and its workflows use, besides one per unit kind. */
 export const LABELS = ["bug", "blocker", "gated", "producer-ok", "playtest"];
@@ -81,11 +67,3 @@ export const labels: Check = {
 };
 
 export const GITHUB = [gate, labels];
-
-// The gate workflow: `node scripts/health/src/github.ts <file listing changed paths>` prints the gated ones.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const root = fileURLToPath(new URL("../../..", import.meta.url));
-  const rules: Gated[] = readJson(join(root, ".github/gated.json")).gated;
-  const files = readFileSync(process.argv[2], "utf8").split("\n").filter(Boolean);
-  for (const hit of gatedHits(rules, files)) console.log(hit);
-}

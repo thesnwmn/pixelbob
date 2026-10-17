@@ -11,6 +11,7 @@
     { "path": "scripts/health/src/run.ts", "why": "the health check's rules: which checks run, what stops a run" },
     { "path": ".github/gated.json", "why": "the gate itself" },
     { "path": ".github/workflows/gate.yml", "why": "the gate itself" },
-    { "path": "scripts/health/src/github.ts", "why": "the gate itself: the matcher the workflow runs" }
+    { "path": "scripts/health/src/gate.ts", "why": "the gate itself: the logic the workflow runs" },
+    { "path": ".github/workflows/ci.yml", "why": "the health check's rules: where and when it runs" }
   ]
 }

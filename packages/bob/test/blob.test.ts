@@ -203,6 +203,24 @@ describe("tearing", () => {
     expect(drop(1)).toBe(1);
   });
 
+  it("after spikes cut him, he re-forms into a round Bob that rolls again", () => {
+    const spikes = (w: World, m: number) => { for (let x = 40; x < 80; x += 2) for (let y = FLOOR - 3; y < FLOOR; y++) w.set(x, y, m); };
+    const w = ground(M.rock, (w) => spikes(w, M.spike)), b = new Blob(DEFAULTS);
+    b.spawn(w, 60, FLOOR - 50);
+    run(b, w, 90);
+    expect(b.pieces.length).toBeGreaterThan(1);
+    spikes(w, M.air);
+    run(b, w, 180);
+    const p = b.main!, x0 = p.cx;
+    run(b, w, 120, { move: 1, jump: false });
+    expect(b.main!.cx - x0).toBeGreaterThan(40);
+    // Not stuck flat: about as tall for his size as a fresh Bob.
+    let y0 = Infinity, y1 = -Infinity;
+    const q = b.main!;
+    for (let k = q.start; k < q.start + q.len; k++) { const i = b.order[k]; y0 = Math.min(y0, b.y[i]); y1 = Math.max(y1, b.y[i]); }
+    expect(y1 - y0).toBeGreaterThan(Math.sqrt(q.len / Math.PI) * 1.4);
+  });
+
   it("torn-off bits rejoin when they touch", () => {
     const w = ground(), b = bob(w, { cohesion: 0 });
     lift(b, 80);

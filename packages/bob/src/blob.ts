@@ -445,7 +445,7 @@ export class Blob {
         a += ox * rx[i]; b += ox * ry[i]; c += oy * rx[i]; d += oy * ry[i];
       }
       const th = Math.atan2(c - b, a + d), co = Math.cos(th), si = Math.sin(th);
-      const sx = pi === 0 ? this.sx : 1, sy = pi === 0 ? this.sy : 1;
+      const [sx, sy] = this.squash(pi, p.temp);
       // Each particle's pull towards its goal. Particles can pull with different strengths
       // (half frozen: the cold side is stiffer), and uneven pulls would shift and spin the
       // whole piece by themselves. So take out any net shift and net spin: shape matching
@@ -495,8 +495,14 @@ export class Blob {
       if (f > 0) bl[k] += (len - bl[k]) * f * 0.05;
       // Runny Bob is taffy: bonds take on whatever length they're pulled to, so he pours and stays poured.
       else if (r > 0) bl[k] = Math.max(0.6, Math.min(4, bl[k] + (len - bl[k]) * r * 0.05));
-      // Back to normal, bonds return to their natural length, so he becomes a blob again.
-      else bl[k] += (this.bn[k] - bl[k]) * 0.01;
+      // Normally, bonds settle to the spacing of the particles in his rest shape, so they
+      // agree with his shape memory: otherwise bonds made while he was squashed flat (merging
+      // bits back on) would hold him flat, and a lump that's flat can't roll. Bonds between
+      // particles that aren't neighbours in his rest shape just go slack.
+      else {
+        const rest = Math.hypot(this.rx[a] - this.rx[b], this.ry[a] - this.ry[b]);
+        bl[k] += ((rest < 2 ? Math.max(0.7, rest) : len) - bl[k]) * 0.01;
+      }
     }
   }
 
@@ -610,7 +616,7 @@ export class Blob {
         nx = px[i] + tr + (nx - px[i] - tr) * (1 - f);
       }
       // Last resort: never end inside a solid.
-      if (this.solid(world, Math.floor(nx), Math.floor(ny))) { nx = px[i]; ny = py[i]; }
+      if (this.solid(world, Math.floor(nx), Math.floor(ny))) { nx = px[i]; ny = py[i]; if ((globalThis as any).REV) (globalThis as any).REV.push(i); }
       x[i] = nx; y[i] = ny;
     }
   }
@@ -807,7 +813,7 @@ export class Blob {
     const { rx, ry, hx, hy, alive, fz } = this;
     for (let i = 0; i < this.cap; i++) {
       if (!alive[i]) continue;
-      const k = 0.03 * (1 - fz[i]);
+      const k = 0.05 * (1 - fz[i]);
       rx[i] += (hx[i] - rx[i]) * k; ry[i] += (hy[i] - ry[i]) * k;
     }
   }
@@ -844,41 +850,123 @@ export class Blob {
       const same = keepAll || (old[prev] !== undefined && old[prev].len === members.length && (prev === 0) === (pi === 0) && members.every((i) => piece[i] === prev));
       const p: Piece = { start: o, len: members.length, cx: 0, cy: 0, vx: 0, vy: 0, temp: 20, radius: 1, ground: old[prev]?.ground ?? 0, nx: 0, ny: -1, wet: 0 };
       for (const i of members) this.order[o++] = i;
-      // The main piece's target gets squashed by sx, sy: undo that so it starts where it is.
-      if (!same) this.reshape(members, pi === 0 ? this.sx : 1, pi === 0 ? this.sy : 1);
+      // Every piece's target is squashed (see squash()): undo that so it starts where it is.
+      if (!same) {
+        let tt = 0;
+        for (const i of members) tt += this.t[i];
+        const [sx, sy] = this.squash(pi, this.fixedTemp ?? tt / members.length);
+        this.reshape(members, sx, sy);
+      }
       this.pieces.push(p);
     }
     this.pieces.forEach((p, pi) => { for (let k = p.start; k < p.start + p.len; k++) piece[this.order[k]] = pi; });
     this.stats();
   }
 
-  private reshapePiece(p: Piece): void {
-    this.reshape(Array.from(this.order.subarray(p.start, p.start + p.len)), 1, 1);
+  /**
+   * World-space squash of a piece's target shape. The piece he's controlling remembers being
+   * round (a slight dome on the ground, squashed and stretched by jumping). Every other bit
+   * has no will of its own and slumps flat, as far as his cohesion lets it: a thin film at
+   * low cohesion, a thick lump at high; runny bits spread further. (Frozen bits keep whatever
+   * shape they froze in, since this doesn't change with cold.)
+   */
+  private squash(pi: number, temp: number): [number, number] {
+    if (pi === 0) return [this.sx, this.sy];
+    const a = Math.max(0.2, (0.45 + 0.45 * this.tweaks.cohesion) * (1 - 0.5 * runniness(temp)));
+    return [1 / a, a];
   }
 
-  /** New rest shape for a changed piece: its current shape, relaxing towards a round blob of the same size. */
-  private reshape(members: number[], sx: number, sy: number): void {
-    const { x, y, rx, ry, hx, hy } = this;
+  /** Take the piece's current shape as its rest shape (freezing and thawing). */
+  private reshapePiece(p: Piece): void {
+    this.reshape(Array.from(this.order.subarray(p.start, p.start + p.len)), 1, 1, true);
+  }
+
+  /**
+   * New rest shape for a changed piece. If most of it was one piece before (a bit torn off,
+   * or a droplet rejoining), it keeps that piece's memory of its shape, and newcomers take
+   * their place in it from where they are now; otherwise its current shape becomes the rest
+   * shape. Either way it relaxes towards a round blob of its new size.
+   */
+  private reshape(members: number[], sx: number, sy: number, fresh = false): void {
+    const { x, y, rx, ry, hx, hy, piece } = this;
     let cx = 0, cy = 0;
-    for (const i of members) { cx += x[i]; cy += y[i]; }
-    cx /= members.length; cy /= members.length;
-    for (const i of members) { rx[i] = (x[i] - cx) / sx; ry[i] = (y[i] - cy) / sy; }
-    // Round target: the n lattice points nearest the centre, matched row by row.
-    const n = members.length, pts: [number, number][] = [];
-    const R = Math.ceil(Math.sqrt(n / Math.PI)) + 2;
-    for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) pts.push([dx, dy]);
-    pts.sort((a, b) => a[0] * a[0] + a[1] * a[1] - b[0] * b[0] - b[1] * b[1] || a[1] - b[1] || a[0] - b[0]);
-    const disc = pts.slice(0, n).sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+    const counts = new Map<number, number>();
+    for (const i of members) counts.set(piece[i], (counts.get(piece[i]) ?? 0) + 1);
+    let src = -1, best = 0;
+    for (const [k, v] of counts) if (v > best) { best = v; src = k; }
+    const kept = fresh ? [] : members.filter((i) => piece[i] === src);
+    if (kept.length >= 3 && kept.length * 2 >= members.length) {
+      // Fit the old rest shape to where the kept particles are now (2D polar decomposition).
+      let rcx = 0, rcy = 0;
+      for (const i of kept) { cx += x[i]; cy += y[i]; rcx += rx[i]; rcy += ry[i]; }
+      cx /= kept.length; cy /= kept.length; rcx /= kept.length; rcy /= kept.length;
+      let a = 0, b = 0, c = 0, d = 0;
+      for (const i of kept) {
+        const ox = (x[i] - cx) / sx, oy = (y[i] - cy) / sy, qx = rx[i] - rcx, qy = ry[i] - rcy;
+        a += ox * qx; b += ox * qy; c += oy * qx; d += oy * qy;
+      }
+      const th = Math.atan2(c - b, a + d), co = Math.cos(th), si = Math.sin(th);
+      for (const i of members) {
+        if (piece[i] === src) continue;
+        const ox = (x[i] - cx) / sx, oy = (y[i] - cy) / sy;
+        rx[i] = co * ox + si * oy + rcx; ry[i] = -si * ox + co * oy + rcy;
+      }
+      let mx = 0, my = 0;
+      for (const i of members) { mx += rx[i]; my += ry[i]; }
+      mx /= members.length; my /= members.length;
+      for (const i of members) { rx[i] -= mx; ry[i] -= my; }
+    } else {
+      for (const i of members) { cx += x[i]; cy += y[i]; }
+      cx /= members.length; cy /= members.length;
+      for (const i of members) { rx[i] = (x[i] - cx) / sx; ry[i] = (y[i] - cy) / sy; }
+    }
+    // Round target: inflate (or deflate) the outline evenly into a disc of the same area,
+    // along each direction from the centre. Neighbours stay neighbours, so he can get there
+    // by deforming, without particles having to pass through each other.
+    const n = members.length, BINS = 24, ext = new Float32Array(BINS);
+    const bin = (i: number) => ((Math.atan2(ry[i], rx[i]) / (Math.PI * 2)) * BINS + BINS + 0.5) % BINS;
+    for (const i of members) {
+      const k = Math.floor(bin(i)) % BINS;
+      ext[k] = Math.max(ext[k], Math.hypot(rx[i], ry[i]) + 0.5);
+    }
+    // Directions with no particles (or a notch) borrow from their neighbours.
+    for (let pass = 0; pass < 2; pass++)
+      for (let k = 0; k < BINS; k++) ext[k] = Math.max(ext[k], 0.5 * (ext[(k + BINS - 1) % BINS] + ext[(k + 1) % BINS]), 0.5);
+    const R = Math.sqrt(n / Math.PI) + 0.5;
     let mx = 0, my = 0;
-    for (const [dx, dy] of disc) { mx += dx; my += dy; }
+    for (const i of members) {
+      const u = bin(i), k0 = Math.floor(u) % BINS, k1 = (k0 + 1) % BINS, f = u - Math.floor(u);
+      const e = ext[k0] * (1 - f) + ext[k1] * f, sc = R / e;
+      hx[i] = rx[i] * sc; hy[i] = ry[i] * sc;
+      mx += hx[i]; my += hy[i];
+    }
     mx /= n; my /= n;
-    const byY = [...members].sort((a, b) => ry[a] - ry[b]);
-    for (let k = 0; k < n; ) {
-      let e = k;
-      while (e < n && disc[e][1] === disc[k][1]) e++;
-      const row = byY.slice(k, e).sort((a, b) => rx[a] - rx[b]);
-      for (let j = 0; j < row.length; j++) { hx[row[j]] = disc[k + j][0] - mx; hy[row[j]] = disc[k + j][1] - my; }
-      k = e;
+    // Then settle each particle on the nearest free point of an evenly spaced disc (one per
+    // pixel), innermost first: packed-together particles (bits merging) would otherwise be
+    // remembered packed, push apart against their own memory and lock him up flat.
+    let r2 = 0;
+    for (const i of members) { hx[i] -= mx; hy[i] -= my; r2 += hx[i] * hx[i] + hy[i] * hy[i]; }
+    const want = Math.sqrt(n / Math.PI / 2), have = Math.sqrt(r2 / n) || 1;
+    for (const i of members) { hx[i] *= want / have; hy[i] *= want / have; }
+    const L = Math.ceil(Math.sqrt(n / Math.PI)) + 3, pts: [number, number][] = [];
+    for (let dy = -L; dy <= L; dy++) for (let dx = -L; dx <= L; dx++) pts.push([dx, dy]);
+    pts.sort((a, b) => a[0] * a[0] + a[1] * a[1] - b[0] * b[0] - b[1] * b[1]);
+    const free = new Set<number>(), key = (dx: number, dy: number) => (dy + 64) * 128 + dx + 64;
+    let px = 0, py = 0;
+    for (let k = 0; k < n; k++) { free.add(key(pts[k][0], pts[k][1])); px += pts[k][0]; py += pts[k][1]; }
+    px /= n; py /= n;
+    for (const i of [...members].sort((a, b) => hx[a] * hx[a] + hy[a] * hy[a] - hx[b] * hx[b] - hy[b] * hy[b])) {
+      const fx = Math.round(hx[i] + px), fy = Math.round(hy[i] + py);
+      let bx = 0, by = 0, bd = Infinity;
+      for (let r = 0; r <= 2 * L && bd === Infinity; r++)
+        for (let dy = -r; dy <= r; dy++)
+          for (let dx = -r; dx <= r; dx++) {
+            if (Math.max(Math.abs(dx), Math.abs(dy)) !== r || !free.has(key(fx + dx, fy + dy))) continue;
+            const d = (fx + dx - px - hx[i]) ** 2 + (fy + dy - py - hy[i]) ** 2;
+            if (d < bd) { bd = d; bx = fx + dx; by = fy + dy; }
+          }
+      free.delete(key(bx, by));
+      hx[i] = bx - px; hy[i] = by - py;
     }
   }
 

@@ -8,8 +8,9 @@ How Bob is built, how he moves, and what every material and effect does to him. 
 - **Bonds** join each particle to its 8 neighbours. They are XPBD distance constraints that can break, and they re-form when particles touch.
 - **Shape matching** (`memory`) pulls every connected piece towards its rest shape, rotated to fit. This is what keeps him a blob instead of a puddle.
   - The rest shape is a disc.
-  - On the ground the target is squashed in world space (`sag`), so he sits as a dome without the dome rolling round with him.
-  - When a piece tears off or rejoins, its rest shape becomes whatever shape it is in now, then relaxes back towards round over a second or two.
+  - The target is squashed in world space, so the squash doesn't roll round with him. **The piece he controls remembers being round**: a slight dome on the ground (`sag`), squashed and stretched by jumping. **Every other bit slumps flat**, as far as cohesion lets it (a thin film at low cohesion, a thick lump at high; runny bits spread further). A flat bit that becomes the main piece rounds back up.
+  - When a piece tears off or rejoins, it keeps the memory of the piece most of it came from, and newcomers take their place in it. Its round target is its current outline inflated evenly into a circle of the right size, then settled onto an even grid, so neighbours stay neighbours and nothing is packed tighter than particles can sit; it relaxes there in about a second.
+  - Bonds settle to the spacing of his rest shape, so they agree with the shape memory (bonds between particles that aren't neighbours in it go slack). Before this, bits merging back on while squashed made bonds that held him flat, and a flat lump can't roll.
 - **Steps:** 10 substeps per 1/60 s frame, one constraint pass each.
   - Order: forces → shape matching → bonds → particle spacing → collision with the grid.
   - The whole thing is deterministic, like the world.
@@ -65,7 +66,7 @@ Bonds break in four ways:
 
 All impacts are judged by how fast the **whole piece** was moving into the surface, not by single particles, which jiggle even when he sits still. So resting on spikes doesn't keep cutting him, and a frozen lump grinding over bumps doesn't crack.
 
-Every connected group is a **piece**. The biggest has the eyes and takes input; the rest sit where they are. Pieces draw together when close (surface tension, scaled by `cohesion`) and re-bond when they touch, unless frozen.
+Every connected group is a **piece**. The biggest has the eyes and takes input; the rest sit where they are, slumped flat. Pieces draw together when close (surface tension, scaled by `cohesion`) and re-bond when they touch, unless frozen.
 
 **Mass is health and score.** The playground shows what fraction of Bob is alive, how much is in the main piece, what was lost and why (boiled, dissolved, crushed, fell), and the **% of Bob that reached the finish**. That's the level goal idea from the brief: losing bits on jumps and hazards costs you, and you can go back and roll over droplets to pick them up.
 

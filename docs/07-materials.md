@@ -50,7 +50,7 @@ Anything denser falls through anything lighter, with drag through liquids and po
 
 ### Systems the materials share
 
-- **Temperature.** Every cell has one. Heat flows between neighbours by conductivity. Air relaxes towards a per-cell ambient temperature (`base`), which is how cold and hot biomes stay cold or hot.
+- **Temperature.** Every cell has one. Heat flows between neighbours by conductivity. Air relaxes towards a per-cell ambient temperature (`base`), which is how cold and hot biomes stay cold or hot; where `base` is set away from the default, every material does, so a level's lava pit can stay molten forever.
 - **Burning.** Solids burn in place and throw fire cells; fluids that burn turn straight into fire. Solids need air (or loose ash) next to them to catch or keep burning, so buried or underwater wood smothers; being put out also cools the cell so it can't relight from its own heat.
 - **Blasts** (`World.explode`):
   - the inner part of the radius is destroyed;

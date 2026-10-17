@@ -54,8 +54,8 @@ export function buildCourse(world: World, seed = 7): Course {
     else if (x >= 413 && x < 450) y = G - 12 + Math.max(0, x - 428) * (12 / 22);
     else if (x >= 450 && x < 570) y = G + ((x - 450) / 120) * 10;
     else if (x >= 570 && x < 795) y = G + 10;
-    else if (x >= 795 && x < 835) y = G + 24;
-    else if (x >= 835 && x < 880) y = G + 24 - (x - 835) * (24 / 45);
+    else if (x >= 795 && x < 825) y = G + 20;
+    else if (x >= 825 && x < 875) y = G + 20 - (x - 825) * (20 / 50);
     else y = G;
     top[x] = Math.round(y);
   }
@@ -65,7 +65,7 @@ export function buildCourse(world: World, seed = 7): Course {
       const i = y * w + x, d = y - top[x];
       world.back[i] = 0;
       if (d < 0) { set(x, y, M.air); continue; }
-      let m: number = d < 1 && (x < 235 || x >= 860) ? M.plant : d < 8 + fbm(x * 0.05, 1, seed, 2) * 6 ? M.dirt : M.rock;
+      let m: number = d < 1 && (x < 235 || x >= 900) ? M.plant : d < 8 + fbm(x * 0.05, 1, seed, 2) * 6 ? M.dirt : M.rock;
       if (x >= 235 && x < 335 && d < 6) m = M.rock;
       set(x, y, m);
     }
@@ -101,7 +101,12 @@ export function buildCourse(world: World, seed = 7): Course {
   }
 
   // Lava pit, then hot air over a steel floor, then a slot under a hanging wall.
-  for (let x = 674; x < 690; x++) for (let y = G + 4; y < G + 18; y++) set(x, y, y < G + 8 ? M.air : M.lava);
+  // The lava pit is held hot by its cells' ambient temperature, so it never crusts over.
+  for (let x = 674; x < 690; x++)
+    for (let y = G + 4; y < G + 18; y++) {
+      if (y >= G + 8) world.base[y * w + x] = 1200;
+      set(x, y, y < G + 8 ? M.air : M.lava);
+    }
   for (let x = 690; x < 795; x++) for (let k = 0; k < 2; k++) set(x, G + 10 + k, M.stone);
   for (let y = 0; y < h; y++)
     for (let x = 700; x < 790; x++) {
@@ -114,7 +119,7 @@ export function buildCourse(world: World, seed = 7): Course {
   for (let x = 744; x < 750; x++) for (let y = G - 30; y < G + 6; y++) set(x, y, M.steel);
 
   // Cool-off pool, level with the hot floor.
-  for (let x = 795; x < 880; x++) for (let y = G + 10; y < top[x]; y++) set(x, y, M.water);
+  for (let x = 795; x < 875; x++) for (let y = G + 10; y < top[x]; y++) set(x, y, M.water);
 
   // Finish flag.
   for (let k = 1; k < 30; k++) set(940, G - k, M.wood);

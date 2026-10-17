@@ -3,7 +3,7 @@ title: Docs sweep after m0
 kind: tidy
 role: director
 size: S
-status: ready
+status: doing
 milestone: m1-green-alpha
 ---
 

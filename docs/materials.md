@@ -1,6 +1,6 @@
 # Materials
 
-The material catalogue: what exists in `packages/sim` today, how each one behaves and what it reacts with, and a backlog of ideas. Behaviour numbers (density, flammability, conductivity…, and `friction` and `sharp` for Bob) live in `packages/sim/src/materials.ts`; reactions live in `packages/sim/src/world.ts`.
+The material catalogue: what exists in `packages/sim` today, how each one behaves and what it reacts with, and a backlog of ideas. Behaviour numbers (density, flammability, conductivity…, and `friction`, `sharp` and `tack` for Bob) live in `packages/sim/src/materials.ts`; reactions live in `packages/sim/src/world.ts`.
 
 How to read the categories:
 - **static**: stays put unless dug, burnt, melted or blown up.

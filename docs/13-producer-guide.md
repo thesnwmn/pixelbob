@@ -32,14 +32,17 @@ Four, typed into a session. Anything you type without a command goes to the Dire
 /go                       the next thing, the Director's choice
 /go small                 something that fits in half a session
 /go fix the jump          steer it
+/go anyway                carry on even though the health check is red (it'll say what's broken)
 /go think                 ideas or shaping, not code
 /go 3                     (later) three independent units in parallel sessions
 ```
 
+Every session starts with the health check (tools, dependencies, code, the studio's files). If it's red, the session says so and fixes that instead of what you asked, then stops. Every session also ends with the health check, and the result is in the report and the PR.
+
 It ends with a short report:
 
 ```
-Done: split action (build, M) → PR #41, merged.
+Done: split action (build, M) → PR #41, merged. Health: green at start and end.
 Play: https://…/preview/pr-41/game/?scenario=split-gate (2 min)
   Try splitting on the plate and going on without the piece. Does choosing which half you keep feel natural?
 Needs you: 1 ask (split direction on touch, default "across the swipe"), expires in 3 sessions.

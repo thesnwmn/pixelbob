@@ -25,6 +25,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 - **All state is in the repo.** `studio/` holds the board as one file per unit, the producer's settings, the asks waiting on you, milestones and playtest reports. Decisions go in `docs/decisions/`. A session's memory is the repo, so nothing depends on a conversation surviving.
 - **Visible.** Every unit opens a draft PR as soon as it starts, so work in flight shows on GitHub. A generated **studio page** on Pages shows in flight, needs you, next, milestone progress, recent work, decisions and builds.
 - **Playable.** Every PR that changes play gets a preview link that drops you straight into a **scenario** (a level, a place, Bob's state) with a card saying what changed and what to look for, and a feedback button that sends your notes with an exact **replay** of what you did.
+- **Healthy in, healthy out.** Every session starts by running `pnpm health`, which checks the tools, dependencies, code and studio files. If it's red, that session's only job is to make it green. Every session ends by running it again, as proof it left the repo in a good state. CI runs the same script. It grows with the repo.
 - **Bots play too.** The sim is deterministic and runs in Node, so the Tester proves levels can be finished, measures how forgiving they are, replays your runs as regression tests and renders filmstrips the agents (and you) can look at.
 
 ## Where it runs
@@ -49,7 +50,7 @@ What the brief asks of the studio, and what each turns into here.
 | Original | The Muse is briefed to start from the sim and Bob ("what can only happen here?"), not from other games. Prior art ([06](06-prior-art.md)) is a check, not a source. |
 | Agile | Plans only the current milestone in detail and the next one in outline. Units are shaped just before they're needed. The harness itself is reviewed at every milestone. |
 | Brave | Every spike states its **question and its kill criterion before any code**. Dropping is a normal outcome, recorded with what was learned, like the lattice and ring in [09](09-bob-models.md). A dropped idea can come back later as a new unit. |
-| Thorough | Reproduce first (a replay or a failing test), then fix. Every PR passes typecheck, tests and the studio's own checks, and an independent Critic reads it. Code is written for change: data over code, as with materials. |
+| Thorough | Reproduce first (a replay or a failing test), then fix. Every session starts and ends on a green [health check](#health), and an independent Critic reads every PR. Code is written for change: data over code, as with materials. |
 | Transparent | Draft PR from the first push, the studio page, one file per unit with a log, nothing done off the record. |
 | Documented | Decisions as short records in `docs/decisions/`; design docs updated in the same PR as the change; the concept doc kept in step. |
 
@@ -76,10 +77,15 @@ studio/
   playtests/
     2026-10-21-split-action.md   your reports, and the Tester's
   board.ts              generates the board from the files above + open PRs
+scripts/
+  health/
+    health.ts           the health check: runs every check, prints the report
+    checks/             one file per check, grouped in tiers (see Health)
 docs/
   decisions/
     2026-10-17-studio.md        one record per decision
 .claude/
+  settings.json         the session start hook: install, then a quick health check
   agents/               one file per role: its brief, tools and limits (a Claude Code subagent definition)
   skills/               the commands: go, director, feedback, status
 .github/
@@ -201,14 +207,16 @@ There are three ways a role runs, picked by what the work needs.
 
 What every session does on `/go`:
 
+0. **Health check.** `pnpm health`. If it's red, stop here: this session is now a `fix` unit for the health check (see [Health](#health)).
 1. **Sync.** Read `producer.md`, `direction.md`, the board, open PRs and their reviews, CI on main, and new feedback issues.
 2. **Pick** the next unit by the [order below](#what-go-picks), and say which and why in a few lines.
 3. **Claim.** Set the unit to `doing`, push, and open a draft PR at once, so it's visible in flight. The branch is whatever the session gets; the unit records the PR.
 4. **Work** in the role's hat. Spikes state the question and kill criterion first; fixes reproduce first.
-5. **Check.** `pnpm typecheck && pnpm test`, the studio's checks (scenarios load, golden replays pass, the board builds), and the Tester for anything that changes play.
+5. **Check.** `pnpm health --quick` as often as useful while working, and the Tester for anything that changes play.
 6. **Review.** The Critic as a subagent. Its blocking findings are fixed before the PR leaves draft; the rest are answered on the PR.
 7. **Ship.** PR description per the template: the unit, what changed, decisions, how to test (the preview link to the scenario, what to look for), follow-ups. Update the unit's log and status, any docs, the concept doc if it's affected. Merge per the autonomy level.
-8. **Report** to you in five lines or so: what was done, the link, what's waiting on you.
+8. **Health check again.** `pnpm health` on the final commit, with everything pushed. Its summary goes in the PR description as proof. If it can't be made green, the PR stays draft, labelled `red`, and the unit's handoff names the failing check.
+9. **Report** to you in five lines or so: what was done, the link, the health result, what's waiting on you.
 
 If there's budget left after an S unit, the session may take a second S unit, from a clean point.
 
@@ -216,7 +224,7 @@ If there's budget left after an S unit, the session may take a second S unit, fr
 
 Top of this list first:
 
-1. **Main is broken** (CI red, a deploy failed, a regression replay fails).
+1. **Main is broken**: the start-of-session health check is red, CI on main is red, or a deploy failed. This isn't a choice: the health check decides it before anything else is read.
 2. **Your input that hasn't been handled**: feedback issues, PR comments from you, answered asks that unblock something.
 3. **Open PRs** that need fixing or finishing.
 4. **The current milestone's next ready unit**, riskiest first: the unit with the biggest unknown, or a spike in front of it.
@@ -238,6 +246,50 @@ You can always steer: `/go fix the jump`, `/go something small`, `/go think`.
 - **Tools**: each role's subagent definition lists only the tools it needs.
 - **Code**: one branch and PR per unit; spikes live only in `prototypes/`, and nothing outside imports them; parallel writers use separate sessions (or worktrees), never the same checkout.
 - **Authority**: the *May change* and *Never* columns above, plus gated calls that only you make. The Critic checks a PR stays inside its unit's role and scope.
+
+## Health
+
+`pnpm health` answers one question: is this repo ready to develop on? It runs at the start of every session, at the end of every session and in CI. All three run the same script, so a session and CI can't disagree about what "healthy" means.
+
+### What it checks
+
+Checks are grouped in tiers and run in order. A tier that fails stops the run, because there's no point type-checking without dependencies.
+
+| Tier | Checks (to start with) | Typical failure it catches |
+|---|---|---|
+| **1. Tools** | Node is the version the repo pins; pnpm matches `packageManager`; git; Chromium is where Playwright looks (once browser tests exist) | A fresh container with the wrong Node, or a missing tool |
+| **2. Dependencies** | Install from the lockfile (`--frozen-lockfile`); `node_modules` matches the lockfile; every workspace package resolves | "tsc not found" because nothing was installed, as happened when this plan was written |
+| **3. Repo** | On a session branch, not `main`; no conflict markers; how far behind `main` the branch is; at the end, also: tree clean, everything pushed, a PR open | Work that wasn't pushed before the container was thrown away |
+| **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim` or `packages/bob`, no DOM in either | Main red, or a convention quietly broken |
+| **5. Studio** | Every unit, ask and milestone file parses, with valid fields and statuses; every `needs` exists; the board generates; links between docs resolve; scenarios load; golden replays still give their recorded outcome | A typo in a unit's status that hides it from the board |
+| **6. Budgets** (later) | The sim step and render stay within their time budgets on the benchmark scene | A change that quietly costs 3 ms a frame |
+
+- **Quick and full.** `pnpm health` runs everything; it should take a couple of minutes at most. `pnpm health --quick` skips the slow checks (build, replays, budgets) for use while working. Sessions start and end on the full run, and so does CI.
+- **Output.** One line per check (pass or fail, and its time), then for each failure the command that reproduces it and a hint at the usual cause. `--json` prints the same as data, for the board and the PR description.
+- **Automatic.** A session start hook in `.claude/settings.json` installs dependencies and runs the quick check, so every session (even one that isn't `/go`) sees the repo's state first thing. The skills then require the full run before any work.
+
+### When it's red at the start
+
+The session doesn't do what it was asked. It says so in one line, then works out where the failure comes from:
+
+- **Main is broken** (code, tests, studio files). The session becomes a `fix` unit for that check: it reproduces the failure, fixes it, opens a PR, runs the end-of-session health check and stops there. It also asks why CI didn't catch the problem, and if CI couldn't have, adds a check so it would next time.
+- **The environment is broken** (a tool missing or the wrong version in the container). If the repo can fix it (the session start hook, a pinned version), that's the fix. If it needs a change to the cloud environment's settings, which live outside the repo, the session tells you exactly what to change and stops.
+- **The check itself is wrong** (flaky, or out of date). A flaky check is a bug, fixed like any other. The check is never deleted or skipped to get green.
+
+You can override with `/go anyway`. The session then works with the failure named in its PR and its report, and the next session starts by fixing it.
+
+### When it's red at the end
+
+A session never leaves main worse than it found it. CI runs the same check, and a red PR can't merge. If the unit's branch can't be made green, the PR stays draft, labelled `red`, and the handoff in the unit's log says which check fails and what's been tried.
+
+### Keeping it up to date
+
+The health check is only useful if it grows with the repo, so these rules apply:
+
+- **Whatever a PR adds, it checks.** A PR that adds a tool, a dependency, a file format, a generated file or a convention also adds a check for it. The Critic looks for the missing check.
+- **Every surprise becomes a check.** A failure a session hits that the health check didn't predict gets a check in the same PR as the fix. The first one is in this plan: missing dependencies.
+- **Checks can fail.** Each check has a test that feeds it a broken fixture and expects a failure, so a check that always passes is caught.
+- **Slow or noisy checks are fixed.** Each milestone retro looks at how long the run takes and which checks have been noisy.
 
 ### Autonomy levels
 
@@ -306,16 +358,17 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 
 ## Building the studio
 
-The order it gets built in, each a unit of its own. The first two make the harness usable; the rest come in as they're needed, so phase 3 starts as soon as possible.
+The order it gets built in, each a unit of its own. The first three make the harness usable; the rest come in as they're needed, so phase 3 starts as soon as possible.
 
-1. **Folder and board (S).** `studio/` with its formats, `producer.md` at level 1, `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record.
-2. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `director`, `feedback` and `status` skills, the PR template, labels, the `CLAUDE.md` pointer.
-3. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
-4. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button.
-5. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.
-6. **Bots and forgiveness (M, spike first).** The search bot and the slack measure.
-7. **Release (S).** Tag-cut alpha and beta builds under `/builds/`, release notes.
-8. **Fan-out (S, later).** Parallel sessions for independent units.
+1. **Health check (S).** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, and a test for each check. It comes first because every unit after it starts and ends with the check.
+2. **Folder and board (S).** `studio/` with its formats, `producer.md` at level 1, `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record, and the studio tier of the health check.
+3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `director`, `feedback` and `status` skills, the PR template, labels, the `CLAUDE.md` pointer.
+4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
+5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button.
+6. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.
+7. **Bots and forgiveness (M, spike first).** The search bot and the slack measure.
+8. **Release (S).** Tag-cut alpha and beta builds under `/builds/`, release notes.
+9. **Fan-out (S, later).** Parallel sessions for independent units.
 
 Then the Director takes phase 3: the first milestone, an alpha of The Green.
 

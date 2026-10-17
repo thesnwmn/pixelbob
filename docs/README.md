@@ -41,7 +41,7 @@ Target: web browser first, on phones and laptops.
 | [09 Bob models](09-bob-models.md) | Why Bob is goo: the three models that were built and compared, and what was learned |
 | [10 Ideas](10-ideas.md) | Gameplay and other ideas raised along the way that aren't built yet |
 | [11 Worlds](11-worlds.md) | The run of worlds: what each teaches, its materials, heat and light, and its shot |
-| [12 The studio](12-studio.md) | The agent harness (planned): roles, how they're invoked and isolated, where state lives, builds, playtesting and bots |
+| [12 The studio](12-studio.md) | The agent harness (planned): roles, how they're invoked and isolated, where state lives, the health check every session starts and ends with, builds, playtesting and bots |
 | [13 Producer guide](13-producer-guide.md) | How the producer and play tester works with the studio: commands, asks, playtest links, feedback |
 
 ## The shots

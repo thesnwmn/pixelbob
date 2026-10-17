@@ -1,6 +1,6 @@
 ---
 title: The studio
-status: current
+status: done
 ---
 
 ## Why

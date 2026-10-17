@@ -1,6 +1,6 @@
 ---
 title: An alpha of The Green
-status: proposed
+status: current
 ---
 
 ## Why

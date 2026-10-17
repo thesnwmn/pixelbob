@@ -1,5 +1,5 @@
 ---
-milestone: m0-studio        # the current milestone, in milestones/
+milestone: m1-green-alpha  # the current milestone, in milestones/
 ---
 
 # Direction
@@ -8,11 +8,11 @@ Where the game is going now. The Director keeps it, and changes to it are gated:
 
 ## Now
 
-[m0-studio](milestones/m0-studio.md): build the studio far enough that `/go` works, then hand over to the game. Units 1 to 4 of [Building the studio](README.md#building-the-studio).
+[m1-green-alpha](milestones/m1-green-alpha.md): an alpha of The Green, confirmed by the producer on 2026-10-17 ([the ask](asks/first-milestone.md)). First, shaping its levels and mechanics into units, alongside the game shell, replays, bots and alpha builds the studio needs to test it.
 
-## Next
+## Done
 
-[m1-green-alpha](milestones/m1-green-alpha.md): an alpha of The Green, confirmed by the producer on 2026-10-17 ([the ask](asks/first-milestone.md)). It becomes current when m0-studio is done. The studio's later units (the game shell, replays, bots, releases) belong to it, because the alpha is what needs them.
+[m0-studio](milestones/m0-studio.md): the studio, built far enough that `/go` works ([retro](sessions/2026-10-17-m0-retro.md)).
 
 ## Priorities
 

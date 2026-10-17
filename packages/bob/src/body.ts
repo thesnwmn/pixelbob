@@ -74,6 +74,8 @@ export abstract class Body implements BobModel {
   ccell = new Int32Array(0);
   protected fz = new Float32Array(0);
   protected rn = new Float32Array(0);
+  /** Share of a jelly's wobble (motion apart from moving and turning as one) taken out each step. */
+  protected settleRate = 0;
   /** How hard pressing down pours a runny Bob (x POUR). */
   protected pourGain = 1;
   /** How hard his rolling effort turns him (models differ in how well spin becomes travel). */
@@ -187,21 +189,8 @@ export abstract class Body implements BobModel {
       for (let dy = -r; dy <= r; dy++)
         for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r + r * 0.5) pts.push([dx, dy, d]);
     });
-    const n = pts.length, cap = n * 2;
-    this.cap = cap;
-    const f = () => new Float32Array(cap);
-    this.x = f(); this.y = f(); this.px = f(); this.py = f(); this.vx = f(); this.vy = f(); this.t = f(); this.cool = f();
-    this.cnx = f(); this.cny = f(); this.hit = f(); this.fz = f(); this.rn = f(); this.tread = f(); this.fsx = f(); this.fsy = f();
-    this.alive = new Uint8Array(cap); this.piece = new Int32Array(cap); this.deg = new Uint8Array(cap);
-    this.cmat = new Uint8Array(cap); this.ccell = new Int32Array(cap);
-    this.ba = new Int32Array(cap * NB / 2); this.bb = new Int32Array(cap * NB / 2); this.bl = new Float32Array(cap * NB / 2); this.bn = new Float32Array(cap * NB / 2);
-    this.nb = 0;
-    this.order = new Int32Array(cap);
-    this.ww = world.w;
-    this.world = world;
-    this.head = new Int32Array(world.w * world.h).fill(-1);
-    this.next = new Int32Array(cap);
-    this.alloc(cap);
+    const n = pts.length;
+    this.allocate(world, n * 2);
     const index = new Map<number, number>();
     const key = (dx: number, dy: number, d: number) => ((d * 256 + dy + 64) * 256) + dx + 64;
     pts.forEach(([dx, dy, d], i) => {
@@ -219,6 +208,29 @@ export abstract class Body implements BobModel {
       }
     });
     this.count = this.total = n;
+    this.started();
+  }
+
+  /** Fresh arrays for `cap` particles, and the controller back to rest. */
+  protected allocate(world: World, cap: number): void {
+    this.cap = cap;
+    const f = () => new Float32Array(cap);
+    this.x = f(); this.y = f(); this.px = f(); this.py = f(); this.vx = f(); this.vy = f(); this.t = f(); this.cool = f();
+    this.cnx = f(); this.cny = f(); this.hit = f(); this.fz = f(); this.rn = f(); this.tread = f(); this.fsx = f(); this.fsy = f();
+    this.alive = new Uint8Array(cap); this.piece = new Int32Array(cap); this.deg = new Uint8Array(cap);
+    this.cmat = new Uint8Array(cap); this.ccell = new Int32Array(cap);
+    this.ba = new Int32Array(cap * NB / 2); this.bb = new Int32Array(cap * NB / 2); this.bl = new Float32Array(cap * NB / 2); this.bn = new Float32Array(cap * NB / 2);
+    this.nb = 0;
+    this.order = new Int32Array(cap);
+    this.ww = world.w;
+    this.world = world;
+    this.head = new Int32Array(world.w * world.h).fill(-1);
+    this.next = new Int32Array(cap);
+    this.alloc(cap);
+  }
+
+  /** Particles placed: reset the controller and group them into pieces. */
+  protected started(): void {
     this.losses = { boiled: 0, dissolved: 0, crushed: 0, fell: 0 };
     this.charge = this.stretch = this.coyote = this.sag = this.buffer = this.banked = 0;
     this.reset();
@@ -227,6 +239,8 @@ export abstract class Body implements BobModel {
     this.rebuild(true);
   }
 
+  /** How much of him a group of particles is (which piece is the biggest, and so the main one). */
+  protected weigh(members: number[]): number { return members.length; }
   /** A particle was placed at (dx, dy) from the middle of its disc. */
   protected spawned(_i: number, _dx: number, _dy: number): void {}
   /** Clear the model's state on spawn. */
@@ -608,8 +622,9 @@ export abstract class Body implements BobModel {
           mvx += dv * tx; mvy += dv * ty;
         }
       }
-      // Only frozen Bob is damped: jelly keeps its wobble, and oozing is all internal motion.
-      const w = den > 0 ? num / den : 0, k = 0.8 * f;
+      // Frozen Bob is damped (and jelly, a little, in some models); oozing is all internal motion.
+      // (Some models damp a normal jelly's wobble too: settle says how much per step.)
+      const w = den > 0 ? num / den : 0, k = Math.max(0.8 * f, this.settleRate * (1 - f) * (1 - r));
       for (let j = p.start; j < p.start + p.len; j++) {
         const i = order[j], ox = x[i] - cx, oy = y[i] - cy;
         const rx = mvx - w * oy, ry = mvy + w * ox;
@@ -820,7 +835,7 @@ export abstract class Body implements BobModel {
       g.push(i);
     }
     const old = this.pieces;
-    const list = [...groups.values()].sort((a, b) => b.length - a.length || a[0] - b[0]);
+    const list = [...groups.values()].sort((a, b) => this.weigh(b) - this.weigh(a) || a[0] - b[0]);
     this.pieces = [];
     let o = 0;
     for (const [pi, members] of list.entries()) {

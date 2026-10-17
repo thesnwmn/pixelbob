@@ -3,6 +3,7 @@ export * from "./model.ts";
 export * from "./body.ts";
 export * from "./blob.ts";
 export * from "./goo.ts";
+export * from "./skin.ts";
 export * from "./models.ts";
 export * from "./course.ts";
 export * from "./draw.ts";

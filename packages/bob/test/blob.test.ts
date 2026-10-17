@@ -333,6 +333,18 @@ describe("feel", () => {
     return { top: top / b.total, fell: fell / b.total };
   };
 
+  it("left alone he settles down: no buzzing or fluttering", () => {
+    const w = ground(), b = bob(w);
+    run(b, w, 60, { move: 1, jump: false });
+    run(b, w, 120);
+    let jiggle = 0, n = 0;
+    for (let f = 0; f < 60; f++) {
+      b.step(w, { move: 0, jump: false });
+      each(b, (_x, _y, vx, vy, _t, pi) => { if (pi === 0) { jiggle += Math.hypot(vx - b.main!.vx, vy - b.main!.vy); n++; } });
+    }
+    expect(jiggle / n).toBeLessThan(2); // px/s, on average
+  });
+
   /** v1 (the lattice) can't do these: kept as a record of what it gets wrong. */
   const v2 = kind === "lattice" ? it.fails : it;
 

@@ -26,6 +26,9 @@ const RHO0 = (() => {
 const ROUND_MAX = 0.05;
 /** Most his outline is scaled towards round in a substep, either way. */
 const RATIO = 1.25;
+/** A particle this sparse (of the rest density) inside his outline is at the edge of a hole; how fast it closes (px per substep). */
+const HOLE_RHO = 0.6;
+const HOLE_PULL = 0.04;
 /** Directions his outline is measured in. */
 const BINS = 24;
 /** Particles never get closer than this. */
@@ -85,6 +88,8 @@ export class Goo extends Body {
   private stiff = new Float32Array(0);
   private rho = new Float32Array(0);
   private rhoN = new Float32Array(0);
+  /** Neighbour density last substep (low at a surface). */
+  private dens = new Float32Array(0);
   private ext = new Float32Array(BINS);
   private dsx = new Float32Array(0);
   private dsy = new Float32Array(0);
@@ -114,6 +119,7 @@ export class Goo extends Body {
     this.sagRunny = 0.6;
     // (A jelly that shifts its weight as it turns needs more effort to roll than a firm one.)
     this.rollGain = 2;
+    this.settleRate = 0.4;
     this.pourGain = 0.3;
   }
 
@@ -121,7 +127,7 @@ export class Goo extends Body {
     const f = () => new Float32Array(cap);
     this.rx = f(); this.ry = f(); this.frz = new Uint8Array(cap);
     this.ks = f(); this.flow = f(); this.creep = f(); this.round = f(); this.visc = f(); this.stiff = f();
-    this.rho = f(); this.rhoN = f(); this.dsx = f(); this.dsy = f();
+    this.rho = f(); this.rhoN = f(); this.dens = f(); this.dsx = f(); this.dsy = f();
     this.pa = new Int32Array(cap * 40); this.pb = new Int32Array(cap * 40);
     this.ca = new Int32Array(cap * 40); this.cb = new Int32Array(cap * 40); this.cq = new Float32Array(cap * 40); this.cux = new Float32Array(cap * 40); this.cuy = new Float32Array(cap * 40);
     this.adj = new Int32Array(cap * NB); this.adjN = new Uint8Array(cap);
@@ -348,6 +354,7 @@ export class Goo extends Body {
     this.nc = nc;
     for (let i = 0; i < n; i++) {
       if (!alive[i]) continue;
+      this.dens[i] = rho[i];
       const P = rho[i] - RHO0;
       // (Runny, his springs barely hold him: surface tension does, so it's stronger.)
       rho[i] = KP * (P < 0 ? P * coh * (1 + 1.5 * this.rn[i]) : P);
@@ -407,17 +414,21 @@ export class Goo extends Body {
       for (let k = p.start; k < p.start + p.len; k++) {
         const i = order[k], ox = x[i] - cx, oy = y[i] - cy;
         let gx = 0, gy = 0;
+        const th = Math.atan2(oy, ox), u = ((th / (Math.PI * 2)) * BINS + BINS) % BINS;
+        const k0 = Math.floor(u) % BINS, k1 = (k0 + 1) % BINS, f = u - Math.floor(u);
+        const e = ext[k0] * (1 - f) + ext[k1] * f, d = Math.sqrt(ox * ox + oy * oy);
+        // A surface well inside his outline is the edge of a hole in him: it closes up
+        // (surface tension can't reach across a hole wider than its own reach).
+        if (this.dens[i] < HOLE_RHO * RHO0 && d < e - 4 && d > 0.5 && !frz[i]) { gx -= (ox / d) * HOLE_PULL; gy -= (oy / d) * HOLE_PULL; }
         if (round[i] > 0) {
-          const th = Math.atan2(oy, ox), u = ((th / (Math.PI * 2)) * BINS + BINS) % BINS;
-          const k0 = Math.floor(u) % BINS, k1 = (k0 + 1) % BINS, f = u - Math.floor(u);
-          const e = ext[k0] * (1 - f) + ext[k1] * f;
           const c = Math.cos(th) / ea, s = Math.sin(th) / eb, want = R / Math.sqrt(c * c + s * s);
           // (A step only ever moves the outline a little: a thin spot mustn't fling particles out.)
           const sc = (Math.min(RATIO, Math.max(1 / RATIO, want / e)) - 1) * round[i];
-          gx = ox * sc; gy = oy * sc;
+          let rx2 = ox * sc, ry2 = oy * sc;
           // Gently: an odd shape (a drop on a thread) would otherwise have its far ends dragged about.
-          const gl = Math.sqrt(gx * gx + gy * gy);
-          if (gl > ROUND_MAX) { gx *= ROUND_MAX / gl; gy *= ROUND_MAX / gl; }
+          const gl = Math.sqrt(rx2 * rx2 + ry2 * ry2);
+          if (gl > ROUND_MAX) { rx2 *= ROUND_MAX / gl; ry2 *= ROUND_MAX / gl; }
+          gx += rx2; gy += ry2;
         }
         if (fr && frz[i]) {
           const qx = rx[i] - fr.rcx, qy = ry[i] - fr.rcy;

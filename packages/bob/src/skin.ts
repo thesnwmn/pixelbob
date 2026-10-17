@@ -24,6 +24,8 @@ const JOIN_R = 0.9;
 const JOIN_CHANCE = 0.03;
 /** Most the round outline moves a point per substep (px), and the most it scales him by. */
 const ROUND_MAX = 0.08;
+/** Most the pressure moves a point per substep (px). */
+const PUSH_MAX = 0.5;
 const RATIO = 1.25;
 /** Runny stickiness: pull onto a face he touches, the most it holds with (px/s²), how close counts as touching. */
 const ADHESION = 0.35;
@@ -70,6 +72,7 @@ class Rings extends Body {
     // (Runny, surface tension and gravity decide how he puddles, not his will.)
     this.sagRunny = 0.6;
     this.settleRate = 0.5;
+    this.keepControl = true;
     this.pourGain = 0.3;
   }
 
@@ -111,6 +114,7 @@ class Rings extends Body {
         this.y[i] = this.py[i] = cy + Math.sin(a) * R;
         this.t[i] = temp;
         this.alive[i] = 1;
+        this.ctl[i] = first === 0 ? 1 : 0;
         this.ash[i] = area / n;
         this.nxt[i] = k === n - 1 ? first : i + 1;
         this.prv[i] = k === 0 ? first + n - 1 : i - 1;
@@ -307,6 +311,9 @@ class Rings extends Body {
     this.pressure();
     this.shape();
     this.apart();
+    // Last line of defence: a point that's gone anywhere impossible goes back where it was.
+    const { x, y, px, py, alive } = this;
+    for (let i = 0; i < this.used; i++) if (alive[i] && !(Number.isFinite(x[i]) && Number.isFinite(y[i]))) { x[i] = px[i]; y[i] = py[i]; }
   }
 
   /**
@@ -349,9 +356,16 @@ class Rings extends Body {
         dsx[i] = 0.5 * (y[b] - y[a]); dsy[i] = 0.5 * (x[a] - x[b]);
         g2 += dsx[i] * dsx[i] + dsy[i] * dsy[i];
       }
-      if (g2 < 1e-9) continue;
+      // (A ring squashed flat has no area to push with: leave it to the skin and the will to be round.)
+      if (g2 < 0.05) continue;
       const lambda = (0.5 * (r.target - A)) / g2;
-      for (let k = r.start; k < r.start + r.len; k++) { const i = seq[k]; x[i] += lambda * dsx[i]; y[i] += lambda * dsy[i]; }
+      for (let k = r.start; k < r.start + r.len; k++) {
+        const i = seq[k];
+        let dx = lambda * dsx[i], dy = lambda * dsy[i];
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d > PUSH_MAX) { dx *= PUSH_MAX / d; dy *= PUSH_MAX / d; }
+        x[i] += dx; y[i] += dy;
+      }
     }
   }
 
@@ -667,9 +681,8 @@ export class Skin implements BobModel {
 
   spawn(world: World, cx: number, cy: number, temp = 20, bits: { x: number; y: number; r: number }[] = []): void {
     this.total = this.rings.spawnRings(world, [{ x: cx, y: cy, r: this.tweaks.size }, ...bits], temp);
-    const m = this.total * 3;
-    this.fx = new Float32Array(m); this.fy = new Float32Array(m); this.fvx = new Float32Array(m); this.fvy = new Float32Array(m);
-    this.ft = new Float32Array(m); this.forder = new Int32Array(m);
+    this.n = 0;
+    this.grow(this.total * 3);
     this.fill();
   }
 
@@ -694,11 +707,18 @@ export class Skin implements BobModel {
     return { x: this.fx, y: this.fy, vx: this.fvx, vy: this.fvy, t: this.ft, order: this.forder, pieces: this.pieces, fixedTemp: this.fixedTemp, facing: this.facing };
   }
 
+  private grow(m: number): void {
+    this.fx = new Float32Array(m); this.fy = new Float32Array(m); this.fvx = new Float32Array(m); this.fvy = new Float32Array(m);
+    this.ft = new Float32Array(m); this.forder = new Int32Array(m);
+  }
+
   /**
    * The inside of each ring, one point per pixel centre (scanlines across the polygon), with
    * temperature and velocity taken from the skin either side.
    */
   private fill(): void {
+    // (Room for his whole area many times over; grown if he ever needs more.)
+    if (this.fx.length < this.total * 2 || this.n > this.fx.length * 0.8) this.grow(Math.max(this.total * 3, this.fx.length * 2));
     const R = this.rings, { x, y, t, vx, vy, seq } = R;
     let n = 0, alive = 0;
     this.pieces = [];

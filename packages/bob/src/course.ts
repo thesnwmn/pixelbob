@@ -14,7 +14,7 @@ export interface Course {
   marks: { jumps: number[]; thaw: number; melt: number; pit: number };
 }
 
-export const COURSE_W = 1640, COURSE_H = 270;
+export const COURSE_W = 1880, COURSE_H = 270;
 
 /**
  * The playground course, left to right: one thing to feel at a time, with flat ground
@@ -35,9 +35,13 @@ export function buildCourse(world: World, seed = 7): Course {
   // Held at a temperature: the ice stays frozen, the lava stays molten.
   const hold = (x: number, y: number, m: number, t: number) => { set(x, y, m); world.base[y * w + x] = t; world.temp[y * w + x] = t; };
 
-  const HILLS = 190, ROUGH = 375, STEPS = 535, ICE = 710, THAW = 900, SPIKES = 1000, LAVA = 1110, PIT = 1220, MELT = 1250, SLOT = 1290, POOL = 1350, FINISH = 1520;
+  // Left of the start: an optional climbing gym. Everything else is to the right.
+  const L = 240;
+  const MOSS = 175, RESIN = 120, GUM = 55;
+  const HILLS = L + 190, ROUGH = L + 375, STEPS = L + 535, ICE = L + 710, THAW = L + 900, SPIKES = L + 1000, LAVA = L + 1110, PIT = L + 1220, MELT = L + 1250, SLOT = L + 1290, POOL = L + 1350, FINISH = L + 1520;
   const sections: Section[] = [
-    { name: "Flat", x0: 0, x1: HILLS, note: "Roll left and right; let go and he coasts." },
+    { name: "Climbing gym", x0: 0, x1: L - 10, note: "Tacky surfaces: push into them and he pulls himself up. Moss holds on 60° slopes, resin on 70°, gum on walls. A lost bit of Bob waits on each top." },
+    { name: "Flat", x0: L - 10, x1: HILLS, note: "Roll left and right; let go and he coasts. (Climbing gym to the left.)" },
     { name: "Smooth hills", x0: HILLS, x1: ROUGH - 30, note: "Momentum up and over." },
     { name: "Rough ground", x0: ROUGH - 30, x1: STEPS - 30, note: "Bumps snag his underside; jagged teeth more so." },
     { name: "Steps and a gap", x0: STEPS - 30, x1: ICE - 30, note: "Hop the steps, jump the water gap. Fell in? Hold jump to swim up, let go to leap out." },
@@ -53,10 +57,20 @@ export function buildCourse(world: World, seed = 7): Course {
   ];
 
   // Ground height per column.
+  // Gym towers: a block with a climbable face on its right, rising leftwards; the face is
+  // the tacky material, `steep` px up per px across (99: a sheer wall).
+  const towers = [
+    { x1: MOSS, h: 24, steep: 1.73, m: M.moss },
+    { x1: RESIN, h: 36, steep: 2.75, m: M.resin },
+    { x1: GUM, h: 56, steep: 99, m: M.gum },
+  ];
+  const tower = (x: number) => towers.find((t) => x <= t.x1 && x > t.x1 - 34);
   const top = new Float32Array(w);
   for (let x = 0; x < w; x++) {
     let y = G;
-    if (x >= HILLS && x < HILLS + 125) {
+    const t = tower(x);
+    if (t) y = G - Math.min(t.h, (t.x1 - x + 1) * t.steep);
+    else if (x >= HILLS && x < HILLS + 125) {
       const u = (x - HILLS) / 125;
       y = G - (u < 0.5 ? 12 : 20) * Math.sin(((u * 2) % 1) * Math.PI) ** 2;
     } else if (x >= ROUGH && x < ROUGH + 55) y = G - Math.floor(hash2(x >> 1, 1, seed) * 3);
@@ -76,7 +90,10 @@ export function buildCourse(world: World, seed = 7): Course {
       const i = y * w + x, d = y - top[x];
       world.back[i] = 0;
       if (d < 0) { set(x, y, M.air); continue; }
-      let m: number = d < 1 && (x < HILLS + 125 || x >= FINISH + 10) ? M.plant : d < 8 + fbm(x * 0.05, 1, seed, 2) * 6 ? M.dirt : M.rock;
+      let m: number = d < 1 && ((x >= L && x < HILLS + 125) || x >= FINISH + 10) ? M.plant : d < 8 + fbm(x * 0.05, 1, seed, 2) * 6 ? M.dirt : M.rock;
+      // Gym towers: a skin of the tacky stuff over rock (their tops and faces).
+      const t = tower(x);
+      if (t && y < G) m = d < 3 || x > t.x1 - 3 ? t.m : M.rock;
       if (x >= ROUGH && x < ROUGH + 100 && d < 6) m = M.rock;
       // Pools are lined with rock: water soaks dirt into mud, which would eat the banks away.
       if (((x >= STEPS + 45 && x < STEPS + 83) || (x >= POOL - 5 && x < FINISH)) && m === M.dirt) m = M.rock;
@@ -143,9 +160,9 @@ export function buildCourse(world: World, seed = 7): Course {
       { x: MELT, y: G - 13, color: [1, 0.55, 0.25], radius: 60 },
       { x: flag - 10, y: G - 40, color: [1, 0.82, 0.55], radius: 100 },
     ],
-    spawn: { x: 40, y: G - 12 },
+    spawn: { x: L + 40, y: G - 12 },
     finish: { x0: FINISH, y0: 0, x1: w, y1: h },
-    bits: [{ x: PIT + 3, y: G + 19, r: 2 }],
+    bits: [{ x: PIT + 3, y: G + 19, r: 2 }, ...towers.map((t) => ({ x: t.x1 - 16, y: G - t.h - 4, r: 2 }))],
     sections,
     marks: { jumps: [STEPS + 27, SPIKES - 8, LAVA - 34], thaw: THAW, melt: MELT, pit: PIT + 3 },
   };

@@ -141,11 +141,13 @@ if (window.innerWidth > 900) togglePanel(true);
 // ---- Bar: modes, edit tools ----
 
 type Mode = "play" | "edit";
-type Tool = "dig" | "rock" | "ice" | "spikes" | "sand" | "water" | "lava" | "heat" | "cool";
-const TOOL_MAT: Partial<Record<Tool, number>> = { dig: M.air, rock: M.rock, ice: M.ice, spikes: M.spike, sand: M.sand, water: M.water, lava: M.lava };
+type Tool = "dig" | "rock" | "ice" | "spikes" | "moss" | "resin" | "gum" | "sand" | "water" | "lava" | "heat" | "cool";
+const TOOL_MAT: Partial<Record<Tool, number>> = { dig: M.air, rock: M.rock, ice: M.ice, spikes: M.spike, moss: M.moss, resin: M.resin, gum: M.gum, sand: M.sand, water: M.water, lava: M.lava };
+/** Painted over whatever is there (not only into air). */
+const SOLID_TOOLS = new Set<number>([M.air, M.rock, M.ice, M.spike, M.moss, M.resin, M.gum]);
 const state = { mode: "play" as Mode, tool: "dig" as Tool, size: 4, paused: false, look: params.get("look") ?? "day" };
 const toolEl = $("#tools");
-for (const t of Object.keys({ dig: 1, rock: 1, ice: 1, spikes: 1, sand: 1, water: 1, lava: 1, heat: 1, cool: 1 }) as Tool[]) {
+for (const t of Object.keys({ dig: 1, rock: 1, ice: 1, spikes: 1, moss: 1, resin: 1, gum: 1, sand: 1, water: 1, lava: 1, heat: 1, cool: 1 }) as Tool[]) {
   const b = document.createElement("button");
   b.textContent = t[0].toUpperCase() + t.slice(1);
   b.dataset.tool = t;
@@ -237,7 +239,7 @@ const toCell = (e: { clientX: number; clientY: number }) => {
 };
 function brush(x: number, y: number) {
   const r = state.size, m = TOOL_MAT[state.tool];
-  if (m !== undefined) world.paint(x, y, r, m, { replace: m === M.air || m === M.rock || m === M.ice || m === M.spike, fill: CAT[m] === Cat.Liquid || CAT[m] === Cat.Powder ? 0.6 : 1 });
+  if (m !== undefined) world.paint(x, y, r, m, { replace: SOLID_TOOLS.has(m), fill: CAT[m] === Cat.Liquid || CAT[m] === Cat.Powder ? 0.6 : 1 });
   else world.heat(x, y, r * 1.5, state.tool === "heat" ? 40 : -10);
 }
 canvas.addEventListener("pointerdown", (e) => {

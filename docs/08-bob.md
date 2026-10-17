@@ -30,7 +30,8 @@ Bob has no feet, wheels or jetpack. **Every action is Bob changing his own shape
 | Action | What he does | Needs | Lost when |
 |---|---|---|---|
 | **Roll** (default drive) | Turns his body like a tank tread (a torque about his centre). Friction at the bottom turns the spin into travel. | Muscle (he can deform), grip (friction underneath), ground | Frozen (can't deform). Ice: he spins in place. In the air: only a weak spin. |
-| **Crawl / ooze** | His underside runs like a conveyor along whatever it touches, and friction does the pushing. Runny Bob uses this automatically because he can't hold a shape to roll with. | Muscle, grip | Same as rolling. Also, walls aren't climbed (yet). |
+| **Crawl / ooze** | His underside runs like a conveyor along whatever it touches, and friction does the pushing. Runny Bob uses this automatically because he can't hold a shape to roll with. | Muscle, grip | Same as rolling. |
+| **Climb** (goo) | On a tacky surface, pushing into it: the part of him touching it creeps along it, up a wall too, while the rest of him hugs it. | Muscle, tack | Frozen. Too steep for the surface's tack: he slides back down. |
 | **Coast** | Momentum. Letting go, he grips gently and slows over about a second. | Nothing | Sticky ground stops him sooner, ice later. |
 | **Jump** | Hold to squash (the wind-up is him holding a deformed shape), release to spring. Pushes off along the average contact normal, so slopes and walls angle the jump. | Muscle to wind up; **footing**: only what he's touching can push back, so jumps from a point (a spike tip, a corner) are weak | Frozen: can't squash, so can't jump. In the air: there's nothing to push. Forgiving timing: coyote time 0.15 s, and a jump released up to 0.15 s before landing fires on touchdown. |
 | **Steer in the air** | A small sideways push (`air`). Physically a cheat, kept small. | | |
@@ -81,7 +82,7 @@ Bonds break in four ways:
 
 All impacts are judged by how fast the **whole piece** was moving into the surface, not by single particles, which jiggle even when he sits still. So resting on spikes doesn't keep cutting him, and a frozen lump grinding over bumps doesn't crack.
 
-Every connected group is a **piece**. The biggest has the eyes and takes input; the rest sit where they are, slumped flat. Pieces draw together when close (surface tension, scaled by `cohesion`) and re-bond when they touch, unless frozen.
+Every connected group is a **piece**. One has the eyes and takes input; the rest sit where they are, slumped flat. In the goo and skin models that's the piece with most of what he was already steering, so after a split you keep the bit you had, even if a bigger one broke off (in the lattice it's simply the biggest). Later: a button to switch between pieces. Pieces draw together when close (surface tension, scaled by `cohesion`) and re-bond when they touch, unless frozen.
 
 **Mass is health and score.** The playground shows what fraction of Bob is alive, how much is in the main piece, what was lost and why (boiled, dissolved, crushed, fell), and the **% of Bob that reached the finish**. That's the level goal idea from the brief: losing bits on jumps and hazards costs you, and you can go back and roll over droplets to pick them up.
 
@@ -122,8 +123,8 @@ The whole range, built or not. **Built** means it works in the playground today.
 | glass | Slippery, and slightly sharp | Built (data) |
 | spikes | Sharp: slice him into strips and bits | Built (new material). Later: a hard **edge** (a blade of steel or glass) that splits him cleanly in two, maybe into two halves you control in turn: good as well as bad |
 | rust | Grippy; crumbles under him | Built (rust's own crumbling) |
-| vine, moss | Sticky: he can cling and climb slowly | Later: needs per-material stickiness pulling particles onto the surface (the "cling" ability) |
-| very high-grip surfaces | Grip on corners and edges lets him roll or pull himself up and over them; grippy enough walls, and he rolls straight up them | Later: builds on the runny holds (a hold that works at any temperature, per material) |
+| moss, resin, gum | **Tacky** (`tack` 0.35, 0.65, 1): he clings to them at any temperature short of frozen, and pushing into one, the part of him touching it creeps along it (a gecko's foot) while the rest of him hugs it. Moss holds him on 60° slopes, resin on 70°, gum on walls. Green, amber and violet so a player can read the challenge | Built in the goo model (09). The course's climbing gym (left of the start) has a tower of each with a lost bit on top. Paint them with the edit tools. Later: ceilings (gum), vine |
+| vine | Sticky like moss | Later |
 | mushroom cap | Springy: a bounce pad | Later: restitution per material |
 
 ### Things he's in

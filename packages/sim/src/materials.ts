@@ -50,12 +50,14 @@ export interface MatDef {
   friction: number;
   /** How readily it cuts Bob's bonds on impact, 0 .. 1 (spikes). */
   sharp: number;
+  /** How sticky it is for Bob at any temperature, 0 .. 1: what lets him cling to it and pull himself up it. */
+  tack: number;
 }
 
 const defaults: Omit<MatDef, "id" | "name" | "cat" | "colors"> = {
   density: 1000, flow: 0, mobility: 1, conduct: 0.08, flammable: 0, ignite: Infinity, burnTime: 30,
   spawnTemp: 20, dissolve: 0, occ: 0.55, emit: [0, 0, 0], alpha: 1, palette: true,
-  friction: 0.5, sharp: 0,
+  friction: 0.5, sharp: 0, tack: 0,
 };
 
 const list: MatDef[] = [];
@@ -101,6 +103,11 @@ export const M = {
   rubble: def("rubble", Cat.Powder, [0x4a423b, 0x5a5048, 0x6a5e54], { friction: 0.7, sharp: 0.15, density: 22, occ: 0.55, palette: false }),
   glass: def("glass", Cat.Static, [0x9fc4c8, 0xb8dadc, 0xd0eef0], { friction: 0.15, sharp: 0.3, conduct: 0.1, occ: 0.08, palette: false }),
   spike: def("spikes", Cat.Static, [0x8a929e, 0xa3abb6, 0xc4ccd6], { conduct: 0.45, dissolve: 0.01, occ: 0.6, friction: 0.4, sharp: 1 }),
+  // Climbing surfaces, in rising grip: Bob can cling to them and pull himself up slopes too
+  // steep to roll up (moss), very steep ones (resin), and walls (gum).
+  moss: def("moss", Cat.Static, [0x3d5a24, 0x4a6b2b, 0x587d33, 0x6a913d], { friction: 1, tack: 0.35, flammable: 0.1, ignite: 160, burnTime: 20, conduct: 0.05, dissolve: 0.5, occ: 0.4 }),
+  resin: def("resin", Cat.Static, [0x8a4a12, 0xa85c18, 0xc27420, 0xd98e2e], { friction: 1, tack: 0.65, flammable: 0.3, ignite: 250, burnTime: 60, conduct: 0.04, dissolve: 0.2, occ: 0.5, emit: [0.04, 0.015, 0] }),
+  gum: def("gum", Cat.Static, [0x4a2a72, 0x5a3488, 0x6c42a0, 0x8054b8], { friction: 1, tack: 1, conduct: 0.04, dissolve: 0.3, occ: 0.5 }),
 } as const;
 export type MatId = (typeof M)[keyof typeof M];
 
@@ -117,5 +124,6 @@ export const IGNITE = Float32Array.from(list, (m) => m.ignite);
 export const DISSOLVE = Float32Array.from(list, (m) => m.dissolve);
 export const FRICTION = Float32Array.from(list, (m) => m.friction);
 export const SHARP = Float32Array.from(list, (m) => m.sharp);
+export const TACK = Float32Array.from(list, (m) => m.tack);
 
 export const AMBIENT = 20;

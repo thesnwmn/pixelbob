@@ -32,11 +32,13 @@ export class BobPainter {
 
   private piece(blob: BobView, world: World, color: Uint8Array, emit: Uint8Array, frame: number, pi: number): void {
     const p = blob.pieces[pi], { x, y, t, order } = blob, W = world.w, Hh = world.h;
+    if (!p.len) return;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (let k = p.start; k < p.start + p.len; k++) {
       const i = order[k];
       x0 = Math.min(x0, x[i]); x1 = Math.max(x1, x[i]); y0 = Math.min(y0, y[i]); y1 = Math.max(y1, y[i]);
     }
+    if (!Number.isFinite(x0 + x1 + y0 + y1) || x1 - x0 > W || y1 - y0 > Hh) return;
     const bx = Math.floor(x0) - 3, by = Math.floor(y0) - 3;
     const fw = Math.ceil(x1) + 4 - bx, fh = Math.ceil(y1) + 4 - by, n = fw * fh;
     if (this.field.length < n) {
@@ -146,7 +148,7 @@ export class BobPainter {
       const o = ((hy + dy + by) * W + hx + dx + bx) * 4;
       for (let ch = 0; ch < 3; ch++) color[o + ch] = color[o + ch] + (255 - color[o + ch]) * k;
     }
-    if (pi !== 0 || p.len < 25) return;
+    if (pi !== 0 || p.len < 12) return;
     // Eyes: on the main piece, looking where he's going.
     const look = Math.max(-2, Math.min(2, Math.round(p.vx / 30))) || blob.facing;
     const ex = mid + look, ey = topY + Math.max(2, Math.round(R * 0.4));

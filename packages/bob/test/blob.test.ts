@@ -220,7 +220,7 @@ describe("temperature", () => {
       const course = buildCourse(world), pit = course.marks.pit;
       const b = make();
       if (runny) b.fixedTemp = 80;
-      b.spawn(world, runny ? pit + 15 : pit - 40, 195, 20, course.bits);
+      b.spawn(world, runny ? pit + 15 : pit - 40, 195, 20, course.bits.slice(0, 1));
       for (let f = 0; f < 300; f++) {
         let left = Infinity;
         each(b, (x, _y, _vx, _vy, _t, pi) => { if (pi === 0) left = Math.min(left, x); });
@@ -336,6 +336,33 @@ describe("feel", () => {
     return { top: top / b.total, fell: fell / b.total };
   };
 
+  (kind === "lattice" ? it.fails : it)("he keeps steering the piece he was steering, even when another is bigger", () => {
+    const w = ground(), b = make({ size: 5 });
+    b.spawn(w, 60, FLOOR - 8, 20, [{ x: 200, y: FLOOR - 10, r: 8 }]);
+    run(b, w, 60);
+    expect(b.pieces.length).toBe(2);
+    expect(b.main!.cx).toBeLessThan(120); // the small one he started as
+    expect(b.main!.len).toBeLessThan(b.pieces[1].len);
+    run(b, w, 60, { move: 1, jump: false });
+    expect(b.main!.cx).toBeGreaterThan(70); // and it's the one that rolls
+  });
+
+  (kind === "goo" ? it : it.fails)("on tacky surfaces he pulls himself up: moss up a 60° slope, gum up a wall", () => {
+    const climb = (m: number, steep: number) => {
+      const w = new World(320, 200, 1);
+      for (let x = 0; x < 320; x++) { const top = x < 60 ? 170 : Math.max(5, Math.round(170 - (x - 60) * steep)); for (let y = top; y < 200; y++) w.set(x, y, x < 60 ? M.rock : m); }
+      const b = make();
+      b.spawn(w, 40, 155);
+      let top = Infinity;
+      for (let f = 0; f < 300; f++) { b.step(w, { move: 1, jump: false }); top = Math.min(top, b.main!.cy); }
+      return 160 - top;
+    };
+    expect(climb(M.rock, 1.73)).toBeLessThan(10); // too steep to roll up
+    expect(climb(M.moss, 1.73)).toBeGreaterThan(60);
+    expect(climb(M.moss, 99)).toBeLessThan(10); // moss won't hold him on a wall
+    expect(climb(M.gum, 99)).toBeGreaterThan(60);
+  });
+
   it("left alone he settles down: no buzzing or fluttering", () => {
     const w = ground(), b = bob(w);
     run(b, w, 60, { move: 1, jump: false });
@@ -368,7 +395,7 @@ describe("feel", () => {
     const course = buildCourse(world), pit = course.marks.pit;
     const b = make();
     b.fixedTemp = 62;
-    b.spawn(world, pit + 15, 195, 20, course.bits);
+    b.spawn(world, pit + 15, 195, 20, course.bits.slice(0, 1)); // (just the pit's bit)
     let worst = 0;
     for (let f = 0; f < 420; f++) {
       let left = Infinity;
@@ -395,7 +422,7 @@ describe("course", () => {
     const course = buildCourse(world);
     const b = make();
     b.spawn(world, course.spawn.x, course.spawn.y);
-    const { jumps, thaw, melt } = course.marks, end = course.finish.x0 + 40;
+    const { jumps, thaw, melt } = course.marks, end = course.finish.x0 + 40, slot = course.sections.find((s) => s.name === "Slot")!.x0 + 10;
     let hold = 0;
     for (let f = 0; f < 60 * 60 && b.main!.cx < end; f++) {
       const p = b.main!;
@@ -403,9 +430,11 @@ describe("course", () => {
       // thaw under the first brazier and melt under the second.
       if (!hold && jumps.some((x) => Math.abs(p.cx - x) < 2)) hold = 20;
       if (hold) hold--;
-      const wait = (Math.abs(p.cx - thaw) < 4 && p.temp < 15) || (Math.abs(p.cx - melt) < 4 && runniness(p.temp) < 0.9);
+      const wait = (Math.abs(p.cx - thaw) < 4 && p.temp < 15) || (Math.abs(p.cx - melt) < 4 && runniness(p.temp) < 1);
+      // Rolled past the brazier without melting? Go back for it (the slot needs him runny).
+      const back = p.cx > melt + 4 && p.cx < slot + 8 && runniness(p.temp) < 0.8;
       world.step();
-      b.step(world, { move: wait ? 0 : 1, jump: hold > 0 || p.wet > 0.2 });
+      b.step(world, { move: back ? -1 : wait ? 0 : 1, jump: hold > 0 || p.wet > 0.2 });
     }
     expect(b.main!.cx).toBeGreaterThan(end);
     expect(b.countIn(course.finish.x0, 0, COURSE_W, COURSE_H) / b.total).toBeGreaterThan(0.5);

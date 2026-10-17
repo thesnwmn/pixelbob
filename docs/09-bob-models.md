@@ -35,6 +35,8 @@ Tuning the constants moves these problems around without removing them. The fix 
 | Runny | Taffy bonds and honey anchors | A thick liquid: it drips, hangs on a thread and pinches off | A slack balloon; necks pinch explicitly |
 | Dangling | A beam, then a drop | Hangs and reaches down; too far and the thread snaps | Can't: a ring rolls off a ledge like a tread |
 | Spikes | Cut along a line; bits stay | Cut along a line; bits stay and rejoin later | Rings are cut in two; the halves are bouncy balls and roll away |
+| Climbing tacky surfaces | No | Yes | No |
+| After a split you steer | The biggest piece | The piece you were steering | The piece you were steering |
 | Cost per step | ~2 ms | ~2.4 ms | ~0.5 ms |
 
 ### Goo (the recommendation)
@@ -64,6 +66,8 @@ If I were starting again, this is what I'd build. Bob is a *material*, not a sha
   - Down lowers him on a thread.
   - Too far, and the thread snaps at its thinnest point.
 - **Oozing** is a slug's foot: his underside creeps a little ahead of him and he leans that way. It's not a conveyor, which would run his underside out as a tongue.
+- **Climbing.** Tacky surfaces (moss, resin, gum) hold him at any temperature short of frozen, and harder than runny honey does: enough to hang his weight from gum. Pushing into one, the part of him touching it creeps along it, up a wall too, like a gecko's foot. Meanwhile the rest of him leans into it, so he doesn't lever himself off. Clinging counts as footing for the controller. How steep he can go depends on the surface's tack: moss about 60°, resin about 70°, gum walls. Known rough edge: he sheds a few single-particle crumbs on tacky faces.
+- **Who you steer.** After a split you keep steering the piece with most of what you were steering, not just the biggest (skin too).
 
 `stringy` (0 to 1) sets how thick runny Goo is: drips at 0, honey at 1. `memory` is his will to be round, `softness` his springiness, and `cohesion` his surface tension and how readily bits join.
 
@@ -93,9 +97,9 @@ Kept as it was: the same code, bit for bit, as a reference. See [08 Bob](08-bob.
 
 | Model | Can't do |
 |---|---|
-| Lattice | Dangle and drip; pick up the pit's bit without a jolt |
+| Lattice | Dangle and drip; pick up the pit's bit without a jolt; climb tacky surfaces; keep steering the piece you had |
 | Goo | none |
-| Skin | Dangle and drip (rolls off the ledge); bits settle quickly after spikes (they bounce) |
+| Skin | Dangle and drip (rolls off the ledge); bits settle quickly after spikes (they bounce); climb tacky surfaces (not built) |
 
 `BOB_MODELS=skin pnpm test` runs one model (or a comma-separated list).
 
@@ -112,6 +116,7 @@ In the playground, pick a model in the bar (it's kept in the link). The sliders 
   - Pull back quickly: the bulge comes back. Leave it, and a drop goes.
 - **Rolling and jumping (Skin vs Goo):** Skin is the bounciest and roundest; Goo is softer and settles.
 - **Spikes and ice (all three).**
+- **The climbing gym (Goo):** go left from the start. The moss, resin and gum towers each have a lost bit on top. Or paint moss, resin and gum with the edit tools and try your own slopes.
 - **`stringy`, `cohesion` and `memory` (Goo):** these change how runny Goo drips and how readily his bits rejoin.
 
 If Goo is the one, the next step is to delete the lattice (and probably Skin), make Goo the only Bob, and move the remaining tuning into the course.

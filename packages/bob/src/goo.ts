@@ -1,4 +1,4 @@
-import type { World } from "@pixelbob/sim";
+import { TACK, type World } from "@pixelbob/sim";
 import { Body, NB } from "./body.ts";
 import type { Piece } from "./model.ts";
 import { DEFAULTS, type Tweaks } from "./tweaks.ts";
@@ -55,6 +55,14 @@ const HOLD = 1500;
 /** Honey doesn't slide on a floor: its underside drags (it still flows above that). */
 const FLOOR_DRAG = 0.3;
 const WALL_DRAG = 0.05;
+/** How much a tacky surface (at full tack) stops him sliding along it, per substep. */
+const GRIP = 0.6;
+/** How hard a tacky surface (at full tack) holds on, px/s², and how fast he climbs one (x his speed). */
+const TACK_HOLD = 8000;
+const CLIMB = 0.6;
+/** Leaning into a tacky surface he's climbing (px/s²), up to this speed towards it. */
+const HUG = 300;
+const HUG_SPEED = 15;
 /** How far ahead of the rest of him his underside may creep when oozing (px/s). */
 const FOOT_LEAD = 12;
 /** How much a runny Bob holding still firms himself up (0..1). */
@@ -109,6 +117,9 @@ export class Goo extends Body {
   private adjN = new Uint8Array(0);
   /** The player isn't steering: runny Bob holds himself together instead of flowing (0..1). */
   private tense = 0;
+  /** Particles of the piece he's steering clinging to something tacky, last step. */
+  private cling = 0;
+  private clung = 0;
   /** Seconds before runny Bob sticks again (just jumped off). */
   private unstick = 0;
 
@@ -120,6 +131,7 @@ export class Goo extends Body {
     // (A jelly that shifts its weight as it turns needs more effort to roll than a firm one.)
     this.rollGain = 2;
     this.settleRate = 0.4;
+    this.keepControl = true;
     this.pourGain = 0.3;
   }
 
@@ -213,6 +225,10 @@ export class Goo extends Body {
   protected override crawl(p: Piece, dir: number, ooze: number, m: number, grounded: boolean): void {
     // Not oozing or pouring anywhere, he tenses up and holds the shape he's in (main piece only).
     this.tense = dir || (this.input.down ?? 0) > 0.05 ? 0 : Math.min(1, m);
+    // Clinging to something tacky and pushing towards it, he hugs it: all of him leans in, so
+    // he doesn't lever himself off it while his foot climbs.
+    if (dir && this.clung > 1 && dir * p.vx < HUG_SPEED)
+      for (let k = p.start; k < p.start + p.len; k++) this.vx[this.order[k]] += dir * HUG * Math.min(1, m) * (1 / 60);
     if (!dir || !ooze) return;
     const target = dir * this.tweaks.speed * 0.6 * Math.min(1, m);
     // His underside creeps along the surface towards the speed he wants (like a slug's foot),
@@ -468,29 +484,64 @@ export class Goo extends Body {
    * along it. It only lets go when pulled more than a pixel off (weight hanging below, the
    * last of a thread), so he can ooze over a ledge and hang from it.
    */
+  /**
+   * Holding on. Runny, he's sticky like honey: a particle touching a floor or ceiling is held
+   * against being pulled off (with a limited grip: a heavy enough load peels it away) and
+   * drags along it; walls only drag (he hangs from the lip above). And at any temperature
+   * short of frozen, tacky surfaces (moss, resin, gum) hold whatever touches them, walls
+   * too: pressed on, his rolling grips and he pulls himself up. Nothing is drawn in from
+   * further away than touching.
+   */
   protected override stick(world: World, i: number, nx: number, ny: number): void {
-    const r = Math.max(0, (this.rn[i] - 0.5) / 0.5);
-    if (r > 0 && this.unstick <= 0) {
-      // Only what's actually touching a face holds on (within TOUCH of it): it's held against
-      // being pulled off, with a limited grip (a heavy enough load peels it away), and drags
-      // along walls and ceilings. Nothing is drawn in from further away.
-      const x0 = nx, y0 = ny;
-      const cx = Math.floor(nx), cy = Math.floor(ny), a = ADHESION * r, grip = HOLD * r * this.h * this.h;
-      const fx = nx - cx, fy = ny - cy;
-      const pull = (d: number) => Math.max(-grip, Math.min(grip, d * a));
-      if (fy > 1 - TOUCH && this.solid(world, cx, cy + 1)) { ny += pull(cy + 1 - 0.02 - ny); const tr = this.tread[i] * this.h; nx = this.px[i] + tr + (nx - this.px[i] - tr) * (1 - FLOOR_DRAG * r); }
-      if (fy < TOUCH && this.solid(world, cx, cy - 1)) { ny += pull(cy + 0.02 - ny); nx = this.px[i] + (nx - this.px[i]) * (1 - 0.3 * r); }
-      // Walls don't hold him (he'd run down them as a film): he hangs from the lip above.
-      // They drag a little, as honey does.
-      if ((fx > 1 - TOUCH && this.solid(world, cx + 1, cy)) || (fx < TOUCH && this.solid(world, cx - 1, cy))) ny = this.py[i] + (ny - this.py[i]) * (1 - WALL_DRAG * r);
-      // Holding on never pulls him into a solid (keep where collisions put him, on that axis).
-      if (this.solid(world, Math.floor(nx), Math.floor(ny))) {
-        if (!this.solid(world, Math.floor(nx), Math.floor(y0))) ny = y0;
-        else if (!this.solid(world, Math.floor(x0), Math.floor(ny))) nx = x0;
-        else { nx = x0; ny = y0; }
-      }
+    if (this.unstick > 0) { this.qx = nx; this.qy = ny; return; }
+    const r = Math.max(0, (this.rn[i] - 0.5) / 0.5), live = 1 - this.fz[i], h2 = this.h * this.h;
+    const x0 = nx, y0 = ny, cx = Math.floor(nx), cy = Math.floor(ny), fx = nx - cx, fy = ny - cy;
+    const tack = (qx: number, qy: number) => (world.inside(qx, qy) ? TACK[world.mat[qy * world.w + qx]] * live : 0);
+    // (Tacky surfaces hold on harder than runny honey: enough to hang his weight from a wall.)
+    const pull = (d: number, k: number, t = 0) => { const g = (HOLD * k + TACK_HOLD * t) * h2; return Math.max(-g, Math.min(g, d * ADHESION * Math.max(k, t))); };
+    // Pushing towards a tacky wall, the side of him touching it creeps up it (a gecko's foot).
+    const climb = CLIMB * this.tweaks.speed * this.h * Math.min(1, this.tweaks.muscle * live);
+    let held = 0;
+    if (fy > 1 - TOUCH && this.solid(world, cx, cy + 1)) {
+      const t = tack(cx, cy + 1), k = Math.max(r, t);
+      if (k > 0) { ny += pull(cy + 1 - 0.02 - ny, r, t); held = Math.max(held, k); }
+      const d = Math.max(FLOOR_DRAG * r, GRIP * t);
+      // (His foot walks: on a tacky floor it creeps the way he's pushing, as on a wall.)
+      const foot = t > 0 && this.piece[i] === 0 && this.input.move ? this.input.move * climb * Math.sqrt(t) : this.tread[i] * this.h;
+      if (d > 0) nx = this.px[i] + foot + (nx - this.px[i] - foot) * (1 - d);
+    }
+    if (fy < TOUCH && this.solid(world, cx, cy - 1)) {
+      const t = tack(cx, cy - 1), k = Math.max(r, t);
+      if (k > 0) { ny += pull(cy + 0.02 - ny, r, t); held = Math.max(held, k); }
+      const d = Math.max(0.3 * r, GRIP * tack(cx, cy - 1));
+      if (d > 0) nx = this.px[i] + (nx - this.px[i]) * (1 - d);
+    }
+    for (const side of [1, -1]) {
+      if (!(side > 0 ? fx > 1 - TOUCH : fx < TOUCH) || !this.solid(world, cx + side, cy)) continue;
+      const k = tack(cx + side, cy);
+      if (k > 0) { nx += pull((side > 0 ? cx + 1 - 0.02 : cx + 0.02) - nx, k, k); held = Math.max(held, k); }
+      // (A tacky wall holds along itself too, and if he's pushing towards it, his foot on it
+      // creeps upward: the rest of him is pulled up after it.)
+      const d = Math.max(WALL_DRAG * r, GRIP * k);
+      if (d > 0) ny = this.py[i] + (ny - this.py[i]) * (1 - d);
+      if (k > 0 && this.piece[i] === 0 && this.input.move * side > 0) ny -= climb * Math.min(1, this.input.move * side) * Math.sqrt(k);
+    }
+    // Clinging to something tacky counts as footing for the piece he's steering.
+    if (held > 0 && this.piece[i] === 0) this.cling += 1 / this.sub;
+    // Holding on never pulls him into a solid (keep where collisions put him, on that axis).
+    if (this.solid(world, Math.floor(nx), Math.floor(ny))) {
+      if (!this.solid(world, Math.floor(nx), Math.floor(y0))) ny = y0;
+      else if (!this.solid(world, Math.floor(x0), Math.floor(ny))) nx = x0;
+      else { nx = x0; ny = y0; }
     }
     this.qx = nx; this.qy = ny;
+  }
+
+  protected override footing(p: Piece): boolean {
+    const c = this.cling;
+    this.clung = c;
+    this.cling = 0;
+    return p.ground + c >= Math.max(1, p.radius * 0.35);
   }
 
   // ---- After the substeps ----

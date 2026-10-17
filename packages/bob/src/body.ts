@@ -64,6 +64,8 @@ export abstract class Body implements BobModel {
   t = new Float32Array(0);
   alive = new Uint8Array(0);
   piece = new Int32Array(0);
+  /** Particles of the piece he's steering. */
+  ctl = new Uint8Array(0);
   deg = new Uint8Array(0);
   /** Seconds before a torn particle may link again. */
   cool = new Float32Array(0);
@@ -78,6 +80,8 @@ export abstract class Body implements BobModel {
   protected settleRate = 0;
   /** How hard pressing down pours a runny Bob (x POUR). */
   protected pourGain = 1;
+  /** After a split, keep steering the piece with most of what he was steering (else: the biggest). */
+  protected keepControl = false;
   /** How hard his rolling effort turns him (models differ in how well spin becomes travel). */
   protected rollGain = 1;
   /** How much flatter runny Bob wants to be (his sag when fully runny, on top of a dome's). */
@@ -163,6 +167,8 @@ export abstract class Body implements BobModel {
   protected prepare(_i: number, _T: number): void {}
   /** Forces inside him, once per substep, after the free move and before collisions. */
   protected abstract solve(substep: number): void;
+  /** Standing on something he can push against (enough of him touching the ground). */
+  protected footing(p: Piece): boolean { return p.ground >= Math.max(1, p.radius * 0.35); }
   /** The main piece's temperature state, once per step (freezing rigid, melting...). */
   protected phase(_p: Piece, _T: number): void {}
   /** The main piece's shape is set (frozen) and can't be squashed. */
@@ -199,6 +205,7 @@ export abstract class Body implements BobModel {
       this.spawned(i, dx, dy);
       this.t[i] = temp;
       this.alive[i] = 1;
+      this.ctl[i] = d === 0 ? 1 : 0;
       index.set(key(dx, dy, d), i);
     });
     pts.forEach(([dx, dy, d], i) => {
@@ -217,7 +224,7 @@ export abstract class Body implements BobModel {
     const f = () => new Float32Array(cap);
     this.x = f(); this.y = f(); this.px = f(); this.py = f(); this.vx = f(); this.vy = f(); this.t = f(); this.cool = f();
     this.cnx = f(); this.cny = f(); this.hit = f(); this.fz = f(); this.rn = f(); this.tread = f(); this.fsx = f(); this.fsy = f();
-    this.alive = new Uint8Array(cap); this.piece = new Int32Array(cap); this.deg = new Uint8Array(cap);
+    this.alive = new Uint8Array(cap); this.piece = new Int32Array(cap); this.deg = new Uint8Array(cap); this.ctl = new Uint8Array(cap);
     this.cmat = new Uint8Array(cap); this.ccell = new Int32Array(cap);
     this.ba = new Int32Array(cap * NB / 2); this.bb = new Int32Array(cap * NB / 2); this.bl = new Float32Array(cap * NB / 2); this.bn = new Float32Array(cap * NB / 2);
     this.nb = 0;
@@ -400,7 +407,7 @@ export abstract class Body implements BobModel {
     const tw = this.tweaks, { vx, vy, x, y, order } = this;
     const T = this.fixedTemp ?? p.temp;
     const m = tw.muscle * muscleAt(T);
-    const grounded = p.ground >= Math.max(1, p.radius * 0.35);
+    const grounded = this.footing(p);
     const swim = p.wet > 0.3;
     this.coyote = grounded ? 0.15 : this.coyote - DT;
     const dir = Math.max(-1, Math.min(1, input.move));
@@ -838,6 +845,14 @@ export abstract class Body implements BobModel {
     }
     const old = this.pieces;
     const list = [...groups.values()].sort((a, b) => this.weigh(b) - this.weigh(a) || a[0] - b[0]);
+    if (this.keepControl) {
+      // The piece he's steering stays the one he was steering: the one with most of it in
+      // (not simply the biggest). Only if none of it is left does the biggest take over.
+      const { ctl } = this;
+      let best = -1, most = 0;
+      list.forEach((g, k) => { const w = this.weigh(g.filter((i) => ctl[i])); if (w > most) { most = w; best = k; } });
+      if (best > 0) list.unshift(list.splice(best, 1)[0]);
+    }
     this.pieces = [];
     let o = 0;
     for (const [pi, members] of list.entries()) {
@@ -850,6 +865,8 @@ export abstract class Body implements BobModel {
       this.pieces.push(p);
     }
     this.pieces.forEach((p, pi) => { for (let k = p.start; k < p.start + p.len; k++) piece[this.order[k]] = pi; });
+    // What he's steering now: the main piece, bits that just joined it included.
+    for (let i = 0; i < n; i++) this.ctl[i] = alive[i] && piece[i] === 0 ? 1 : 0;
     this.stats();
   }
 

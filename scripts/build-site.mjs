@@ -22,7 +22,10 @@ for (const name of names) {
 }
 
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+// The concept doc is the front door; the prototypes follow.
+const concept = entries.find((e) => e.name.endsWith("-concept"));
 const items = entries
+  .filter((e) => e !== concept)
   .map((e) => `<li><a href="./${esc(e.name)}/">${esc(e.name)}</a> - ${esc(e.description)}</li>`)
   .join("\n      ");
 
@@ -44,6 +47,7 @@ writeFileSync(
   <body>
     <h1>Pixelbob</h1>
     <p>Prototypes for a 2D platformer where everything, including Bob the blob, is simulated pixels.</p>
+    ${concept ? `<p><a href="./${esc(concept.name)}/"><b>Read the concept doc</b></a>: what the game is, how it looks, the worlds, menus and the plan.</p>` : ""}
     <ul>
       ${items || "<li>No prototypes built yet.</li>"}
     </ul>

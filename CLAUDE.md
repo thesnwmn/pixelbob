@@ -23,4 +23,6 @@ A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer.
 - Deterministic: never use `Math.random()` in generation or simulation. Use `World.rand()` in the sim and the seeded helpers in `kit/rng.ts` in the stills.
 - Hot loops use typed arrays (structure of arrays), not an object per cell. `noUncheckedIndexedAccess` is off for that reason.
 - Only erasable TypeScript syntax (no enums, no parameter properties): `erasableSyntaxOnly` is on so Node can run `.ts` files directly.
-- The look is defined by `prototypes/00-stills/src/kit/` (materials, lighting, Bob). Keep the game renderer consistent with it, or change both.
+- The look is defined by `prototypes/00-stills/src/kit/` (materials, lighting) and Bob's painter `paintBob` in `packages/bob/src/draw.ts`, which the stills and the game share. Keep the game renderer consistent with the kit, or change both. Bob in a still is always the real goo, posed by simulating him (`kit/goo.ts`), never a drawn shape.
+- The worlds and their colour language are in `docs/11-worlds.md` and `docs/02-art-direction.md`: moss green grips, resin amber holds, gum violet sticks, hot colours are heat. Bob is rose pink, the one hue nothing else uses.
+- `prototypes/03-concept` is the concept doc on Pages (the site index links it first); it draws the stills' shots live. Keep it in step with the docs.

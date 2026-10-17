@@ -2,7 +2,7 @@
 
 The look: crisp pixels, a lit simulated layer over a dim back wall, and colour that comes from light and from things that glow rather than from saturated textures. Moody by default: most of every screen is dark, and the light tells you where to look.
 
-Everything below can be seen in `prototypes/00-stills`: one shot per world ([11 Worlds](11-worlds.md)) and a sheet of Bob's states, with controls for Bob's colour and for looking at the light on its own.
+Everything below can be seen in `prototypes/00-stills`: one shot per world ([11 Worlds](11-worlds.md)) and a sheet of Bob's states, with controls for Bob's colour and for looking at the light on its own. The [concept doc](https://thesnwmn.github.io/pixelbob/03-concept/) shows them with the logo, menus and HUD.
 
 ## Two renderers, one look
 
@@ -77,18 +77,32 @@ Material ramps live in `prototypes/00-stills/src/kit/materials.ts` and `packages
 
 ## Bob's colour
 
-PENDING: the colour study.
+**Rose pink** (`#ff6a92`; `BOB_COLORS.rose` in `packages/bob/src/draw.ts`).
+
+Decided by a study: every shot rendered with every candidate, cropped on Bob (`img/bob-colours.png`).
+
+![Bob's colour study](img/bob-colours.png)
+
+- **Pink, because nothing else is pink.** Nature here is green, brown and blue; light is teal and amber; hazards are orange, red and toxic green; tacky surfaces are green, amber and violet. Every other candidate vanishes into some world: cyan into ice and teal glow, lime into moss and gas, amber into sun, lava and resin, milk into snow.
+- **Rose, not coral or bubblegum.** Coral (the old default) leans orange and sits closest to fire and lava in the Foundry. Bubblegum leans magenta and drifts towards the violet gum and crystals in the Ruins and the Caverns. Rose sits between them.
+- **Pink's weak spot is teal light**, which turns it grey-mauve (the Caverns' lost bit). Bob's self-light floor fixes him; lost bits there want a little light of their own.
+
+Gameplay changes his colour without changing who he is, and the rose stays underneath:
+
+- **Temperature** already tints him: icy blue and faceted when frozen, molten orange and glowing when runny.
+- **Absorbing** (planned) would tint him: watery blue and see-through when swollen, teal when glowing, dark and glossy when oily.
+- **Players can pick another colour** in settings (accessibility), from the same set.
 
 ## Shots
 
 | Shot | World | Shows |
 |---|---|---|
-| The Green | 1 | PENDING |
-| Glow Caverns | 2 | PENDING |
-| Sticky Ruins | 3 | PENDING |
-| Frozen Grotto | 4 | PENDING |
-| The Foundry | 5 | PENDING |
-| The Sump | 6 | PENDING |
+| The Green | 1 | Golden hour. Bob rolls downhill (leaning into it) towards a moss ramp up to a ledge with a lost bit glinting on it |
+| Glow Caverns | 2 | Runny from a hot spring, Bob hangs on a thread from a ledge over a glowing pool, reaching for a lost bit below; an earlier drop is falling |
+| Sticky Ruins | 3 | Bob, a drop of goo, halfway up a violet gum pillar in a sun shaft; an amber resin route glows to one side; a lost bit on top |
+| Frozen Grotto | 4 | Moonlit lake: frozen, faceted Bob has frozen a road of ice across the water; a campfire on the far bank to thaw at |
+| The Foundry | 5 | A piece of Bob holds a pressure plate; the signal opens a gate; runny from a vent, the rest of him pours under it towards the exit |
+| The Sump | 6 | A swollen, watery Bob (absorbing isn't built: he's a bigger Bob in watery colours) tips a log see-saw to lift a lost bit to a ledge; gas glows, methane flares |
 | Bob's states | — | Nine real poses: idle, rolling, jumping, pouring under a slot, hanging on a thread, climbing gum, frozen and cracked, cut by spikes, a hot puddle |
 
 ## Still to settle
@@ -98,3 +112,13 @@ PENDING: the colour study.
 3. Bloom on big glowing pools: lovely, but heavy.
 4. A painted parallax backdrop in the game renderer (the stills have one; the game has a gradient).
 5. Plants on springs (grass, vines) in the game renderer: the stills sway them; the game's are cells.
+
+## Logo, menus and HUD
+
+Mocked up in the concept doc (`prototypes/03-concept`):
+
+- **Logo**: carved, moss-topped stone letters lit warm from above and teal from below; the O of BOB is Bob himself, the real goo, sitting in the gap.
+- **Menus** are a dark glass panel and a pixel font (Silkscreen) over the live game, never a separate screen. Rose marks the selection.
+- **HUD**: how much of Bob you still have (the score), a temperature strip from icy to molten, and his pieces with the one you steer ringed. It fades when nothing changes.
+- **Level complete** shows the % of Bob that made it, lost bits found and crumbs shed.
+- **Tips** are one line in the world when something new happens to Bob. Never a tutorial screen.

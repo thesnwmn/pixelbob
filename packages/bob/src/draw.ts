@@ -10,7 +10,7 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] 
 export interface BobColors { body: RGB; light: RGB; dark: RGB; rim: RGB }
 
 /**
- * Colours Bob can be. Coral is his default (docs/02-art-direction.md says why); the
+ * Colours Bob can be. Rose is his default (docs/02-art-direction.md says why); the
  * others are for comparing, and for the times gameplay wants him a different colour.
  */
 export const BOB_COLORS: Record<string, BobColors & { name: string }> = {
@@ -46,7 +46,7 @@ const scratch = {
  * (BobPainter, below) and the stills, so they look the same. `solid` says where the
  * ground is: his pixels never draw inside it, which is what presses him onto it.
  */
-export function paintBob(blob: BobView, solid: (x: number, y: number) => boolean, put: PutPixel, frame: number, colors: BobColors = BOB_COLORS.coral): void {
+export function paintBob(blob: BobView, solid: (x: number, y: number) => boolean, put: PutPixel, frame: number, colors: BobColors = BOB_COLORS.rose): void {
   blob.pieces.forEach((_, pi) => piece(blob, solid, put, frame, pi, colors));
 }
 
@@ -167,7 +167,7 @@ function piece(blob: BobView, solid: (x: number, y: number) => boolean, put: Put
  * packages/render/src/shade.ts for their layout), after the world has been shaded.
  */
 export class BobPainter {
-  colors: BobColors = BOB_COLORS.coral;
+  colors: BobColors = BOB_COLORS.rose;
 
   draw(blob: BobView, world: World, color: Uint8Array, emit: Uint8Array, frame: number): void {
     const W = world.w, H = world.h;

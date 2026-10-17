@@ -5,7 +5,7 @@ Each phase is a prototype with a preview link, and is "done" when it answers its
 ## Phase 0: art direction (this work)
 
 - Repo, toolchain, CI and Pages previews.
-- Procedural stills: meadow, glow cavern, foundry, frozen grotto, Bob's states, sandbox mockup.
+- Procedural stills (since replaced by one shot per world, below).
 - Docs: overview, art direction, simulation plan, toolchain.
 - **Questions:** camera size, Bob's look and colour, how dark, how much bloom. See [02](02-art-direction.md#what-we-want-to-settle).
 
@@ -39,9 +39,15 @@ Bob in the sandbox.
 
 **Proves:** Bob feels good to move: momentum, hugging terrain, squeezing, splitting. This is the riskiest part of the game.
 
+## Phase 2½: concept (`prototypes/03-concept`)
+
+What the whole game is, before building it: the run of worlds ([11](11-worlds.md)), one shot per world authored at the game camera with the real goo Bob posed in each, Bob's colour settled by a study across every world (rose), a logo, mocked-up menus, HUD and settings, and a concept doc on Pages that draws the shots live.
+
+**Status:** done. Next is the agent harness: how a team of agents builds the game from here, with a human as play tester and director.
+
 ## Phase 3: first level slice
 
-A meadow-to-cave level with three or four puzzles built from the seeds in [01](01-game-overview.md#puzzle-seeds), checkpoints, a level file format and a minimal title screen. Audio prototype.
+The Green ([11](11-worlds.md#1-the-green)): three or four levels built from the seeds in [01](01-game-overview.md#puzzle-seeds), checkpoints, a level file format, the title screen, map and saves from the concept doc. Audio prototype.
 
 ## Later
 

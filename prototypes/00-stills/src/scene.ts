@@ -15,10 +15,6 @@ export interface SceneDef {
   notes: string[];
   w: number;
   h: number;
-  /** Where the camera-zoom control centres (usually Bob), as fractions of w/h. */
-  focus: [number, number];
-  /** Sheets and UI mockups are composed for the whole frame: ignore the zoom control. */
-  fixedZoom?: boolean;
   build(ctx: SceneCtx): Setup;
   /** Optional HTML on top of the canvas (UI mockups, labels). Positioned in % of the canvas. */
   overlay?(root: HTMLElement): void;

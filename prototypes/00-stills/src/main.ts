@@ -9,7 +9,7 @@ const params = new URLSearchParams(location.search);
 
 const bobSel = form.elements.namedItem("bob") as HTMLSelectElement;
 for (const [id, p] of Object.entries(PALETTES)) bobSel.add(new Option(p.name, id));
-for (const name of ["bob", "zoom", "view", "seed"]) {
+for (const name of ["bob", "view", "seed"]) {
   const v = params.get(name);
   if (v !== null) (form.elements.namedItem(name) as HTMLInputElement).value = v;
 }
@@ -18,8 +18,7 @@ if (params.get("animate") === "0") (form.elements.namedItem("animate") as HTMLIn
 const opt = () => {
   const f = new FormData(form);
   return {
-    bob: String(f.get("bob") ?? "coral"),
-    zoom: Number(f.get("zoom") ?? 1.5),
+    bob: String(f.get("bob") ?? "rose"),
     view: String(f.get("view") ?? "final") as View,
     animate: f.get("animate") === "on",
     seed: Math.max(1, Number(f.get("seed") ?? 7) | 0),
@@ -60,16 +59,6 @@ const io = new IntersectionObserver((entries) => {
 });
 for (const c of cards) io.observe(c.el);
 
-function applyZoom(c: Card, zoom: number) {
-  const z = c.def.fixedZoom ? 1 : zoom;
-  const [fx, fy] = c.def.focus;
-  const left = Math.max(0, Math.min(1 - 1 / z, fx - 0.5 / z));
-  const top = Math.max(0, Math.min(1 - 1 / z, fy - 0.5 / z));
-  const tf = `scale(${z}) translate(${-left * 100}%, ${-top * 100}%)`;
-  c.canvas.style.transform = tf;
-  c.overlay.style.transform = tf;
-}
-
 // Build renderers one at a time so the page stays responsive.
 let building = false;
 function pump() {
@@ -81,7 +70,7 @@ function pump() {
   building = true;
   setTimeout(() => {
     const t0 = performance.now();
-    next.r = new Renderer(next.def.build({ seed: o.seed, palette: PALETTES[o.bob] ?? PALETTES.coral }));
+    next.r = new Renderer(next.def.build({ seed: o.seed, palette: PALETTES[o.bob] ?? PALETTES.rose }));
     next.key = key;
     next.el.querySelector(".loading")?.remove();
     draw(next, performance.now() / 1000);
@@ -112,11 +101,9 @@ requestAnimationFrame(loop);
 
 form.addEventListener("input", () => {
   const o = opt();
-  for (const c of cards) applyZoom(c, o.zoom);
-  const p = new URLSearchParams({ bob: o.bob, zoom: String(o.zoom), view: o.view, seed: String(o.seed), animate: o.animate ? "1" : "0" });
+  const p = new URLSearchParams({ bob: o.bob, view: o.view, seed: String(o.seed), animate: o.animate ? "1" : "0" });
   history.replaceState(null, "", `?${p}${location.hash}`);
   pump();
   for (const c of cards) draw(c, performance.now() / 1000);
 });
-for (const c of cards) applyZoom(c, opt().zoom);
 pump();

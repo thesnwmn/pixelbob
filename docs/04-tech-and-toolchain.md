@@ -23,12 +23,13 @@ packages/
   render/     WebGL2 renderer and the CPU pass that turns cells into its textures (shared by the sandbox and the playground).
   levels/     (planned) level format, loading/saving, generation helpers.
 prototypes/
-  00-stills/      art direction stills (CPU renderer, this PR)
+  00-stills/      art direction: one shot per world and Bob's states (CPU renderer, real goo Bob)
   01-sandbox/     world sandbox: dig, paint materials, heat, light
   02-bob/         Bob playground
+  03-concept/     concept doc: the game, look, worlds, menus, settings, plan (shots drawn live)
 ```
 
-`prototypes/00-stills/src/kit/` is the reference implementation of the look. The lighting there is deliberately structured like a GPU pipeline (half-res light grid, nearest-surface lookup, two-scale bloom) so it ports to shaders directly.
+`prototypes/00-stills/src/kit/` is the reference implementation of the look (with Bob's painter, shared from `packages/bob/src/draw.ts`). The lighting there is deliberately structured like a GPU pipeline (half-res light grid, nearest-surface lookup, two-scale bloom) so it ports to shaders directly.
 
 ## Rendering pipeline (WebGL2)
 
@@ -82,8 +83,10 @@ Pointer Events for mouse and touch together; the Gamepad API; keyboard. Touch la
 pnpm install
 pnpm dev:stills       # art stills at http://localhost:5180
 pnpm dev:sandbox      # world sandbox at http://localhost:5181
+pnpm dev:bob          # Bob playground at http://localhost:5182
+pnpm dev:concept      # concept doc at http://localhost:5183
 pnpm typecheck
 pnpm test
 pnpm build:site       # _site/ as deployed to Pages
-node prototypes/00-stills/scripts/render.ts out 2   # stills to PNG without a browser
+node prototypes/00-stills/scripts/render.ts out 3   # shots to PNG without a browser
 ```

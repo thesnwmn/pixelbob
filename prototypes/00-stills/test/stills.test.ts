@@ -5,7 +5,7 @@ import { SCENES } from "../src/scenes/index.ts";
 
 const frame = (id: string, seed: number, t: number) => {
   const def = SCENES.find((s) => s.id === id)!;
-  const r = new Renderer(def.build({ seed, palette: PALETTES.coral }));
+  const r = new Renderer(def.build({ seed, palette: PALETTES.rose }));
   const img = { width: def.w, height: def.h, data: new Uint8ClampedArray(def.w * def.h * 4) } as ImageData;
   r.render(img, t);
   return img.data;

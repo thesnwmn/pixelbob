@@ -1,5 +1,5 @@
 // Renders every still to PNG without a browser (Node strips the types):
-//   node prototypes/00-stills/scripts/render.ts <outDir> [scale=2] [t=2.5] [bob=coral] [only=id,id] [view=final]
+//   node prototypes/00-stills/scripts/render.ts <outDir> [scale=2] [t=2.5] [bob=rose] [only=id,id] [view=final]
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { deflateSync } from "node:zlib";
@@ -7,7 +7,7 @@ import { PALETTES } from "../src/kit/goo.ts";
 import { Renderer, type View } from "../src/kit/render.ts";
 import { SCENES } from "../src/scenes/index.ts";
 
-const [out = "stills-out", scaleArg = "2", tArg = "2.5", bob = "coral", only = "", view = "final"] = process.argv.slice(2);
+const [out = "stills-out", scaleArg = "2", tArg = "2.5", bob = "rose", only = "", view = "final"] = process.argv.slice(2);
 const scale = Number(scaleArg), t = Number(tArg);
 mkdirSync(out, { recursive: true });
 
@@ -41,7 +41,7 @@ function png(w: number, h: number, rgba: Uint8ClampedArray): Buffer {
 for (const def of SCENES) {
   if (only && !only.split(",").includes(def.id)) continue;
   const t0 = performance.now();
-  const r = new Renderer(def.build({ seed: 7, palette: PALETTES[bob] ?? PALETTES.coral }));
+  const r = new Renderer(def.build({ seed: 7, palette: PALETTES[bob] ?? PALETTES.rose }));
   const t1 = performance.now();
   const img = { width: def.w, height: def.h, data: new Uint8ClampedArray(def.w * def.h * 4) } as ImageData;
   r.render(img, t, view as View);

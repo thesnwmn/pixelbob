@@ -42,8 +42,6 @@ export const bobsheet: SceneDef = {
   ],
   w: W,
   h: H,
-  fixedZoom: true,
-  focus: [0.5, 0.5],
   build({ seed, palette }) {
     const buf = new Buf(W, H);
     const sim = new Uint8Array(W * H);

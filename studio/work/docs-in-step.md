@@ -3,7 +3,7 @@ title: Docs in step
 kind: tool
 role: toolsmith
 size: S
-status: ready
+status: doing
 milestone: m0-studio
 ---
 

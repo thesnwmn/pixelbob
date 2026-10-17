@@ -3,18 +3,29 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # The studio page shows open PRs and bugs, so it's rebuilt when one opens or closes.
+  # pull_request_target checks out main, never the PR's code, so it's safe with write access.
+  pull_request_target:
+    types: [opened, closed, reopened]
+  issues:
+    types: [opened, closed, reopened]
   workflow_dispatch:
 
 permissions:
   contents: write
-
-# Main and PR previews all push to gh-pages; queue them instead of racing.
-concurrency:
-  group: gh-pages
-  cancel-in-progress: false
+  issues: read
+  pull-requests: read
 
 jobs:
   deploy:
+    # A merged PR is also a push to main, which deploys anyway. Skipping it matters: GitHub keeps only
+    # one pending run per concurrency group, so a third run at merge could cancel pr-cleanup's.
+    if: github.event_name != 'pull_request_target' || !github.event.pull_request.merged
+    # Main and PR previews all push to gh-pages; queue them instead of racing. On the job, so a
+    # skipped run never takes a place in the queue.
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +36,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:site
+        env:
+          STUDIO_GITHUB: "1"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: JamesIves/github-pages-deploy-action@v4
         with:

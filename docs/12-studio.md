@@ -8,7 +8,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 
 ```
  producer ──"/go", "/director …", "/feedback …"──►  Director  ── reads ──►  studio/ (the board, on main)
-    ▲                                                  │                        + open PRs + feedback issues
+    ▲                                                  │                        + open PRs + open issues (bugs)
     │                                                  │ picks one unit, wears the right hat
     │                                                  ▼
     │      Designer · Muse · Art director · Planner · Prototyper · Engineer · Toolsmith · Tester · Release
@@ -93,7 +93,7 @@ docs/
   pull_request_template.md
 ```
 
-Why files and not GitHub issues or a project board: they're versioned and reviewed in the same PR as the work, any session reads them without an API, they can't drift from the code, and observers see them in the repo. GitHub is used where it's better: **PRs** are the record of every unit and show work in progress, and **issues** are the record of your playtest feedback. `/feedback` raises one for each report, and it's closed when the work it caused is done.
+Why files and not GitHub issues or a project board for the backlog: they're versioned and reviewed in the same PR as the work, any session reads them without an API, they can't drift from the code, and observers see them in the repo. GitHub is used where it's better (see [GitHub](#github)): **PRs** are the record of every unit, and **issues** are for things that are wrong.
 
 ### Main is the truth
 
@@ -210,6 +210,35 @@ Asks are answered in a session (`/director` answers them; the Director also offe
 - **Standing rules** you've given ("never change Bob's colour without asking", "prefer forgiving over precise").
 - **Taste notes**: what the Director has learned from your feedback, each with where it came from ("likes crumbs-as-skill: playtest 2026-10-02"). Designers read this before shaping anything. You can correct it.
 
+## GitHub
+
+The repo holds the plan and the work. GitHub holds the conversation around the work and enforces the rules, so they don't depend on an agent remembering them.
+
+### Use
+
+| Feature | For |
+|---|---|
+| **Issues** | **Things that are wrong**, never planned work: bugs and problems you hit in a playtest, failures the Tester's bots find, main going red overnight. Each has the build, the scenario and a replay where there is one. Ideas, features and tasks stay in `studio/`. |
+| **Labels** | On issues: `bug`, plus `blocker` for a bug that stops a milestone build. On PRs: the unit's kind, `gated`, and `playtest` when it wants you to play it. |
+| **Issue form** | A bug form (`.github/ISSUE_TEMPLATE/bug.yml`) asking for the build, the scenario, what happened, what you expected, and the replay, for when you or anyone else file from GitHub directly. `/feedback` fills in the same fields. |
+| **PRs** | One per unit; short (see [PRs](#prs)). `Fixes #N` closes the issue when it merges. Review comments are how you or anyone else can say something about a change after the fact; the next session reads them. |
+| **Rulesets** on `main` | Enforce what `CLAUDE.md` asks: no direct pushes, squash merge only, and the CI health check and the gate check must pass before anything merges. |
+| **A gate check** | An Action that finds PRs touching gated files (`studio/producer.md`, `direction.md`, milestones, `.claude/` and the health check's rules, the colour language in `docs/02`, the kit's palette), labels them `gated`, and stays red until the PR also has the label `producer-ok`. Only you add that label. Code owners can't do this job: the studio's PRs are opened under your GitHub account, and GitHub doesn't let you approve your own PR. Since the studio uses your account, the check can't stop it from adding the label deliberately; it does stop a gated change slipping through by accident, which is the real risk. |
+| **Releases** | Each alpha and beta is a tag and a GitHub Release: notes generated from the squash-merged PR titles since the last release (another reason the titles are short and plain), plus a link to the frozen build and a zip of it to play offline. |
+| **Actions** | What's there now (CI, Pages, PR previews), plus: CI runs `pnpm health`; a **nightly health check on main** that opens an issue if it fails (dependencies rot even when nobody pushes, and it uses no session budget); the studio page rebuilt on PR and issue events; releases cut from tags; filmstrips posted in the preview comment on a PR. |
+| **Pages** | The game builds, the prototypes, the concept doc and the studio page. |
+
+Bugs don't need a unit file. A small one is fixed straight from its issue, and the PR closes it. A bug that needs shaping or splitting gets a `fix` unit linking the issue. The board lists open issues alongside units, so `/go` sees both.
+
+### Don't use
+
+- **GitHub milestones.** Our milestones are files with scope and exit criteria. A `blocker` label covers the one thing GitHub milestones would add: which bugs must be fixed before a build.
+- **Projects.** A second board would drift from the first. The studio page is generated from the repo.
+- **Discussions and the wiki.** Design lives in `docs/` and decisions in `docs/decisions/`. Discussions might be worth adding later, if outside play testers join.
+- **Dependabot.** Dependency updates are `tidy` units, so they go through the health check and the Critic like any other change. The nightly health check notices when something's rotting.
+- **Code owners and required approvals.** Both need a reviewer other than the PR's author, and the PRs are yours. The gate check does the job instead.
+- **Auto-merge.** A session merges its own PR once it has seen CI go green. Auto-merge would let a PR merge after the session has ended and can't follow up, which breaks [Main is the truth](#main-is-the-truth).
+
 ## The roles
 
 Each role is a brief in `.claude/agents/<role>.md`: what it's for, what it reads first, what it may change, and what done looks like. It's written as a Claude Code subagent definition, so the same file serves both ways a role is used (see [Invocation](#invocation)).
@@ -224,7 +253,7 @@ Each role is a brief in `.claude/agents/<role>.md`: what it's for, what it reads
 | **Prototyper** | Spikes: fast, throwaway, one question each, with a kill criterion. Answers with a verdict and what was learned. | the unit's question | `prototypes/NN-*` only | Import spike code into packages or the game; it's rebuilt properly if it survives. |
 | **Engineer** | Production code: packages, the game, fixes. Reproduces before fixing. Tests with the change. Designs for extension. | `CLAUDE.md`, the code, the unit | `packages/`, `game/`, tests | Change design intent silently; it raises an ask or a note. |
 | **Toolsmith** | Tools for you (tweak panels, level and puzzle editor, scenario links, replay viewer) and for us (the board, bots' harness, render scripts). | the formats in `04`, the board | `tools/`, `studio/board.ts`, editor prototypes | Change game rules to suit a tool. |
-| **Tester** | Automated play: scripted and bot runs, replays of your runs as regression tests, invariants and fuzzing, performance budgets, filmstrips, browser smoke tests. Writes playtest reports. | the unit, scenarios, replays | `tests/`, `studio/playtests/`, bot code | Fix what it finds (it files `fix` units with a replay). |
+| **Tester** | Automated play: scripted and bot runs, replays of your runs as regression tests, invariants and fuzzing, performance budgets, filmstrips, browser smoke tests. Writes playtest reports. | the unit, scenarios, replays | `tests/`, `studio/playtests/`, bot code | Fix what it finds (it opens an issue with a replay). |
 | **Critic** | Independent review of every PR before merge: correctness, the conventions in `CLAUDE.md`, determinism, tests that test the claim, docs in step, size. Fresh eyes: it never sees the author's reasoning, only the diff and the unit. | the diff, the unit, `CLAUDE.md` | PR comments | Push code. |
 | **Release** | Builds: preview scenarios and handoff cards for each PR, alpha and beta builds at milestones, changelogs and release notes. | the milestone, merged units | `.github/workflows/`, `game/scenarios/`, release notes | Cut a milestone build without you. |
 
@@ -241,7 +270,7 @@ There are three ways a role runs, picked by what the work needs.
 What every session does on `/go`:
 
 0. **Health check.** `pnpm health`. If it's red, stop here: this session is now a `fix` unit for the health check (see [Health](#health)).
-1. **Sync.** Read `producer.md`, `direction.md`, the board, open PRs and their reviews, CI on main, and new feedback issues.
+1. **Sync.** Read `producer.md`, `direction.md`, the board, open PRs and their reviews, CI on main, and open issues.
 2. **Pick** the next unit by the [order below](#what-go-picks), and say which and why in a few lines.
 3. **Claim.** Set the unit to `doing`, push, and open a draft PR at once, so it's visible in flight. The branch is whatever the session gets; the unit records the PR.
 4. **Work** in the role's hat. Spikes state the question and kill criterion first; fixes reproduce first.
@@ -259,12 +288,13 @@ If there's budget left after an S unit, the session may take a second S unit, fr
 Top of this list first:
 
 1. **Main is broken**: the start-of-session health check is red, CI on main is red, or a deploy failed. This isn't a choice: the health check decides it before anything else is read.
-2. **Your input that hasn't been handled**: feedback issues, PR comments from you, answered asks that unblock something.
-3. **Open PRs** that need fixing or finishing.
-4. **The current milestone's next ready unit**, riskiest first: the unit with the biggest unknown, or a spike in front of it.
-5. **Shaping** when fewer than about three units are ready: the Designer and Planner turn the next ideas into units.
-6. **Balance**: after about four build units in a row, a test or tidy unit. After a milestone, a retro.
-7. **Nothing obvious**: the Muse pitches, or the Tester goes bug-hunting.
+2. **Your input that hasn't been handled**: PR comments from you, answered asks that unblock something.
+3. **Bugs**: `blocker` issues first, then the rest by how badly they hurt play.
+4. **Open PRs** that need your call and have had it (merge or rework).
+5. **The current milestone's next ready unit**, riskiest first: the unit with the biggest unknown, or a spike in front of it.
+6. **Shaping** when fewer than about three units are ready: the Designer and Planner turn the next ideas into units.
+7. **Balance**: after about four build units in a row, a test or tidy unit. After a milestone, a retro.
+8. **Nothing obvious**: the Muse pitches, or the Tester goes bug-hunting.
 
 You can always steer: `/go fix the jump`, `/go something small`, `/go think`.
 
@@ -336,7 +366,7 @@ Set in `producer.md`.
 
 **Autopilot** (`/go` run as a scheduled task within a budget) isn't planned for now. It could be added later without changing anything else.
 
-**Gated**, at any level: changes to direction, milestones, the colour language or Bob's character, the harness's own rules, cutting an alpha or beta, and anything an ask marked gated. Gated PRs are labelled `gated` and wait for you. Each one is self-contained, so nothing else waits behind it.
+**Gated**, at any level: changes to direction, milestones, the colour language or Bob's character, the harness's own rules, cutting an alpha or beta, and anything an ask marked gated. Gated PRs are labelled `gated` (by the gate check, so none slip through unlabelled) and wait for you: add `producer-ok` and merge, or comment. Each one is self-contained, so nothing else waits behind it.
 
 ## Builds and playtesting
 
@@ -346,11 +376,11 @@ Set in `producer.md`.
 |---|---|---|
 | **Preview** | `…/preview/pr-N/` (exists today) | Every PR. |
 | **Latest** | `…/pixelbob/game/` | Every merge to main. |
-| **Alpha / beta** | `…/pixelbob/builds/alpha-1/`, kept forever | When you approve a milestone build; a tag cuts it. |
+| **Alpha / beta** | `…/pixelbob/builds/alpha-1/`, kept forever, and a GitHub Release | When you approve a milestone build; a tag cuts it. |
 
 - **Alpha**: the milestone's mechanics are all playable end to end; content can be rough and placeholder.
 - **Beta**: the milestone's content is complete; only fixes and polish follow.
-- Each comes with release notes: what's in, what to play, what's known broken, and a short playtest script.
+- Each comes with release notes: what's in (generated from PR titles, then edited), what to play, what's known broken (open issues), and a short playtest script. No open `blocker` issues is part of every milestone's exit criteria.
 
 ### Scenarios: putting you where the change is
 
@@ -373,11 +403,9 @@ It stops when it has enough to act on, not when every field is full.
 
 Then it does the rest itself:
 
-- **Raises a GitHub issue**, labelled `feedback`: your words, the answers, the ratings, the build and scenario, and the replay.
-- **Files the triage on main**, each linking the issue: a playtest report in `studio/playtests/`, a log line on the unit, new `fix` units with the replay, and taste notes.
-- **Tells you** what it understood and what will happen.
-
-The issue is closed when the units it caused are done.
+- **Writes the report** to `studio/playtests/`: your words, the answers, the ratings, the build and scenario, the replay.
+- **Raises an issue for each thing that's wrong**, labelled `bug`, with its replay and a link to the report. What you liked, what you'd change and what it taught us about your taste go into the report, the units and the taste notes, not into issues.
+- **Tells you** what it understood, the issues it raised, and what will happen.
 
 ### Automated playtesting
 
@@ -412,14 +440,14 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 
 The order it gets built in, each a unit of its own. The first three make the harness usable; the rest come in as they're needed, so phase 3 starts as soon as possible.
 
-1. **Health check (S).** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, and a test for each check. It comes first because every unit after it starts and ends with the check.
+1. **Health check (S).** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, the nightly run on main, and a test for each check. It comes first because every unit after it starts and ends with the check.
 2. **Folder and board (S).** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record, and the studio tier of the health check.
-3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `director`, `feedback` and `status` skills, labels, the `CLAUDE.md` pointer. (The PR template is already in, with this plan.)
+3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `director`, `feedback` and `status` skills, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](13-producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
 4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
 5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button (copy to clipboard).
 6. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.
 7. **Bots and forgiveness (M, spike first).** The search bot and the slack measure.
-8. **Release (S).** Tag-cut alpha and beta builds under `/builds/`, release notes.
+8. **Release (S).** Tag-cut alpha and beta builds under `/builds/`, GitHub Releases with notes from PR titles.
 9. **Fan-out (S, later).** Parallel sessions for independent units, when the producer wants it.
 
 Then the Director takes phase 3: the first milestone, an alpha of The Green.
@@ -429,6 +457,7 @@ Then the Director takes phase 3: the first milestone, an alpha of The Green.
 2026-10-17, on the questions this plan first raised:
 
 - **Merging:** the studio merges its own PRs. PR titles and descriptions are short, following the template in [PRs](#prs).
-- **Feedback:** through `/feedback`. The session grills the producer to complete the report, then raises the issue itself.
+- **Feedback:** through `/feedback`. The session grills the producer to complete the report, writes it to the repo, and raises an issue itself for each thing that's wrong.
+- **Backlog and issues:** the backlog is in the repo. Issues are only for things that are wrong (bugs from playtests, bots and the nightly check), never for features or planned work.
 - **Autopilot:** not now; maybe later.
 - **Roles:** the eleven above are the starting set.

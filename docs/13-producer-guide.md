@@ -16,7 +16,7 @@ You don't need to plan, size, review code or merge, except PRs that need your ca
 | Place | For |
 |---|---|
 | **A Claude Code session** on this repo (claude.ai/code, web or app) | Commands, conversations with the Director, answering questions |
-| **GitHub** | The history: short PRs (merged by the studio) and an issue for each piece of feedback. Comment on either and the next session picks it up |
+| **GitHub** | The history: short PRs (merged by the studio), issues for bugs, releases for alpha and beta builds. Comment on any of them and the next session picks it up; file a bug with the bug form if you're not in a session |
 | **The studio page** (`thesnwmn.github.io/pixelbob/studio/`) | What's going on, without starting a session |
 | **Builds** (preview links, `…/game/`, `…/builds/alpha-1/`) | Playing, and the feedback button (copies your notes and a replay for `/feedback`) |
 
@@ -72,7 +72,7 @@ The session then grills you, a few questions at a time with options to pick from
 - what a vague word like "off" meant;
 - the questions on the handoff card.
 
-Then it raises a GitHub issue with the full report and the replay, files the triage on main (playtest report, fix units, taste notes), and tells you what will happen. The issue closes when that work is done.
+Then it writes the report to the repo, raises a GitHub issue for each thing that's wrong (with the replay), turns the rest into ideas, units and taste notes, and tells you what will happen. Each issue closes when its fix merges.
 
 ```
 /feedback split gate: splitting is great but I kept losing track of which piece was me. fun 4, difficulty right.
@@ -110,6 +110,15 @@ How much the studio does without you is a setting in `studio/producer.md`, which
 Running `/go` on a schedule (autopilot) isn't planned for now.
 
 Gated PRs (direction, milestones, Bob's character, the colour language, the studio's own rules, alpha and beta builds) always wait for you. They're the only PRs left open between sessions.
+
+## One-time setup
+
+A few GitHub settings only you can change. The studio will ask for them when it builds its commands (unit 3 in [12](12-studio.md#building-the-studio)), with exact steps:
+
+- **A ruleset on `main`**: require a PR, require the `CI` and `gate` checks to pass, allow squash merge only.
+- That's all. Labels, the bug form and the gate check go in through the studio's own PRs.
+
+To let a gated PR through, add the label `producer-ok` and merge it (or say so in a session and the studio merges it).
 
 ## Tools you'll get
 

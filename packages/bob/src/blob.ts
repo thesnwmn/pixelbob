@@ -1,8 +1,8 @@
 import { CAT, CONDUCT, Cat, DENSITY, FRICTION, M, MOBILITY, SHARP, type World } from "@pixelbob/sim";
 import { DEFAULTS, frozenness, muscleAt, runniness, type Tweaks } from "./tweaks.ts";
 
-/** What the player is asking for this step. move is -1..1. */
-export interface Input { move: number; jump: boolean }
+/** What the player is asking for this step. move is -1..1; down (0..1, optional) presses down. */
+export interface Input { move: number; jump: boolean; down?: number }
 
 /** A connected bit of Bob. pieces[0] is always the biggest: the one with the eyes. */
 export interface Piece {
@@ -36,7 +36,29 @@ const VMAX = 450;
 /** Fastest a particle may move relative to its piece. */
 const RELMAX = 120;
 /** °C per step a struggling Bob warms himself by, below room temperature. */
-const SHIVER = 0.15;
+const SHIVER = 0.02;
+/** °C a jolt of effort (a change of direction, a tap of jump) warms a cold Bob by. */
+const JOLT = 0.5;
+/** Struggling only warms him this far: enough to move a little, not to thaw properly. */
+const STRUGGLE_MAX = 0;
+/** His normal temperature, and the one his radiant target is measured from. */
+const AMBIENT_BOB = 20;
+/** How far heat and cold shine from strong sources, px; and how fast he soaks it up at full exposure. */
+const RADIANT = 24;
+const SOAK = 0.03;
+/** How strongly hot and cold sources shine (exposure per source cell at 1 px).  */
+const HEAT_REACH = 1.2;
+const COLD_REACH = 0.1;
+/** Share of the temperature gap he hands to a cell he touches each step. */
+const EMIT = 0.03;
+const EMIT_MAX = 1.5;
+/** Push downward when a runny Bob presses down, px/s². */
+const POUR = 900;
+/** Runny stickiness: pull per substep back to where a particle holds on, and how far it stretches before letting go. */
+const ADHESION = 0.3;
+const ADH_BREAK = 1.2;
+/** Runny bonds stretch (taffy) up to this length; beyond it they tear, so a heavy dangling bit pulls off. */
+const TAFFY_MAX = 2.4;
 /** Jumping out of liquid is weaker than off the ground: falling in is a trap, but one you can climb out of. */
 const WATER_JUMP = 0.6;
 
@@ -83,6 +105,13 @@ export class Blob {
   /** Shift from pushing apart overlapping pieces this substep, which mustn't become velocity. */
   private fsx = new Float32Array(0);
   private fsy = new Float32Array(0);
+  /** Where a sticky (runny) particle is holding on to a surface. */
+  private anch = new Uint8Array(0);
+  private ax = new Float32Array(0);
+  private ay = new Float32Array(0);
+  /** Which way the held surface is from the hold point (one of the four neighbours). */
+  private asx = new Int8Array(0);
+  private asy = new Int8Array(0);
   /** Shape-matching pull per particle, before taking out net shift and spin. */
   private dsx = new Float32Array(0);
   private dsy = new Float32Array(0);
@@ -116,6 +145,12 @@ export class Blob {
   private rigid = false;
   /** The player is asking for something: he shivers, which warms him a little. */
   private effort = false;
+  /** How hard he's pouring himself down this step (0..1). */
+  private pouring = 0;
+  /** Direction changes and jump taps since the last step (shaking himself warm), and the last input. */
+  private jolts = 0;
+  private lastDir = 0;
+  private lastJump = false;
   /** Squash of the main piece's target shape (world frame), sx * sy = 1. */
   sx = 1;
   sy = 1;
@@ -128,6 +163,7 @@ export class Blob {
   private ww = 0;
   private world: World | null = null;
   private mergeA: number[] = [];
+  private src: number[] = [];
   private mergeB: number[] = [];
 
   constructor(tweaks: Tweaks = DEFAULTS, seed = 1) {
@@ -143,17 +179,25 @@ export class Blob {
   }
 
   /** Make a fresh round Bob centred at (cx, cy) (his bottom rests about `size` below). */
-  spawn(world: World, cx: number, cy: number, temp = 20): void {
-    const r = this.tweaks.size;
-    const pts: [number, number][] = [];
-    for (let dy = -r; dy <= r; dy++)
-      for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r + r * 0.5) pts.push([dx, dy]);
+  /**
+   * Make a fresh round Bob centred at (cx, cy) (his bottom rests about `size` below), plus
+   * any stranded bits of him placed around the level (they count towards his total, so
+   * collecting them raises the score).
+   */
+  spawn(world: World, cx: number, cy: number, temp = 20, bits: { x: number; y: number; r: number }[] = []): void {
+    // [offset x, offset y, disc index] for every particle; disc 0 is Bob.
+    const discs = [{ x: cx, y: cy, r: this.tweaks.size }, ...bits];
+    const pts: [number, number, number][] = [];
+    discs.forEach(({ r }, d) => {
+      for (let dy = -r; dy <= r; dy++)
+        for (let dx = -r; dx <= r; dx++) if (dx * dx + dy * dy <= r * r + r * 0.5) pts.push([dx, dy, d]);
+    });
     const n = pts.length, cap = n * 2;
     this.cap = cap;
     const f = () => new Float32Array(cap);
     this.x = f(); this.y = f(); this.px = f(); this.py = f(); this.vx = f(); this.vy = f(); this.t = f();
     this.rx = f(); this.ry = f(); this.hx = f(); this.hy = f(); this.cool = f();
-    this.cnx = f(); this.cny = f(); this.hit = f(); this.fz = f(); this.rn = f(); this.al = f(); this.tread = f(); this.fsx = f(); this.fsy = f(); this.dsx = f(); this.dsy = f();
+    this.cnx = f(); this.cny = f(); this.hit = f(); this.fz = f(); this.rn = f(); this.al = f(); this.tread = f(); this.fsx = f(); this.fsy = f(); this.ax = f(); this.ay = f(); this.anch = new Uint8Array(cap); this.asx = new Int8Array(cap); this.asy = new Int8Array(cap); this.dsx = f(); this.dsy = f();
     this.alive = new Uint8Array(cap); this.piece = new Int32Array(cap); this.deg = new Uint8Array(cap);
     this.cmat = new Uint8Array(cap); this.ccell = new Int32Array(cap);
     this.ba = new Int32Array(cap * NB / 2); this.bb = new Int32Array(cap * NB / 2); this.bl = new Float32Array(cap * NB / 2); this.bn = new Float32Array(cap * NB / 2);
@@ -164,19 +208,19 @@ export class Blob {
     this.head = new Int32Array(world.w * world.h).fill(-1);
     this.next = new Int32Array(cap);
     const index = new Map<number, number>();
-    const key = (dx: number, dy: number) => (dy + 64) * 256 + dx + 64;
-    pts.forEach(([dx, dy], i) => {
-      this.x[i] = this.px[i] = cx + dx + 0.5;
-      this.y[i] = this.py[i] = cy + dy + 0.5;
+    const key = (dx: number, dy: number, d: number) => ((d * 256 + dy + 64) * 256) + dx + 64;
+    pts.forEach(([dx, dy, d], i) => {
+      this.x[i] = this.px[i] = Math.round(discs[d].x) + dx + 0.5;
+      this.y[i] = this.py[i] = Math.round(discs[d].y) + dy + 0.5;
       this.rx[i] = this.hx[i] = dx;
       this.ry[i] = this.hy[i] = dy;
       this.t[i] = temp;
       this.alive[i] = 1;
-      index.set(key(dx, dy), i);
+      index.set(key(dx, dy, d), i);
     });
-    pts.forEach(([dx, dy], i) => {
+    pts.forEach(([dx, dy, d], i) => {
       for (const [ox, oy] of [[1, 0], [0, 1], [1, 1], [-1, 1]]) {
-        const j = index.get(key(dx + ox, dy + oy));
+        const j = index.get(key(dx + ox, dy + oy, d));
         if (j !== undefined) this.bond(i, j, Math.hypot(ox, oy));
       }
     });
@@ -342,6 +386,11 @@ export class Blob {
     const dir = Math.max(-1, Math.min(1, input.move));
     if (dir) this.facing = Math.sign(dir);
     this.effort = dir !== 0 || input.jump;
+    // Struggling: every change of direction and every tap of jump is a jolt of effort.
+    const d = Math.sign(dir);
+    if ((d && d !== this.lastDir) || (input.jump && !this.lastJump)) this.jolts++;
+    if (d) this.lastDir = d;
+    this.lastJump = input.jump;
 
     // Freezing sets him rigid in his current shape: his squash stops being applied in
     // world space (or a rolling frozen dome would be forced to change shape every frame).
@@ -383,13 +432,18 @@ export class Blob {
         }
         this.stretch = 0.14;
         this.coyote = this.buffer = 0;
+        for (let k = p.start; k < p.start + p.len; k++) this.anch[order[k]] = 0;
       }
     }
     if (!this.held) this.charge = 0;
     // He settles into a dome on the ground and rounds up in the air (world frame, so it doesn't roll with him).
     // Runny, he slumps much flatter: a puddle that can ooze under low gaps.
     this.sag += ((grounded ? 0.16 + 1.4 * runniness(T) : 0) - this.sag) * 0.15;
-    const sq = (1 + this.sag) * (1 + 0.35 * this.charge * Math.min(1, m));
+    // Holding down squashes him: a squat that lowers him under things. How much depends on how
+    // pliable he is: a good squash when normal, a little when cold, none when frozen solid
+    // (runny, he's already flat, and pours instead; see below).
+    const squeeze = Math.max(0, Math.min(1, input.down ?? 0)) * Math.min(1, m) * (1 - frozenness(T));
+    const sq = (1 + this.sag) * (1 + 0.35 * this.charge * Math.min(1, m)) * (1 + 0.5 * squeeze);
     this.sx = this.rigid ? 1 : this.stretch > 0 ? 0.84 : sq;
     this.sy = 1 / this.sx;
     if (this.stretch > 0) this.stretch -= DT;
@@ -424,6 +478,18 @@ export class Blob {
       const a = dir * (swim ? Math.max(tw.air, 0.4) : tw.air) * 500 * DT * Math.min(1, m + 0.2);
       for (let k = p.start; k < p.start + p.len; k++) vx[order[k]] += a;
     }
+    // Pressing down while runny, he pours himself downward: into a pit, through a hole,
+    // over an edge. Where there's floor below nothing happens; over a gap he drips in.
+    const down = Math.max(0, Math.min(1, input.down ?? 0)) * ooze;
+    this.pouring = down;
+    // (Only the parts with nothing under them are pushed: the rest stays put on the floor,
+    // while his bonds may stretch further than usual, so he drains into the gap.)
+    const world = this.world;
+    if (down > 0.05 && world)
+      for (let k = p.start; k < p.start + p.len; k++) {
+        const i = order[k];
+        if (!this.solid(world, Math.floor(x[i]), Math.floor(y[i]) + 1)) vy[i] += POUR * down * DT;
+      }
     // Swimming up: holding jump in water paddles upward.
     if (swim && input.jump && m > 0.05)
       for (let k = p.start; k < p.start + p.len; k++) vy[order[k]] -= 520 * DT * Math.min(1, m);
@@ -485,7 +551,7 @@ export class Blob {
       const f = (fz[a] + fz[b]) * 0.5, r = (rn[a] + rn[b]) * 0.5;
       const strain = len / bl[k] - 1;
       // (Frozen Bob doesn't tear by stretching: he cracks on impact instead, see impacts().)
-      const limit = breakBase * (1 + 2 * r);
+      const limit = breakBase * (1 + r);
       // Only judged once a step, so a hard landing's momentary squeeze doesn't count.
       if (breaking && strain > limit) { this.breaks.strain++; this.unbond(k); this.cool[a] = this.cool[b] = 0.3 * (1 - r); continue; }
       const alpha = soft * (1 + 20 * r);
@@ -495,7 +561,7 @@ export class Blob {
       // Freezing sets him in whatever shape he is in.
       if (f > 0) bl[k] += (len - bl[k]) * f * 0.05;
       // Runny Bob is taffy: bonds take on whatever length they're pulled to, so he pours and stays poured.
-      else if (r > 0) bl[k] = Math.max(0.6, Math.min(4, bl[k] + (len - bl[k]) * r * 0.05));
+      else if (r > 0) bl[k] = Math.max(0.6, Math.min(TAFFY_MAX * (1 + 3 * this.pouring), bl[k] + (len - bl[k]) * r * 0.05));
       // Normally, bonds settle to the spacing of the particles in his rest shape, so they
       // agree with his shape memory: otherwise bonds made while he was squashed flat (merging
       // bits back on) would hold him flat, and a lump that's flat can't roll. Bonds between
@@ -616,8 +682,28 @@ export class Blob {
         const f = 1 - Math.pow(1 - Math.min(1, FRICTION[m] * grip), 1 / SUB), tr = this.tread[i] * H;
         nx = px[i] + tr + (nx - px[i] - tr) * (1 - f);
       }
+      // Runny Bob is sticky, like honey: where he touches a surface he holds on, a little.
+      // Pulled more than ADH_BREAK away (weight hanging below, a jump), he lets go; crawling
+      // drags his hold along with him. So he can ooze over an edge and dangle down.
+      const r = this.rn[i];
+      if (r > 0.3) {
+        if (this.anch[i]) {
+          this.ax[i] += this.tread[i] * H;
+          const dx = this.ax[i] - nx, dy = this.ay[i] - ny;
+          // Let go if pulled too far, or if the surface it holds isn't there any more (dragged
+          // past an edge, or dug away).
+          const sx = Math.floor(this.ax[i]) + this.asx[i], sy = Math.floor(this.ay[i]) + this.asy[i];
+          if (dx * dx + dy * dy > ADH_BREAK * ADH_BREAK || !this.solid(world, sx, sy)) this.anch[i] = 0;
+          else { nx += dx * ADHESION * r; ny += dy * ADHESION * r; }
+        } else if (cnx[i] || cny[i]) {
+          // The surface is on the far side from the contact normal.
+          this.anch[i] = 1; this.ax[i] = nx; this.ay[i] = ny;
+          this.asx[i] = Math.abs(cnx[i]) >= Math.abs(cny[i]) ? -Math.sign(cnx[i]) : 0;
+          this.asy[i] = Math.abs(cnx[i]) >= Math.abs(cny[i]) ? 0 : -Math.sign(cny[i]);
+        }
+      } else this.anch[i] = 0;
       // Last resort: never end inside a solid.
-      if (this.solid(world, Math.floor(nx), Math.floor(ny))) { nx = px[i]; ny = py[i]; if ((globalThis as any).REV) (globalThis as any).REV.push(i); }
+      if (this.solid(world, Math.floor(nx), Math.floor(ny))) { nx = px[i]; ny = py[i]; }
       x[i] = nx; y[i] = ny;
     }
   }
@@ -749,27 +835,60 @@ export class Blob {
     return n >= 4 && vxx > 0 ? Math.max(-1, Math.min(1, (sxy - (sx * sy) / n) / vxx)) : 0;
   }
 
-  /** Exchange heat with the cells he's in and touching; boil off or dissolve. */
+  /**
+   * Bob's temperature (docs/08-bob.md#temperature). Gameplay first, physics second:
+   *   - Near a strong source (glowing lava, a mass of ice) he soaks up its heat or cold
+   *     through the air over a couple of seconds, all the way through, more the closer he is.
+   *   - Away from sources he drifts back towards the temperature around him slowly, so he
+   *     holds a heat or a chill long enough to use it.
+   *   - Touching something extreme (lava, fire) still acts fast; water cools him quicker than air.
+   *   - He gives his temperature off to what he touches: hot Bob melts snow and ice, frozen
+   *     Bob freezes water.
+   * Then particles boil off above 100 °C, and acid eats them.
+   */
   private heat(world: World): void {
-    const { t, alive, x, y, ccell, ba, bb } = this, ww = world.w;
+    const { t, alive, x, y, ccell, ba, bb, order } = this, ww = world.w;
     if (this.fixedTemp !== null) {
       for (let i = 0; i < this.cap; i++) if (alive[i]) t[i] = this.fixedTemp;
+      this.jolts = 0;
     } else {
-      for (let i = 0; i < this.cap; i++) {
-        if (!alive[i]) continue;
-        const cx = Math.floor(x[i]), cy = Math.floor(y[i]);
-        if (world.inside(cx, cy)) {
-          const c = cy * ww + cx, m = world.mat[c];
-          const k = m === M.air ? 0.012 : 0.05 + CONDUCT[m];
-          t[i] += (world.temp[c] - t[i]) * Math.min(0.5, k);
+      const soak = this.tweaks.soak, hold = Math.max(0.1, this.tweaks.hold);
+      for (const p of this.pieces) {
+        // Hot and cold things shine on the particles facing them, so his near side heats (or
+        // chills) first and it spreads through him along his bonds.
+        const src = this.sources(world, p);
+        for (let k = p.start; k < p.start + p.len; k++) {
+          const i = order[k];
+          if (src.length) {
+            let hot = 0, cold = 0;
+            for (let j = 0; j < src.length; j += 3) {
+              const dx = src[j] - x[i], dy = src[j + 1] - y[i], d2 = dx * dx + dy * dy;
+              if (d2 > RADIANT * RADIANT) continue;
+              // Falls off gently with distance (1/d, not 1/d²), so it carries across a room.
+              const f = 1 / Math.max(1, Math.sqrt(d2));
+              if (src[j + 2] > 0) hot += src[j + 2] * f;
+              else cold -= src[j + 2] * f;
+            }
+            if (hot + cold > 0.001) {
+              // Radiated heat alone tops out short of boiling; only touching something hot boils him.
+              const target = AMBIENT_BOB + 72 * (1 - Math.exp(-hot)) - 45 * (1 - Math.exp(-cold));
+              t[i] += (target - t[i]) * Math.min(0.1, SOAK * soak * (1 - Math.exp(-(hot + cold))));
+            }
+          }
+          // Conduction with the cell he's in and the one he touches, faster the bigger the gap.
+          const cx = Math.floor(x[i]), cy = Math.floor(y[i]);
+          if (world.inside(cx, cy)) this.conduct(world, i, cy * ww + cx, hold);
+          if (ccell[i] >= 0) this.conduct(world, i, ccell[i], hold);
         }
-        const c = ccell[i];
-        if (c >= 0) t[i] += (world.temp[c] - t[i]) * Math.min(0.5, 0.02 + CONDUCT[world.mat[c]] * 0.5);
       }
-      // Trying to move in the cold, he shivers: a little body heat (only the main piece is trying).
+      // Trying to move in the cold, he shivers: a little body heat (only the main piece is
+      // trying). Shaking back and forth and tapping jump warm him much more: enough to work a
+      // frozen Bob loose a little at a time.
       const p = this.pieces[0];
-      if (this.effort && p)
-        for (let k = p.start; k < p.start + p.len; k++) { const i = this.order[k]; if (t[i] < 20) t[i] += SHIVER; }
+      const warm = (this.effort ? SHIVER : 0) + this.jolts * JOLT;
+      if (warm && p)
+        for (let k = p.start; k < p.start + p.len; k++) { const i = order[k]; if (t[i] < STRUGGLE_MAX) t[i] = Math.min(STRUGGLE_MAX, t[i] + warm); }
+      this.jolts = 0;
       // Heat spreads through him along his bonds.
       for (let k = 0; k < this.nb; k++) {
         const a = ba[k], b = bb[k], d = (t[b] - t[a]) * 0.12;
@@ -787,6 +906,39 @@ export class Blob {
         if (this.rand() < 0.3) world.set(cx, cy, M.air);
         this.kill(i, "dissolved");
       }
+    }
+  }
+
+  /**
+   * Strong hot and cold sources near a piece (cells hotter than 150 °C or colder than −5 °C
+   * within reach), as [x, y, strength] triples; strength is positive for heat, negative for cold.
+   */
+  private sources(world: World, p: Piece): number[] {
+    const out = this.src;
+    out.length = 0;
+    const reach = p.radius + RADIANT, x0 = Math.max(0, Math.floor(p.cx - reach)), x1 = Math.min(world.w - 1, Math.ceil(p.cx + reach));
+    const y0 = Math.max(0, Math.floor(p.cy - reach)), y1 = Math.min(world.h - 1, Math.ceil(p.cy + reach));
+    for (let cy = y0; cy <= y1; cy++)
+      for (let cx = x0; cx <= x1; cx++) {
+        const T = world.temp[cy * world.w + cx];
+        if (T >= 150) out.push(cx + 0.5, cy + 0.5, ((T - 150) / 1000) * HEAT_REACH);
+        else if (T <= -5) out.push(cx + 0.5, cy + 0.5, ((T + 5) / 20) * COLD_REACH);
+      }
+    return out;
+  }
+
+  /** Heat flow between particle i and cell c, both ways (he warms or chills what he touches). */
+  private conduct(world: World, i: number, c: number, hold: number): void {
+    const m = world.mat[c], gap = world.temp[c] - this.t[i];
+    // Air barely moves his temperature (he holds a heat); liquids more (a dip cools him off);
+    // solids a little; big gaps fast.
+    const touch = CAT[m] === Cat.Liquid ? 0.01 : 0.002;
+    const k = (m === M.air ? 0.0004 / hold : 0.0004 / hold + CONDUCT[m] * touch) * (1 + Math.abs(gap) / 150);
+    this.t[i] += gap * Math.min(0.3, k);
+    if (m !== M.air && CAT[m] !== Cat.Gas && Math.abs(gap) > 2) {
+      // A little at a time: enough to melt snow or freeze water, not to put out lava.
+      world.temp[c] -= Math.max(-EMIT_MAX, Math.min(EMIT_MAX, gap * EMIT));
+      world.wake(c % world.w, (c / world.w) | 0);
     }
   }
 

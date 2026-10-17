@@ -49,15 +49,19 @@ function respawn() {
   let sx = course.spawn.x, sy = course.spawn.y;
   if (at > 0 && at < W) {
     sx = Math.round(at);
-    let top = 0;
-    while (top < H - 1 && (world.mat[top * W + sx] === M.air || CAT[world.mat[top * W + sx]] === Cat.Gas)) top++;
+    // The ground is the top of the solid run up from the bottom (not, say, a brazier overhead).
+    let top = H - 1;
+    while (top > 0 && CAT[world.mat[(top - 1) * W + sx]] !== Cat.Empty && CAT[world.mat[(top - 1) * W + sx]] !== Cat.Gas) top--;
     sy = top - tweaks.size - 3;
   }
-  bob.spawn(world, sx, sy);
+  bob.spawn(world, sx, sy, 20, course.bits);
   bob.fixedTemp = fixedTemp;
   startAt = frame; finishedAt = 0;
   cam.x = sx; cam.y = sy;
 }
+
+// For debugging and scripted playthroughs from the browser console.
+(window as unknown as { pixelbob: unknown }).pixelbob = { bob, get world() { return world; }, get course() { return course; } };
 
 let gl: GLRenderer;
 try {
@@ -71,7 +75,7 @@ try {
 
 const LABELS: Record<keyof typeof RANGES, string> = {
   cohesion: "cohesion", memory: "memory", softness: "softness", muscle: "muscle", grip: "grip",
-  speed: "speed", jump: "jump", air: "air ctrl", size: "size", gravity: "gravity",
+  speed: "speed", jump: "jump", air: "air ctrl", size: "size", gravity: "gravity", soak: "heat soak", hold: "heat hold",
 };
 const panel = $("#panel"), sliders = $("#sliders");
 const inputs = new Map<string, HTMLInputElement>();
@@ -184,8 +188,8 @@ $<HTMLButtonElement>("#zout").onclick = () => setZoom(cam.z / 1.25);
 // ---- Input: keyboard, touch sticks, edit brush ----
 
 const keys = new Set<string>();
-const input = { move: 0, jump: false };
-const stick = { id: -1, x0: 0, move: 0 }, jumpTouch = new Set<number>();
+const input = { move: 0, jump: false, down: 0 };
+const stick = { id: -1, x0: 0, y0: 0, move: 0, down: 0 }, jumpTouch = new Set<number>();
 window.addEventListener("keydown", (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   keys.add(e.key.toLowerCase());
@@ -201,6 +205,7 @@ window.addEventListener("blur", () => keys.clear());
 function readInput() {
   const k = (...a: string[]) => a.some((x) => keys.has(x));
   input.move = (k("d", "arrowright") ? 1 : 0) - (k("a", "arrowleft") ? 1 : 0) || stick.move;
+  input.down = k("s", "arrowdown") ? 1 : stick.down;
   input.jump = k(" ", "w", "arrowup") || jumpTouch.size > 0;
 }
 
@@ -219,7 +224,7 @@ canvas.addEventListener("pointerdown", (e) => {
   if (state.mode === "play") {
     // Touch: left half is a stick (drag), right half is the jump button.
     const r = canvas.getBoundingClientRect();
-    if (e.clientX - r.left < r.width / 2) { stick.id = e.pointerId; stick.x0 = e.clientX; stick.move = 0; }
+    if (e.clientX - r.left < r.width / 2) { stick.id = e.pointerId; stick.x0 = e.clientX; stick.y0 = e.clientY; stick.move = stick.down = 0; }
     else jumpTouch.add(e.pointerId);
     return;
   }
@@ -228,7 +233,11 @@ canvas.addEventListener("pointerdown", (e) => {
   brush(x, y);
 });
 canvas.addEventListener("pointermove", (e) => {
-  if (e.pointerId === stick.id) { stick.move = Math.max(-1, Math.min(1, (e.clientX - stick.x0) / 40)); return; }
+  if (e.pointerId === stick.id) {
+    stick.move = Math.max(-1, Math.min(1, (e.clientX - stick.x0) / 40));
+    stick.down = Math.max(0, Math.min(1, (e.clientY - stick.y0 - 15) / 30));
+    return;
+  }
   if (!ptr.down) return;
   const [x, y] = toCell(e);
   const d = Math.hypot(x - ptr.lx, y - ptr.ly), n = Math.max(1, Math.ceil(d / Math.max(1, state.size * 0.5)));
@@ -236,7 +245,7 @@ canvas.addEventListener("pointermove", (e) => {
   Object.assign(ptr, { x, y, lx: x, ly: y });
 });
 const up = (e: PointerEvent) => {
-  if (e.pointerId === stick.id) { stick.id = -1; stick.move = 0; }
+  if (e.pointerId === stick.id) { stick.id = -1; stick.move = stick.down = 0; }
   jumpTouch.delete(e.pointerId);
   ptr.down = false;
 };

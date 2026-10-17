@@ -1,6 +1,6 @@
 import { M, World } from "@pixelbob/sim";
 import { describe, expect, it } from "vitest";
-import { Blob, COURSE_H, COURSE_W, DEFAULTS, buildCourse, type Input, type Tweaks } from "../src/index.ts";
+import { Blob, COURSE_H, COURSE_W, DEFAULTS, buildCourse, muscleAt, runniness, type Input, type Tweaks } from "../src/index.ts";
 
 const FLOOR = 150;
 /** A wide world with a floor of `m` (and anything extra painted by `extra`). */
@@ -170,6 +170,84 @@ describe("temperature", () => {
     expect(hot.pieces.length).toBe(1);
   });
 
+  it("a heat source warms his near side first, then all of him, and he holds it after", () => {
+    // A bowl of lava hanging just over him, held hot like a brazier.
+    const w = ground(M.rock, (w) => {
+      for (let x = 55; x <= 65; x++) for (let y = FLOOR - 26; y < FLOOR - 23; y++) { w.set(x, y, M.lava); w.base[y * w.w + x] = 1200; w.temp[y * w.w + x] = 1200; }
+    });
+    const b = new Blob(DEFAULTS);
+    b.spawn(w, 60, FLOOR - 12);
+    run(b, w, 30);
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < b.cap; i++) if (b.alive[i]) { lo = Math.min(lo, b.t[i]); hi = Math.max(hi, b.t[i]); }
+    expect(hi - lo).toBeGreaterThan(8); // the side facing it is warmer
+    run(b, w, 240);
+    expect(b.main!.temp).toBeGreaterThan(55); // runny all through
+    expect(b.losses.boiled).toBe(0); // radiated heat alone doesn't boil him
+    for (let x = 55; x <= 65; x++) for (let y = FLOOR - 26; y < FLOOR - 23; y++) { w.set(x, y, M.air); w.base[y * w.w + x] = 20; }
+    run(b, w, 300);
+    expect(b.main!.temp).toBeGreaterThan(50); // five seconds later he's still warm
+  });
+
+  it("shaking and tapping jump loosens a frozen Bob a little; sitting still doesn't", () => {
+    const shake = (struggle: boolean) => {
+      const w = ground(), b = new Blob(DEFAULTS);
+      b.spawn(w, 60, FLOOR - 12, -20);
+      for (let f = 0; f < 180; f++) b.step(w, struggle ? { move: Math.floor(f / 8) % 2 ? 1 : -1, jump: f % 20 < 3 } : { move: 0, jump: false });
+      return b.main!.temp;
+    };
+    const shaken = shake(true), still = shake(false);
+    expect(muscleAt(shaken)).toBeGreaterThan(0.3);
+    expect(shaken).toBeLessThan(2); // only loosened, not thawed
+    expect(muscleAt(still)).toBe(0);
+  });
+
+  it("runny, he clings and can hang down off a ledge", () => {
+    const w = new World(300, 300, 1);
+    for (let y = 100; y < 110; y++) for (let x = 0; x < 120; x++) w.set(x, y, M.rock);
+    const b = new Blob(DEFAULTS);
+    b.fixedTemp = 80;
+    b.spawn(w, 95, 88);
+    for (let f = 0; f < 240; f++) {
+      let edge = 0;
+      for (let i = 0; i < b.cap; i++) if (b.alive[i]) edge = Math.max(edge, b.x[i]);
+      b.step(w, { move: edge < 136 ? 0.5 : 0, jump: false });
+    }
+    let below = 0;
+    for (let i = 0; i < b.cap; i++) if (b.alive[i] && b.y[i] > 110) below++;
+    expect(below).toBeGreaterThan(50); // hanging down past the ledge
+    expect(b.main!.cy).toBeLessThan(115); // but still holding on
+  });
+
+  it("on the course, a round Bob rolls over the pit's lost bit; a runny one pours in for it", () => {
+    const attempt = (runny: boolean) => {
+      const world = new World(COURSE_W, COURSE_H, 7);
+      const course = buildCourse(world), pit = course.marks.pit;
+      const b = new Blob(DEFAULTS);
+      if (runny) b.fixedTemp = 80;
+      b.spawn(world, runny ? pit + 15 : pit - 40, 195, 20, course.bits);
+      for (let f = 0; f < 300; f++) {
+        const p = b.main!;
+        let left = Infinity;
+        for (let k = p.start; k < p.start + p.len; k++) left = Math.min(left, b.x[b.order[k]]);
+        const move = runny ? (left > pit - 6 ? -0.5 : 0) : 1;
+        world.step();
+        b.step(world, { move, jump: false, down: runny && f > 90 ? 1 : 0 });
+      }
+      return b.main!.len === b.total;
+    };
+    expect(attempt(false)).toBe(false);
+    expect(attempt(true)).toBe(true);
+  });
+
+  it("frozen, he freezes the water around him", () => {
+    const w = ground(M.rock, (w) => { for (let y = FLOOR - 30; y < FLOOR; y++) for (let x = 0; x < 320; x++) w.set(x, y, M.water); });
+    const b = new Blob(DEFAULTS);
+    b.spawn(w, 60, FLOOR - 40, -25);
+    for (let f = 0; f < 240; f++) { w.step(); b.step(w, { move: 0, jump: false }); }
+    expect(w.count(M.ice)).toBeGreaterThan(50);
+  });
+
   it("boils away on lava", () => {
     const w = ground(M.rock, (w) => { for (let x = 40; x < 90; x++) for (let y = FLOOR - 4; y < FLOOR; y++) w.set(x, y, M.lava); });
     const b = new Blob(DEFAULTS);
@@ -238,16 +316,19 @@ describe("course", () => {
     const course = buildCourse(world);
     const b = new Blob(DEFAULTS);
     b.spawn(world, course.spawn.x, course.spawn.y);
+    const { jumps, thaw, melt } = course.marks, end = course.finish.x0 + 40;
     let hold = 0;
-    for (let f = 0; f < 60 * 30 && b.main!.cx < 900; f++) {
+    for (let f = 0; f < 60 * 60 && b.main!.cx < end; f++) {
       const p = b.main!;
-      // Wind up just before the gap, the spike pit and the lava pit; swim when in water.
-      if (!hold && [362, 612, 660].some((x) => Math.abs(p.cx - x) < 2)) hold = 20;
+      // Wind up just before the gap, the spike pit and the lava pit; swim when in water;
+      // thaw under the first brazier and melt under the second.
+      if (!hold && jumps.some((x) => Math.abs(p.cx - x) < 2)) hold = 20;
       if (hold) hold--;
+      const wait = (Math.abs(p.cx - thaw) < 4 && p.temp < 15) || (Math.abs(p.cx - melt) < 4 && runniness(p.temp) < 0.9);
       world.step();
-      b.step(world, { move: 1, jump: hold > 0 || p.wet > 0.2 });
+      b.step(world, { move: wait ? 0 : 1, jump: hold > 0 || p.wet > 0.2 });
     }
-    expect(b.main!.cx).toBeGreaterThan(900);
+    expect(b.main!.cx).toBeGreaterThan(end);
     expect(b.countIn(course.finish.x0, 0, COURSE_W, COURSE_H) / b.total).toBeGreaterThan(0.5);
-  }, 30_000);
+  }, 60_000);
 });

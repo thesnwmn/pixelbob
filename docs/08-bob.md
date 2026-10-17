@@ -33,13 +33,22 @@ Bob has no feet, wheels or jetpack. **Every action is Bob changing his own shape
 | **Jump** | Hold to squash (the wind-up is him holding a deformed shape), release to spring. Pushes off along the average contact normal, so slopes and walls angle the jump. | Muscle to wind up; **footing**: only what he's touching can push back, so jumps from a point (a spike tip, a corner) are weak | Frozen: can't squash, so can't jump. In the air: there's nothing to push. Forgiving timing: coyote time 0.15 s, and a jump released up to 0.15 s before landing fires on touchdown. |
 | **Steer in the air** | A small sideways push (`air`). Physically a cheat, kept small. | | |
 | **Swim** | Holding jump in liquid paddles upward; move steers. Let go to leap out: with no ground to squash against, the leap is uncharged and only 60% of a land jump, so water is a trap you can climb out of but not one you leave easily. | Muscle | Frozen sinks like a stone. |
+| **Squash / pour** (down) | Holding down squashes him, a squat that lowers him under things: a good squash when normal, less when cold, none when frozen. Runny, it pours him down into gaps beneath him (into a pit, over an edge); only the parts with nothing under them are pushed, and his bonds may stretch further while he does. | Pliability (temperature) | Frozen: nothing. |
 | **Squeeze** | No collider, so particles go wherever there's room. But bonds and shape memory resist big deformations, so at room temperature he won't fit through a slot much smaller than him. | Low memory (heat) | Normal Bob is blocked by a 4 px slot; runny Bob pours through it in about 2 s. |
 
 So **muscle** (how hard he can deform himself) and **grip** (what the surface gives back) are the two halves of every move. Temperature mostly acts on muscle and memory, and materials mostly act on grip and on what touching them does to him.
 
 ## Temperature
 
-Each particle has its own temperature. It exchanges heat with the cell it's in and the cell it touches (faster with conductive materials such as steel, lava and water), and heat spreads through him along his bonds. So he can be half frozen, with a cold side lagging behind the warm side.
+Each particle has its own temperature, and heat spreads through him along his bonds. The rules are tuned for play, not physics: **get heat or cold from a visible source, then use it before it wears off.**
+
+- **Sources shine.** Anything hotter than 150 °C (lava, fire, glowing steel) or colder than −5 °C (ice, snow) within 24 px warms or chills the particles facing it, falling off with distance (1/d, so it carries). His near side changes first and it spreads through him; he soaks it up all the way through in a few seconds, and can fine-tune by where he stands. Radiated heat alone tops out at about 92 °C, short of boiling.
+- **He holds it.** Away from sources he drifts back towards the temperature around him slowly: runny lasts several seconds after leaving a brazier, and a chill lingers too. Water cools him faster than air (a dip ends a melt).
+- **Touching extremes is still fast.** Lava, fire or a brazier's hot bowl boil him.
+- **He gives it off.** He hands a little of his temperature to what he touches each frame: a hot Bob melts snow and ice, and a frozen Bob dropped in water freezes it around himself.
+- **Tunable.** `heat soak` (how fast he takes on a source) and `heat hold` (how long he keeps it) are on the tweak panel.
+
+So he can be half frozen, with a cold side lagging behind the warm side.
 
 | State | Range | Muscle | Shape | Bonds | What it means |
 |---|---|---|---|---|---|
@@ -49,7 +58,9 @@ Each particle has its own temperature. It exchanges heat with the cell it's in a
 | Warm / runny | 40 to 70 °C | weakening | memory fades to almost none, and what's left is a flat puddle | **taffy**: bonds take on whatever length they're pulled to | Switches from rolling to oozing; slumps into a puddle about 4 px high; pours under low gaps; stays poured until cool |
 | Boiling | above 100 °C | weak | | | Particles boil off as steam cells: he shrinks |
 
-**Shivering.** Below room temperature, trying to move or jump warms him a little (0.15 °C a frame). In mild cold (the course's −15 °C air) that keeps a moving Bob cold and sluggish but able to crawl out; if he stops, he freezes. Without it, a Bob frozen in a cold zone could never move or thaw.
+**Shaking free.** Below 0 °C, struggling warms him: a trickle while you hold a direction, and a jolt for every change of direction and every tap of jump. Rattling back and forth works a frozen Bob loose in a few seconds, up to 0 °C and no further: enough to move a little at half strength, not to thaw properly (that needs a heat source or time).
+
+**Sticky when runny.** A runny particle that touches a surface holds on there, a little: pulled more than about a pixel away it lets go, and crawling drags its hold along. So runny Bob can ooze over an edge and **dangle down** (the course has a cliff to try it on), or hold down to pour into a gap (the course has a lost bit of him at the bottom of a narrow pit). Hang out too far and the holds peel off and he falls; his taffy bonds only stretch so far, so a heavy dangling bit can tear away.
 
 **Thawing.** Frozen, his main piece's target stops being squashed in world space (a frozen dome rolling would otherwise be forced to change shape every frame and shake itself apart). On thawing he takes his current shape as a fresh start, and both his rest shape and his bonds' lengths relax back to a round blob over a second or two.
 

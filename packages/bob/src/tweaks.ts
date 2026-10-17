@@ -26,6 +26,10 @@ export interface Tweaks {
   size: number;
   /** Gravity, px/s². */
   gravity: number;
+  /** 0..2: how fast he takes on the heat or cold of a strong source nearby. */
+  soak: number;
+  /** 0.2..3: how long he holds a heat or chill once away from sources (higher = longer). */
+  hold: number;
 }
 
 export const DEFAULTS: Tweaks = {
@@ -40,6 +44,8 @@ export const DEFAULTS: Tweaks = {
   drive: "roll",
   size: 9,
   gravity: 420,
+  soak: 1,
+  hold: 1,
 };
 
 /** Slider ranges for the playground panel. */
@@ -54,6 +60,8 @@ export const RANGES: Record<Exclude<keyof Tweaks, "drive">, [number, number, num
   air: [0, 1, 0.05],
   size: [3, 14, 1],
   gravity: [100, 900, 20],
+  soak: [0, 2, 0.05],
+  hold: [0.2, 3, 0.1],
 };
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);

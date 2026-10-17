@@ -7,7 +7,7 @@ Each phase is a prototype with a preview link, and is "done" when it answers its
 - Repo, toolchain, CI and Pages previews.
 - Procedural stills (since replaced by one shot per world, below).
 - Docs: overview, art direction, simulation plan, toolchain.
-- **Questions:** camera size, Bob's look and colour, how dark, how much bloom. See [Art direction](art-direction.md#what-we-want-to-settle).
+- **Questions:** camera size, Bob's look and colour, how dark, how much bloom. See [Art direction](art-direction.md#still-to-settle).
 
 ## Phase 1: world sandbox (`prototypes/01-sandbox`)
 

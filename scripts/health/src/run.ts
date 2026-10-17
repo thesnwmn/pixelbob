@@ -4,9 +4,10 @@ import { type Check, type Ctx, type Result, type Status, realShell } from "./che
 import { CODE } from "./code.ts";
 import { DEPS } from "./deps.ts";
 import { REPO } from "./repo.ts";
+import { STUDIO } from "./studio.ts";
 import { TOOLS } from "./tools.ts";
 
-export const CHECKS: Check[] = [...TOOLS, ...DEPS, ...REPO, ...CODE];
+export const CHECKS: Check[] = [...TOOLS, ...DEPS, ...REPO, ...CODE, ...STUDIO];
 
 export interface Options {
   /** Skip the slow checks (the site build), for use while working. */

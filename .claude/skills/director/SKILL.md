@@ -17,7 +17,7 @@ The producer says something to the studio: `$ARGUMENTS`. Read `.claude/agents/di
    - "surprise me": the **muse**, as a subagent.
    Wear the role's hat (read its brief) for a conversation; run it as a subagent when independence matters.
 4. **Record** what was decided: a unit, an ask answered, `direction.md`, a milestone, a standing rule or taste note in `producer.md` (with where it came from), a decision record for anything expensive to reverse.
-5. **Land** it if anything changed, as `/go` does (steps 3, 7 to 9 of `.claude/skills/go/SKILL.md`): a PR, a session log, the end health check, merge. The producer made these calls in this session, so it isn't held as gated.
+5. **Land** it if anything changed, as `/go` does (steps 3, 7 to 9 of `.claude/skills/go/SKILL.md`): a PR, a session log, the end health check, merge. If it touches a gated file, the gate holds it until the producer adds `producer-ok` themselves; a session never adds that label, even for calls made in the session ([Gated files](../../../docs/decisions/2026-10-17-gated-files.md)). Ungated changes go in a separate PR, which merges.
 6. **Report** in a few lines: what you understood, what changed, who's doing what next.
 
 Answering a question changes nothing: no PR, no log.

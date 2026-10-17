@@ -17,6 +17,7 @@ Your settings, the rules you've given the studio, and what it has learned about 
 - The backlog lives in `studio/`. Issues are only for things that are wrong, never for features or planned work ([Backlog in files](../docs/decisions/2026-10-17-backlog-in-files.md)).
 - Feedback comes through `/feedback`: grill me until the report is complete, write it to the repo, and raise an issue for each thing that's wrong.
 - No autopilot (`/go` on a schedule) for now.
+- Only I add `producer-ok`, always, even for a gated change I approved in a session. The session opens the PR and asks me ([Gated files](../docs/decisions/2026-10-17-gated-files.md)).
 
 ## Taste notes
 

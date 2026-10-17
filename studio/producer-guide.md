@@ -155,7 +155,7 @@ A few GitHub settings only you can change; the studio asks for them in [an ask](
    - **Create**.
 3. Tell the studio it's done (`/needs-me` or `/director`), so it closes the ask.
 
-To let a gated PR through, add the label `producer-ok` and merge it (or say so in a session and the studio merges it). What's gated is the list in [`.github/gated.json`](../.github/gated.json), and why each is there is in [Gated files](../docs/decisions/2026-10-17-gated-files.md).
+To let a gated PR through, add the label `producer-ok` yourself; the studio merges it once CI is green, or you can. Only you ever add that label, even for a call you made in a session. What's gated is the list in [`.github/gated.json`](../.github/gated.json), and why each is there is in [Gated files](../docs/decisions/2026-10-17-gated-files.md).
 
 ## Tools you'll get
 

@@ -18,11 +18,10 @@ The producer asked whether session logs should sort within a day. They should: t
 ## Done
 - `board.ts` (via `studio/files`) fails a log named without a valid time, with a test on broken names.
 - The existing logs are renamed with the UTC time each was first committed, and every link to them is updated.
-- The session-log format in `studio/README.md` and the PR template name the new pattern.
+- The session-log format in `studio/README.md`, the PR template, the `/go` skill and the in-step check's hint name the new pattern. The PR is gated: `direction.md` links the renamed retro log, and the skill and the hint are gated anyway.
 
 ## Tried and dropped
 - **A counter per day** (`2026-10-17-03-…`). Parallel sessions would race for the same number. A time can't collide like that.
 
 ## Left for next time
-- The `/go` skill and the in-step check's hint still say `<date>-<slug>`. Both are gated, so they're in a separate PR for the producer. Until then, `board.ts`'s message says the right name.
 - Playtest reports (`studio/playtests/`) could take the same pattern when the first one lands.

@@ -46,7 +46,7 @@ Run the **critic** subagent with only the unit's path and the branch, never your
 ## 7. Ship
 - The unit: its status (`done`, `playtest`, back to `ready` with a handoff, or `dropped`) and a log line linking the session log.
 - The docs that describe what changed, decisions in `docs/decisions/`, the concept doc if it's affected. A new tool, format or convention gets a check in `scripts/health/`.
-- The session log, `studio/sessions/<date>-<slug>.md` (`studio/README.md#session-logs`).
+- The session log, `studio/sessions/<date>-<HHMM>-<slug>.md` (`studio/README.md#session-logs`).
 - The PR description per `.github/pull_request_template.md`: short, linking the log.
 
 ## 8. Health again

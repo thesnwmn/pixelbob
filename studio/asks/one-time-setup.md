@@ -1,7 +1,7 @@
 ---
 title: Will you turn on the ruleset on main?
 from: release
-status: open
+status: answered
 blocks: [release-builds]
 default: None. Until it's on, the CI, pr-title, gate and in-step checks are advice that sessions follow, not rules GitHub enforces.
 gated: true                 # GitHub settings only the producer can change
@@ -14,3 +14,6 @@ The steps are in [the producer guide](../producer-guide.md#one-time-setup), abou
 Options:
 - **Turn it on** (recommended), then say so with `/director` or `/needs-me`.
 - **Not yet**: the studio carries on, and asks again before the first alpha.
+
+## Answer
+2026-10-17, in `/needs-me`: "Done, close the ask." The `main` ruleset is on, with `check`, `pr-title`, `gate` and `in-step` required.

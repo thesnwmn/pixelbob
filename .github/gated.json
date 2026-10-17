@@ -12,6 +12,8 @@
     { "path": ".github/gated.json", "why": "the gate itself" },
     { "path": ".github/workflows/gate.yml", "why": "the gate itself" },
     { "path": "scripts/health/src/gate.ts", "why": "the gate itself: the logic the workflow runs" },
-    { "path": ".github/workflows/ci.yml", "why": "the health check's rules: where and when it runs" }
+    { "path": ".github/workflows/ci.yml", "why": "the health check's rules: where and when it runs" },
+    { "path": "scripts/health/src/instep.ts", "why": "the health check's rules: what keeps docs, units and session logs in step" },
+    { "path": ".github/workflows/in-step.yml", "why": "the health check's rules: where and when the in-step check runs" }
   ]
 }

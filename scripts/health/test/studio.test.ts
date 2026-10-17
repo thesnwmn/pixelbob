@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { board, loadStudio, parseFrontMatter } from "../../../studio/board.ts";
-import { anchors, docsIndex, files, flying, landed, links, slugify } from "../src/studio.ts";
+import { ROLES } from "../../../studio/board.ts";
+import { anchors, commands, docsIndex, files, flying, guideCommands, landed, links, roles, slugify, tableRoles } from "../src/studio.ts";
 import { ctx, tmpDir, tmpRepo } from "./fixture.ts";
 
 const unit = (fields: string, body = "## Why\nBecause.\n\n## Done when\n- It works.\n\n## Not this\nThe rest.\n") => `---\n${fields}\n---\n\n${body}`;
@@ -67,6 +68,11 @@ describe("studio/files", () => {
     expect(problems({ "studio/milestones/m1.md": "---\ntitle: One\nstatus: done\n---\n\n## Why\nW.\n\n## Scope\nS.\n\n## Exit criteria\nE.\n" })).toEqual(['studio/direction.md: milestone "m1" is done, not current']));
   it("fails on a session log named for another day", () =>
     expect(problems({ "studio/sessions/2026-10-17-start.md": "---\ndate: 2026-10-18\ncommand: /go\n---\n" })).toEqual(["studio/sessions/2026-10-17-start.md: the file name should start with its date, 2026-10-18"]));
+  it("reads a playtest report, and fails on a rating out of range", () => {
+    const report = (fun: number) => `---\ndate: 2026-10-21\nby: producer\nbuild: preview/pr-41\nunits: [jump]\nfun: ${fun}\ndifficulty: right\nfrustration: 2\n---\n`;
+    expect(problems({ "studio/playtests/2026-10-21-jump.md": report(4) })).toEqual([]);
+    expect(problems({ "studio/playtests/2026-10-21-jump.md": report(7) })).toEqual(["studio/playtests/2026-10-21-jump.md: fun is 7, not 1 to 5"]);
+  });
   it("fails on a file with no front matter", () => expect(problems({ "studio/work/note.md": "# A note\n" })).toEqual(["studio/work/note.md: no front matter (--- … --- at the top)"]));
 });
 
@@ -113,5 +119,35 @@ describe("docs/links", () => {
     const r = links.run(ctx(tmpRepo({ ...docs, "docs/c.md": "[gone](gone.md), [moved](a.md#what-we-want-to-settle)\n" })));
     expect(r.status).toBe("fail");
     expect(r.out).toBe("docs/c.md: gone.md (no such file)\ndocs/c.md: a.md#what-we-want-to-settle (no such heading)");
+  });
+});
+
+const brief = (name: string) => `---\nname: ${name}\ndescription: Does ${name} things.\n---\n\nYou are ${name}.\n`;
+const table = (names: string[]) => `# The studio\n\n## The roles\n\n| Role | Does |\n|---|---|\n${names.map((n) => `| **${n}** | things |`).join("\n")}\n\n## Invocation\n\n| **Not a role** | x |\n`;
+const titled = (slug: string) => slug.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase());
+const allRoles = () => ({ "studio/README.md": table(ROLES.map(titled)), ...Object.fromEntries(ROLES.map((r) => [`.claude/agents/${r}.md`, brief(r)])) });
+
+describe("studio/roles", () => {
+  it("reads the roles table as slugs", () => expect(tableRoles(table(["Director", "Art director"]))).toEqual(["director", "art-director"]));
+  it("passes when briefs, table and ROLES agree", () => expect(roles.run(ctx(tmpDir(allRoles())))).toMatchObject({ status: "pass", detail: `${ROLES.length} roles` }));
+  it("fails on a role with no brief", () => {
+    const files: Record<string, string> = allRoles();
+    delete files[".claude/agents/muse.md"];
+    expect(roles.run(ctx(tmpDir(files))).out).toBe("muse: in the roles table, but no .claude/agents/muse.md");
+  });
+  it("fails on a brief that isn't in the table, and one misnamed", () => {
+    const r = roles.run(ctx(tmpDir({ ...allRoles(), ".claude/agents/audio.md": brief("audio"), ".claude/agents/critic.md": brief("reviewer") })));
+    expect(r.out).toBe(["audio: has a brief, but isn't in the roles table", '.claude/agents/critic.md: name should be "critic"'].join("\n"));
+  });
+});
+
+describe("studio/commands", () => {
+  const guide = "# Producer guide\n\n### `/go`\n\n### `/director <anything>`\n";
+  const skills = { "studio/producer-guide.md": guide, ".claude/skills/go/SKILL.md": brief("go"), ".claude/skills/director/SKILL.md": brief("director") };
+  it("reads the commands from the guide's headings", () => expect(guideCommands(guide)).toEqual(["go", "director"]));
+  it("passes when the skills and the guide agree", () => expect(commands.run(ctx(tmpDir(skills)))).toMatchObject({ status: "pass", detail: "2 commands" }));
+  it("fails on a command with no skill, and a skill not in the guide", () => {
+    const r = commands.run(ctx(tmpDir({ ...skills, "studio/producer-guide.md": guide + "\n### `/status`\n", ".claude/skills/secret/SKILL.md": brief("secret") })));
+    expect(r.out).toBe(["/status: in the producer guide, but no .claude/skills/status/SKILL.md", "/secret: a skill, but not in the producer guide"].join("\n"));
   });
 });

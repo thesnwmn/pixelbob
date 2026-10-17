@@ -1,9 +1,9 @@
 // Tier 5, the studio and the docs: every file in studio/ follows its format and agrees
 // with the others (the board reads them the same way), nothing is left in flight, the
 // docs index lists every doc, and every link between the docs resolves.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
-import { inFlight, loadStudio } from "../../../studio/board.ts";
+import { inFlight, loadStudio, parseFrontMatter, ROLES } from "../../../studio/board.ts";
 import { type Check, fail, inCI, pass } from "./check.ts";
 
 export const files: Check = {
@@ -41,6 +41,76 @@ export const landed: Check = {
   run({ root }) {
     const doing = loadStudio(root).units.filter((u) => u.fields.status === "doing");
     return doing.length ? fail(`still doing: ${doing.map((u) => u.slug).join(", ")}`) : pass();
+  },
+};
+
+/** `name` and `description` in each file's front matter, the name matching `nameOf(file)`. */
+function briefProblems(root: string, files: string[], nameOf: (file: string) => string): string[] {
+  const problems: string[] = [];
+  for (const file of files) {
+    try {
+      const fm = parseFrontMatter(readFileSync(join(root, file), "utf8"));
+      if (!fm) problems.push(`${file}: no front matter`);
+      else {
+        if (fm.fields.name !== nameOf(file)) problems.push(`${file}: name should be "${nameOf(file)}"`);
+        if (!fm.fields.description) problems.push(`${file}: no description`);
+      }
+    } catch (e) {
+      problems.push(`${file}: ${(e as Error).message}`);
+    }
+  }
+  return problems;
+}
+
+const listDir = (root: string, dir: string) => (existsSync(join(root, dir)) ? readdirSync(join(root, dir)).sort() : []);
+
+/** The roles in the table under `## The roles` in studio/README.md, as slugs ("Art director" → art-director). */
+export function tableRoles(readme: string): string[] {
+  const section = readme.split(/^## The roles$/m)[1]?.split(/^## /m)[0] ?? "";
+  return [...section.matchAll(/^\| \*\*([^*]+)\*\* \|/gm)].map((m) => m[1].toLowerCase().replace(/\s+/g, "-"));
+}
+
+export const roles: Check = {
+  id: "studio/roles",
+  tier: 5,
+  repro: "ls .claude/agents",
+  hint: "Every role has a brief in .claude/agents/<role>.md, a row in the roles table (studio/README.md#the-roles), and a place in ROLES in studio/board.ts; the three agree. A role is added or retired by a decision record.",
+  run({ root }) {
+    const readme = join(root, "studio/README.md");
+    if (!existsSync(readme)) return fail("no studio/README.md");
+    const table = tableRoles(readFileSync(readme, "utf8"));
+    const briefs = listDir(root, ".claude/agents").filter((n) => n.endsWith(".md"));
+    const named = briefs.map((n) => n.replace(/\.md$/, ""));
+    const problems = [
+      ...table.filter((r) => !named.includes(r)).map((r) => `${r}: in the roles table, but no .claude/agents/${r}.md`),
+      ...named.filter((r) => !table.includes(r)).map((r) => `${r}: has a brief, but isn't in the roles table`),
+      ...table.filter((r) => !ROLES.includes(r)).map((r) => `${r}: not in ROLES in studio/board.ts`),
+      ...ROLES.filter((r) => !table.includes(r)).map((r) => `${r}: in ROLES in studio/board.ts, but not in the roles table`),
+      ...briefProblems(root, briefs.map((n) => `.claude/agents/${n}`), (f) => f.split("/").pop()!.replace(/\.md$/, "")),
+    ];
+    return problems.length ? fail(`${problems.length} problem${problems.length === 1 ? "" : "s"}`, problems.join("\n")) : pass(`${table.length} roles`);
+  },
+};
+
+/** The commands the producer guide documents, from its "### `/go`" headings. */
+export const guideCommands = (guide: string): string[] => [...guide.matchAll(/^### `\/([\w-]+)/gm)].map((m) => m[1]);
+
+export const commands: Check = {
+  id: "studio/commands",
+  tier: 5,
+  repro: "ls .claude/skills",
+  hint: "Every command is a skill in .claude/skills/<name>/SKILL.md and has a section in studio/producer-guide.md#the-commands; the two agree.",
+  run({ root }) {
+    const guidePath = join(root, "studio/producer-guide.md");
+    if (!existsSync(guidePath)) return fail("no studio/producer-guide.md");
+    const guide = guideCommands(readFileSync(guidePath, "utf8"));
+    const skills = listDir(root, ".claude/skills").filter((n) => existsSync(join(root, ".claude/skills", n, "SKILL.md")));
+    const problems = [
+      ...guide.filter((c) => !skills.includes(c)).map((c) => `/${c}: in the producer guide, but no .claude/skills/${c}/SKILL.md`),
+      ...skills.filter((c) => !guide.includes(c)).map((c) => `/${c}: a skill, but not in the producer guide`),
+      ...briefProblems(root, skills.map((n) => `.claude/skills/${n}/SKILL.md`), (f) => f.split("/")[2]),
+    ];
+    return problems.length ? fail(`${problems.length} problem${problems.length === 1 ? "" : "s"}`, problems.join("\n")) : pass(`${skills.length} commands`);
   },
 };
 
@@ -121,4 +191,4 @@ export const links: Check = {
   },
 };
 
-export const STUDIO = [files, flying, landed, docsIndex, links];
+export const STUDIO = [files, flying, landed, roles, commands, docsIndex, links];

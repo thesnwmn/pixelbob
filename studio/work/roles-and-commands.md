@@ -3,7 +3,8 @@ title: Roles and commands
 kind: tool
 role: toolsmith
 size: M
-status: ready
+status: done
+pr: 11
 milestone: m0-studio
 ---
 
@@ -18,3 +19,6 @@ milestone: m0-studio
 
 ## Not this
 The doc map and the PR-description checks (docs-in-step), the gate check and labels (github-gate).
+
+## Log
+- 2026-10-17 done, #11: [session](../sessions/2026-10-17-roles-and-commands.md). Eleven role briefs and six command skills, checked against the roles table and the producer guide. `/feedback` brought the playtest report format, which the board now reads.

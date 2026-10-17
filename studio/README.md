@@ -2,7 +2,7 @@
 
 How a team of agents builds Pixelbob from here, with one human as producer and play tester. This is the plan for the harness ("the studio"): what it's made of, where it keeps its state, who's in it, how each role is invoked and kept apart, and how builds reach the play tester. The [producer guide](producer-guide.md) is the same thing from the producer's side: what you type, what you get back.
 
-**Status:** being built, in the order of [Building the studio](#building-the-studio), one session-sized unit at a time. Built so far: the [health check](#health), and the [studio's files and the board](#the-studios-state) (`pnpm board`).
+**Status:** being built, in the order of [Building the studio](#building-the-studio), one session-sized unit at a time. Built so far: the [health check](#health), the [studio's files and the board](#the-studios-state) (`pnpm board`), and [the roles](#the-roles) and the commands (`/go` and the rest, in `.claude/`).
 
 ## TL;DR
 
@@ -87,7 +87,7 @@ pixelbob/
     milestones/             one file per milestone: scope, exit criteria
     work/                   one file per unit of work
     asks/                   one file per question waiting on the producer
-    playtests/              (planned) the producer's reports, and the Tester's
+    playtests/              the producer's reports, and the Tester's (format in the `feedback` skill; none yet)
     sessions/               one log per session: what it did, what was said, tried and learned
     board.ts                reads the files above and generates the board (`pnpm board`); the studio page later
     doc-map.json            (planned) which docs describe which code, for the docs-in-step check
@@ -113,7 +113,7 @@ pixelbob/
   scripts/                  repo scripts
     build-site.mjs          assembles the Pages site
     health/                 the health check and its checks (`pnpm health`)
-  .claude/                  the studio's wiring (agents and skills planned)
+  .claude/                  the studio's wiring
     settings.json           the session start hook
     agents/                 one brief per role
     skills/                 the commands: go, next, needs-me, director, feedback, status
@@ -360,7 +360,7 @@ Bugs don't need a unit file. A small one is fixed straight from its issue, and t
 
 ## The roles
 
-Each role is a brief in `.claude/agents/<role>.md`: what it's for, what it reads first, what it may change, and what done looks like. It's written as a Claude Code subagent definition, so the same file serves both ways a role is used (see [Invocation](#invocation)).
+Each role is a brief in `.claude/agents/<role>.md`: what it's for, what it reads first, what it may change, and what done looks like. Each command is a skill in `.claude/skills/<name>/SKILL.md`, the checklist a session follows when the producer types it. It's written as a Claude Code subagent definition, so the same file serves both ways a role is used (see [Invocation](#invocation)).
 
 | Role | Does | Reads first | May change | Never |
 |---|---|---|---|---|
@@ -371,7 +371,7 @@ Each role is a brief in `.claude/agents/<role>.md`: what it's for, what it reads
 | **Planner** | Turns a shaped design into a technical approach and session-sized units with order and dependencies; spots the risky unknown and puts a spike in front of it. | design docs, the code it touches, simulation and tech docs | `studio/work/`, `docs/decisions/` | Build. |
 | **Prototyper** | Spikes: fast, throwaway, one question each, with a kill criterion. Answers with a verdict and what was learned. | the unit's question | `prototypes/NN-*` only | Import spike code into packages or the game; it's rebuilt properly if it survives. |
 | **Engineer** | Production code: packages, the game, fixes. Reproduces before fixing. Tests with the change. Designs for extension. | `CLAUDE.md`, the code, the unit | `packages/`, `game/`, tests | Change design intent silently; it raises an ask or a note. |
-| **Toolsmith** | Tools for you (tweak panels, level and puzzle editor, scenario links, replay viewer) and for us (the board, bots' harness, render scripts). | the formats in the tech doc, the board | `tools/`, `studio/board.ts`, editor prototypes | Change game rules to suit a tool. |
+| **Toolsmith** | Tools for you (tweak panels, level and puzzle editor, scenario links, replay viewer) and for us (the board, bots' harness, render scripts). | the formats in the tech doc, the board | `tools/`, `studio/board.ts`, `scripts/`, `.claude/`, editor prototypes | Change game rules to suit a tool. |
 | **Tester** | Automated play: scripted and bot runs, replays of your runs as regression tests, invariants and fuzzing, performance budgets, filmstrips, browser smoke tests. Writes playtest reports. | the unit, scenarios, replays | `tests/`, `studio/playtests/`, bot code | Fix what it finds (it opens an issue with a replay). |
 | **Critic** | Independent review of every PR before merge: correctness, the conventions in `CLAUDE.md`, determinism, tests that test the claim, docs that still say true things, size. Fresh eyes: it never sees the author's reasoning, only the diff and the unit. | the diff, the unit, `CLAUDE.md` | PR comments | Push code. |
 | **Release** | Builds: preview scenarios and handoff cards for each PR, alpha and beta builds at milestones, changelogs and release notes. | the milestone, merged units | `.github/workflows/`, `game/scenarios/`, release notes | Cut a milestone build without you. |
@@ -444,7 +444,7 @@ Checks are grouped in tiers and run in order. A tier that fails stops the run, b
 | **2. Dependencies** | Install from the lockfile (`--frozen-lockfile`); `node_modules` matches the lockfile; every workspace package resolves | "tsc not found" because nothing was installed, as happened when this plan was written |
 | **3. Repo** | On a session branch, not `main`; no conflict markers; every top-level folder is in the [repo map](#repo-structure); how far behind `main` the branch is; at the end (`--end`), also: tree clean, everything pushed, and a PR for the branch's commits: open, or merged at this very commit (asked of GitHub with `gh api`; nothing to land passes) | Work that wasn't pushed before the container was thrown away |
 | **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim`, `packages/bob` or the stills, no DOM in the sim or Bob | Main red, or a convention quietly broken |
-| **5. Studio and docs** | Every studio file follows its format, and every name in one points at a file (`studio/files`); no unit on main is `doing` or `review` (`studio/in-flight`), and at the end no unit is still `doing` (`studio/landed`); every doc and decision is in the docs index (`docs/index`); every relative link in the Markdown resolves, headings included (`docs/links`). Next: on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step); later, scenarios load and golden replays still give their recorded outcome | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
+| **5. Studio and docs** | Every studio file follows its format, and every name in one points at a file (`studio/files`); no unit on main is `doing` or `review` (`studio/in-flight`), and at the end no unit is still `doing` (`studio/landed`); every doc and decision is in the docs index (`docs/index`); every relative link in the Markdown resolves, headings included (`docs/links`); every role has a brief and a row in the roles table (`studio/roles`), and every command a skill and a section in the producer guide (`studio/commands`). Next: on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step); later, scenarios load and golden replays still give their recorded outcome | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
 | **6. Budgets** (later) | The sim step and render stay within their time budgets on the benchmark scene | A change that quietly costs 3 ms a frame |
 
 - **Quick and full.** `pnpm health` runs everything; it should take a couple of minutes at most (about 80 s today, most of it the tests). `pnpm health --quick` skips the slow checks (build, replays, budgets) for use while working. Sessions start on the full run and end on `pnpm health --end`, which adds the end-of-session checks; CI runs the full run.
@@ -593,7 +593,7 @@ The order it gets built in, each a unit of its own. The first three make the har
 
 1. **Health check (S), done.** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, the nightly run on main, and a test for each check. It comes first because every unit after it starts and ends with the check.
 2. **Folder and board (S), done.** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, a decision record ([Backlog in files](../docs/decisions/2026-10-17-backlog-in-files.md)), and the studio tier of the health check. From here the units are on the board (`pnpm board`), and this list is their outline.
-3. **Roles and commands (M; on the board as three units: roles-and-commands, docs-in-step, github-gate).** `.claude/agents/` briefs, the `go`, `next`, `needs-me`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
+3. **Roles and commands (M; on the board as three units: roles-and-commands, done; docs-in-step; github-gate).** `.claude/agents/` briefs, the `go`, `next`, `needs-me`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
 4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
 5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button (copy to clipboard).
 6. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.

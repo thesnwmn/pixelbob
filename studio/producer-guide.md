@@ -143,7 +143,7 @@ Gated PRs (direction, milestones, Bob's character, the colour language, the stud
 
 ## One-time setup
 
-A few GitHub settings only you can change. The studio will ask for them when it builds its commands (unit 3 in [the studio](README.md#building-the-studio)), with exact steps:
+A few GitHub settings only you can change. The studio will ask for them, with exact steps, when it builds the gate check (the github-gate unit on the board):
 
 - **A ruleset on `main`**: require a PR, require the `CI`, `pr-title` and `gate` checks to pass, allow squash merge only.
 - That's all. Labels, the bug form and the gate check go in through the studio's own PRs.

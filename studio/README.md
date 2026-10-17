@@ -2,7 +2,7 @@
 
 How a team of agents builds Pixelbob from here, with one human as producer and play tester. This is the plan for the harness ("the studio"): what it's made of, where it keeps its state, who's in it, how each role is invoked and kept apart, and how builds reach the play tester. The [producer guide](producer-guide.md) is the same thing from the producer's side: what you type, what you get back.
 
-**Status:** planned. Nothing here is built yet; [Building the studio](#building-the-studio) is the order it gets built in, one session-sized unit at a time.
+**Status:** being built, in the order of [Building the studio](#building-the-studio), one session-sized unit at a time. Built so far: the [health check](#health).
 
 ## TL;DR
 
@@ -112,13 +112,13 @@ pixelbob/
 
   scripts/                  repo scripts
     build-site.mjs          assembles the Pages site
-    health/                 (planned) the health check and its checks
-  .claude/                  (planned) the studio's wiring
+    health/                 the health check and its checks (`pnpm health`)
+  .claude/                  the studio's wiring (agents and skills planned)
     settings.json           the session start hook
     agents/                 one brief per role
     skills/                 the commands: go, next, needs-me, director, feedback, status
   .github/
-    workflows/              CI, Pages, previews (and planned: gate check, nightly health, releases, studio page)
+    workflows/              CI (`pnpm health`, and nightly), Pages, previews (and planned: gate check, releases, studio page)
     pull_request_template.md
     ISSUE_TEMPLATE/bug.yml  (planned) the bug form
 ```
@@ -311,7 +311,7 @@ The repo holds the plan and the work. GitHub holds the conversation around the w
 | **Rulesets** on `main` | Enforce what `CLAUDE.md` asks: no direct pushes, squash merge only, and the CI health check and the gate check must pass before anything merges. |
 | **A gate check** | An Action that finds PRs touching gated files (`studio/producer.md`, `direction.md`, milestones, `.claude/` and the health check's rules, the colour language in `docs/art-direction.md`, the kit's palette), labels them `gated`, and stays red until the PR also has the label `producer-ok`. Only you add that label. Code owners can't do this job: the studio's PRs are opened under your GitHub account, and GitHub doesn't let you approve your own PR. Since the studio uses your account, the check can't stop it from adding the label deliberately; it does stop a gated change slipping through by accident, which is the real risk. |
 | **Releases** | Each alpha and beta is a tag and a GitHub Release: notes generated from the squash-merged PR titles since the last release (another reason the titles are short and plain), plus a link to the frozen build and a zip of it to play offline. |
-| **Actions** | What's there now (CI, Pages, PR previews), plus: CI runs `pnpm health`; a **nightly health check on main** that opens an issue if it fails (dependencies rot even when nobody pushes, and it uses no session budget); the studio page rebuilt on PR and issue events; releases cut from tags; filmstrips posted in the preview comment on a PR. |
+| **Actions** | What's there now: CI runs `pnpm health` on every PR and push to main, and a **nightly health check on main** opens an issue if it fails (dependencies rot even when nobody pushes, and it uses no session budget); Pages; PR previews. Planned: the studio page rebuilt on PR and issue events; releases cut from tags; filmstrips posted in the preview comment on a PR. |
 | **Pages** | The game builds, the prototypes, the concept doc and the studio page. |
 
 Bugs don't need a unit file. A small one is fixed straight from its issue, and the PR closes it. A bug that needs shaping or splitting gets a `fix` unit linking the issue. The board lists open issues alongside units, so `/go` sees both.
@@ -407,16 +407,19 @@ Checks are grouped in tiers and run in order. A tier that fails stops the run, b
 
 | Tier | Checks (to start with) | Typical failure it catches |
 |---|---|---|
-| **1. Tools** | Node is the version the repo pins; pnpm matches `packageManager`; git; Chromium is where Playwright looks (once browser tests exist) | A fresh container with the wrong Node, or a missing tool |
+| **1. Tools** | Node is the version the repo pins; pnpm matches `packageManager`; git. Later: Chromium is where Playwright looks (once browser tests exist) | A fresh container with the wrong Node, or a missing tool |
 | **2. Dependencies** | Install from the lockfile (`--frozen-lockfile`); `node_modules` matches the lockfile; every workspace package resolves | "tsc not found" because nothing was installed, as happened when this plan was written |
-| **3. Repo** | On a session branch, not `main`; no conflict markers; every top-level folder is in the [repo map](#repo-structure); how far behind `main` the branch is; at the end, also: tree clean, everything pushed, a PR open | Work that wasn't pushed before the container was thrown away |
-| **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim` or `packages/bob`, no DOM in either | Main red, or a convention quietly broken |
-| **5. Studio and docs** | Every unit, ask and milestone file parses, with valid fields and statuses; every `needs` exists; the board generates; no unit on main is `doing` or `review`; links between docs resolve; every doc is in the docs index; and on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step). Scenarios load; golden replays still give their recorded outcome | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
+| **3. Repo** | On a session branch, not `main`; no conflict markers; every top-level folder is in the [repo map](#repo-structure); how far behind `main` the branch is; at the end (`--end`), also: tree clean, everything pushed. That a PR is open is the session's to check: the container has no GitHub API | Work that wasn't pushed before the container was thrown away |
+| **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim`, `packages/bob` or the stills, no DOM in the sim or Bob | Main red, or a convention quietly broken |
+| **5. Studio and docs** (next, with the board) | Every unit, ask and milestone file parses, with valid fields and statuses; every `needs` exists; the board generates; no unit on main is `doing` or `review`; links between docs resolve; every doc is in the docs index; and on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step). Scenarios load; golden replays still give their recorded outcome | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
 | **6. Budgets** (later) | The sim step and render stay within their time budgets on the benchmark scene | A change that quietly costs 3 ms a frame |
 
-- **Quick and full.** `pnpm health` runs everything; it should take a couple of minutes at most. `pnpm health --quick` skips the slow checks (build, replays, budgets) for use while working. Sessions start and end on the full run, and so does CI.
+- **Quick and full.** `pnpm health` runs everything; it should take a couple of minutes at most (about 80 s today, most of it the tests). `pnpm health --quick` skips the slow checks (build, replays, budgets) for use while working. Sessions start on the full run and end on `pnpm health --end`, which adds the end-of-session checks; CI runs the full run.
+- **Where.** `scripts/health/`: one file per tier (`tools.ts`, `deps.ts`, `repo.ts`, `code.ts`), the runner (`run.ts`), and `health.mjs`, which says plainly when Node is too old to run the rest. Each check is a function of its context (the root, Node's version, a shell), so a test hands it a broken fixture.
 - **Output.** One line per check (pass or fail, and its time), then for each failure the command that reproduces it and a hint at the usual cause. `--json` prints the same as data, for the board and the PR description.
-- **Automatic.** A session start hook in `.claude/settings.json` installs dependencies and runs the quick check, so every session (even one that isn't `/go`) sees the repo's state first thing. The skills then require the full run before any work.
+- **Installing is a check.** `deps/install` runs `pnpm install --frozen-lockfile`: quick when nothing changed, and it fixes a fresh container, which has no `node_modules`.
+- **Automatic.** A session start hook in `.claude/settings.json` runs `pnpm health --quick` (which installs), so every session (even one that isn't `/go`) sees the repo's state first thing. The hook never fails the session start: a red result is there for the session to read. The skills then require the full run before any work.
+- **Nightly.** CI runs the full check on main every night, and a red run opens (or comments on) a `bug` issue, *Nightly health check failed*.
 
 ### When it's red at the start
 
@@ -555,7 +558,7 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 
 The order it gets built in, each a unit of its own. The first three make the harness usable; the rest come in as they're needed, so phase 3 starts as soon as possible.
 
-1. **Health check (S).** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, the nightly run on main, and a test for each check. It comes first because every unit after it starts and ends with the check.
+1. **Health check (S), done.** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, the nightly run on main, and a test for each check. It comes first because every unit after it starts and ends with the check.
 2. **Folder and board (S).** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record, and the studio tier of the health check.
 3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `next`, `needs-me`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
 4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.

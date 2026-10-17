@@ -2,3 +2,4 @@ packages:
   - packages/*
   - prototypes/*
   - concept
+  - scripts/health

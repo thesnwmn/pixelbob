@@ -50,7 +50,7 @@ concept/          the concept doc, not a prototype: the game, look, worlds, menu
 
 Copied from familiar-ground:
 
-- `ci.yml`: install, typecheck, test, build site on every push to main and every PR.
+- `ci.yml`: `pnpm health` (install, typecheck, test, build site, and the repo's conventions) on every push to main, every PR and nightly on main; a red nightly opens an issue. See [the health check](../studio/README.md#health).
 - `deploy-pages.yml`: on push to main, build `_site/` and push it to the `gh-pages` branch (keeping `preview/pr-*/`).
 - `pr-preview.yml`: on each PR push, build and publish to `gh-pages:/preview/pr-N/`, and comment the URL on the PR.
 - `pr-cleanup.yml`: delete the preview folder when the PR closes.

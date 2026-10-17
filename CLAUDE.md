@@ -5,7 +5,9 @@ A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer.
 ## Commands
 
 - `pnpm install`, `pnpm typecheck`, `pnpm test`, `pnpm build:site`
-- Run `pnpm typecheck && pnpm test` before committing.
+- `pnpm health` is the health check (tools, install, repo, typecheck, tests, site build, conventions): sessions start on it and end on `pnpm health --end`, and CI runs it. `--quick` skips the build, for use while working. See `studio/README.md#health`.
+- Run `pnpm health --quick` before committing.
+- Whatever a change adds (a tool, a dependency, a format, a convention), it adds a check for in `scripts/health/`, with a test that feeds it a broken fixture.
 - `node prototypes/00-stills/scripts/render.ts <outDir> [scale] [t] [bob] [ids] [view]` renders stills to PNG without a browser (Node strips the types).
 
 ## Workflow

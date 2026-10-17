@@ -7,7 +7,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 ## TL;DR
 
 ```
- producer ──"/go", "/next", "/director …"──────►  Director  ── reads ──►  studio/ (the board, on main)
+ producer ──"/go", "/needs-me", "/director …"──►  Director  ── reads ──►  studio/ (the board, on main)
     ▲                                                  │                        + open PRs + open issues (bugs)
     │                                                  │ picks one unit, wears the right hat
     │                                                  ▼
@@ -20,6 +20,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 ```
 
 - **One way in.** Everything the producer says goes to the **Director**, who asks what you mean when it isn't clear, then routes it: a design question to the Designer, a look question to the Art director, a bug to the Engineer.
+- **Your calls in one place.** `/needs-me` gathers everything waiting on you (questions, gated PRs, playtests) and goes through it with you, one item at a time.
 - **"go" is enough.** `/go` makes the Director pick the most valuable next unit from the board, do it, ship it as a PR and tell you what it needs from you, if anything. `/next` shows what `/go` would pick, and the alternatives, without doing anything.
 - **Docs can't drift.** Every PR updates the docs and studio files its change affects, in the same PR. The health check fails a PR that changes mapped code without touching its docs, unless the PR says why none are needed.
 - **A unit fits in a session.** Every unit is sized S (half a session) or M (one session) before it starts. Anything bigger is split first, and anything that starts to spiral is stopped, handed off and split.
@@ -114,7 +115,7 @@ pixelbob/
   .claude/                  (planned) the studio's wiring
     settings.json           the session start hook
     agents/                 one brief per role
-    skills/                 the commands: go, next, director, feedback, status
+    skills/                 the commands: go, next, needs-me, director, feedback, status
   .github/
     workflows/              CI, Pages, previews (and planned: gate check, nightly health, releases, studio page)
     pull_request_template.md
@@ -236,7 +237,7 @@ gated: false                   # true: nothing proceeds without you
 Context in five lines, a picture or a preview link, and the options with a recommendation.
 ```
 
-Asks are answered in a session (`/director` answers them; the Director also offers the open ones at the start of any session) or on GitHub, as a comment on the PR that raised them. Gated asks (taste, direction, milestones, the harness's own rules) never expire.
+Asks are answered in a session (`/needs-me` walks through them; the Director also mentions how many are open at the start of any session) or on GitHub, as a comment on the PR that raised them. Gated asks (taste, direction, milestones, the harness's own rules) never expire.
 
 ### Decisions
 
@@ -501,7 +502,7 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 
 - **GitHub**: every unit is a PR: draft from the first push, merged by the end of the session. Labels by kind and role, plus `gated` and `playtest`.
 - **The studio page** on Pages (`…/pixelbob/studio/`), regenerated on every merge and whenever a PR opens or closes: in flight, needs you (asks and playtest requests), next up, milestone progress, recently done and dropped, decisions, builds, and your fun and difficulty ratings over time. Linked from the site index above the prototypes.
-- **`/status`** prints the same in a session, and **`/next`** shows what `/go` would do next and why.
+- **`/status`** prints the same in a session, **`/next`** shows what `/go` would do next and why, and **`/needs-me`** goes through everything waiting on you.
 
 ## Building the studio
 
@@ -509,7 +510,7 @@ The order it gets built in, each a unit of its own. The first three make the har
 
 1. **Health check (S).** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, the nightly run on main, and a test for each check. It comes first because every unit after it starts and ends with the check.
 2. **Folder and board (S).** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record, and the studio tier of the health check.
-3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `next`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
+3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `next`, `needs-me`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
 4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
 5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button (copy to clipboard).
 6. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.

@@ -22,7 +22,7 @@ You don't need to plan, size, review code or merge, except PRs that need your ca
 
 ## The commands
 
-Five, typed into a session. Anything you type without a command goes to the Director too.
+Six, typed into a session. Anything you type without a command goes to the Director too.
 
 ### `/go`
 
@@ -90,6 +90,23 @@ Needs you first: nothing. Health: green.
 
 It changes nothing. Then `/go` takes the top pick, or `/go <one of the others>`, or `/director` to reorder. Use it to steer before spending budget.
 
+### `/needs-me`
+
+"Is there anything you need from me?" The Director gathers everything waiting on you, most urgent first:
+
+1. **Blockers**: anything stopping work, such as a cloud environment setting only you can change, or a gated PR that units are waiting on.
+2. **Gated PRs** waiting for `producer-ok`: what each changes and the Director's recommendation.
+3. **Asks**: gated ones first, then those whose defaults expire soonest.
+4. **Playtests requested**: each with its link, how long it takes, and what to look for.
+5. **One-time setup** still to do.
+
+If there's nothing, it says so in one line and suggests `/next`. Otherwise it goes through the items one at a time, each with the context and options (and a recommendation) so you can answer with a click. You can skip any of them and stop whenever you like; whatever you skip stays waiting, and an ask's default still applies when it expires. Your answers are recorded the usual way, with asks closed and settings, direction and taste notes updated, in a PR it merges before it ends. Playtests aren't done in the session: you get the links, and `/feedback` afterwards.
+
+```
+/needs-me                 everything, one at a time
+/needs-me quick           just the list, answer later
+```
+
 ### `/status`
 
 What's in flight, what needs you, what's queued, how the milestone is going, recent builds. Same as the studio page. `/status` is the state of things; `/next` is the decision `/go` would make.
@@ -108,7 +125,7 @@ What helps most: what you *tried* and what you *expected*, not just whether it w
 
 ## Questions for you (asks)
 
-When the studio needs a call only you can make, it writes an ask: context, options, a recommendation and a **default**. Asks show on the studio page, at the start of any session and in `/status`. Answer in a session or as a comment on the PR that raised them.
+When the studio needs a call only you can make, it writes an ask: context, options, a recommendation and a **default**. Asks show on the studio page and in `/status`, and every session's report says how many are waiting. `/needs-me` goes through them with you; you can also answer as a comment on the PR that raised them.
 
 Most asks expire: if you don't answer after a few sessions, the default stands and the work says so (and can be revisited). **Gated** asks (direction, milestones, Bob's character, the colour language, the studio's own rules) wait for you.
 

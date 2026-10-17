@@ -1,6 +1,6 @@
 # Pixelbob
 
-A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer. Read `docs/README.md` for the design; `docs/03-simulation.md` is the core architecture. `docs/` is the game; `studio/` is how it gets made: the agent harness (planned in `studio/README.md`, with the repo map).
+A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer. Read `docs/README.md` for the design; `docs/simulation.md` is the core architecture. `docs/` is the game; `studio/` is how it gets made: the agent harness (planned in `studio/README.md`, with the repo map).
 
 ## Commands
 
@@ -18,11 +18,11 @@ A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer.
 - Prototypes are Vite apps under `prototypes/NN-name/` with `base: "./"` so they work under the GitHub Pages sub-path. `scripts/build-site.mjs` picks up any prototype that has a `dist/` after `pnpm build`.
 - `packages/sim` (the world grid) must stay renderer-agnostic: no DOM, so it runs in a Web Worker and in Node tests. Material behaviour is data in `packages/sim/src/materials.ts`; the step only knows categories.
 - `packages/render` is the WebGL2 renderer (`gl.ts`, the GPU port of the stills' lighting) and `shade.ts`, which turns cells into its textures; the sandbox and the Bob playground share it.
-- `packages/bob` is Bob: renderer-agnostic like the sim. `goo.ts` is what he's made of (a viscoelastic fluid: pressure, surface tension, plastic springs, a will to be round); `body.ts` is how his particles meet the world (collisions, water, heat, the controller, pieces). Material effects on Bob are data too (`friction`, `sharp`, `tack`). See `docs/08-bob.md`, and `docs/09-bob-models.md` for why he's goo and not a lattice or a ring.
+- `packages/bob` is Bob: renderer-agnostic like the sim. `goo.ts` is what he's made of (a viscoelastic fluid: pressure, surface tension, plastic springs, a will to be round); `body.ts` is how his particles meet the world (collisions, water, heat, the controller, pieces). Material effects on Bob are data too (`friction`, `sharp`, `tack`). See `docs/bob.md`, and `docs/bob-models.md` for why he's goo and not a lattice or a ring.
 - Nothing about Bob should switch: temperature turns his knobs continuously, never swaps a remembered shape (every swap is a jolt).
 - Deterministic: never use `Math.random()` in generation or simulation. Use `World.rand()` in the sim and the seeded helpers in `kit/rng.ts` in the stills.
 - Hot loops use typed arrays (structure of arrays), not an object per cell. `noUncheckedIndexedAccess` is off for that reason.
 - Only erasable TypeScript syntax (no enums, no parameter properties): `erasableSyntaxOnly` is on so Node can run `.ts` files directly.
 - The look is defined by `prototypes/00-stills/src/kit/` (materials, lighting) and Bob's painter `paintBob` in `packages/bob/src/draw.ts`, which the stills and the game share. Keep the game renderer consistent with the kit, or change both. Bob in a still is always the real goo, posed by simulating him (`kit/goo.ts`), never a drawn shape.
-- The worlds and their colour language are in `docs/11-worlds.md` and `docs/02-art-direction.md`: moss green grips, resin amber holds, gum violet sticks, hot colours are heat. Bob is rose pink, the one hue nothing else uses.
+- The worlds and their colour language are in `docs/worlds.md` and `docs/art-direction.md`: moss green grips, resin amber holds, gum violet sticks, hot colours are heat. Bob is rose pink, the one hue nothing else uses.
 - `concept/` is the concept doc on Pages: a document, not a prototype, so it lives at the top level and the site index shows it above the prototypes. It draws the stills' shots live. Keep it in step with the docs.

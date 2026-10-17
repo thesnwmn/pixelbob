@@ -11,6 +11,8 @@ Delete sections that don't apply.
 
 **Play:** <!-- scenario link, and what to look for -->
 
+**Docs:** <!-- docs and studio files updated, or "none needed, because …" -->
+
 **Health:** <!-- end-of-session `pnpm health` result, one line -->
 
 **Next:** <!-- follow-ups, if any -->

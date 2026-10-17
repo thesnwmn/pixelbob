@@ -10,7 +10,7 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] 
 export interface BobColors { body: RGB; light: RGB; dark: RGB; rim: RGB }
 
 /**
- * Colours Bob can be. Rose is his default (docs/02-art-direction.md says why); the
+ * Colours Bob can be. Rose is his default (docs/art-direction.md says why); the
  * others are for comparing, and for the times gameplay wants him a different colour.
  */
 export const BOB_COLORS: Record<string, BobColors & { name: string }> = {

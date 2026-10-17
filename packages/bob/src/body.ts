@@ -696,7 +696,7 @@ export abstract class Body implements BobModel {
   }
 
   /**
-   * Bob's temperature (docs/08-bob.md#temperature). Gameplay first, physics second:
+   * Bob's temperature (docs/bob.md#temperature). Gameplay first, physics second:
    *   - Near a strong source (glowing lava, a mass of ice) he soaks up its heat or cold
    *     through the air over a couple of seconds, all the way through, more the closer he is.
    *   - Away from sources he drifts back towards the temperature around him slowly, so he

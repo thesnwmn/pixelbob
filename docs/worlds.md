@@ -1,4 +1,4 @@
-# 11 Worlds
+# Worlds
 
 How the game is laid out: a run of worlds, each a biome with its own materials and its own light, and each teaching Bob one new thing. This is a proposal to play against, not a script. The shots in `prototypes/00-stills` (one per world, in [the concept doc](https://thesnwmn.github.io/pixelbob/concept/#worlds) and below) show what each one feels like.
 
@@ -6,7 +6,7 @@ How the game is laid out: a run of worlds, each a biome with its own materials a
 
 - **One new verb per world.** Each world introduces one thing Bob can do or one thing that's done to him, then spends its levels combining it with everything before. By the last world, every puzzle has three or four answers.
 - **The material set is the teacher.** A world's new materials *are* its mechanic: moss teaches grip, glow goo teaches light, ice teaches cold. A player who has learned the colours can read a room before touching it.
-- **Two-colour light story per world.** Each world has a warm and a cool source that fight over the screen (see [02](02-art-direction.md#palette)). The warm one is usually where the heat (and the danger, and the help) comes from.
+- **Two-colour light story per world.** Each world has a warm and a cool source that fight over the screen (see [Art direction](art-direction.md#palette)). The warm one is usually where the heat (and the danger, and the help) comes from.
 - **Mass is the score everywhere.** Every world has lost bits to find and ways to lose them. A clean run brings more of Bob home; a messy one still finishes.
 - **Heat only from what you can see.** Each world has its own heat sources and sinks, so temperature puzzles change character from world to world.
 - **Order is soft.** The early worlds are fixed (they teach); later ones could be chosen from a map.
@@ -80,4 +80,4 @@ Down where it's hot. Lava rivers, obsidian, the remains of every world above, an
 
 - A world map that is also the side view of the earth: the Green on top, the caverns and ruins below, the grotto and foundry deeper, the sump under the foundry, the core at the bottom. Bob literally goes down.
 - Each world ends with a gate weighed by mass: how much of Bob you bring decides how much opens (a bonus room, not a block).
-- Bob's colour can follow gameplay without changing who he is: tinted by what he has absorbed, by temperature, or (later) by a world's special goo. His default colour is the anchor (see [02](02-art-direction.md#bobs-colour)).
+- Bob's colour can follow gameplay without changing who he is: tinted by what he has absorbed, by temperature, or (later) by a world's special goo. His default colour is the anchor (see [Art direction](art-direction.md#bobs-colour)).

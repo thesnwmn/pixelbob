@@ -7,7 +7,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 ## TL;DR
 
 ```
- producer ──"/go", "/director …", "/feedback …"──►  Director  ── reads ──►  studio/ (the board, on main)
+ producer ──"/go", "/next", "/director …"──────►  Director  ── reads ──►  studio/ (the board, on main)
     ▲                                                  │                        + open PRs + open issues (bugs)
     │                                                  │ picks one unit, wears the right hat
     │                                                  ▼
@@ -20,7 +20,8 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 ```
 
 - **One way in.** Everything the producer says goes to the **Director**, who asks what you mean when it isn't clear, then routes it: a design question to the Designer, a look question to the Art director, a bug to the Engineer.
-- **"go" is enough.** `/go` makes the Director pick the most valuable next unit from the board, do it, ship it as a PR and tell you what it needs from you, if anything.
+- **"go" is enough.** `/go` makes the Director pick the most valuable next unit from the board, do it, ship it as a PR and tell you what it needs from you, if anything. `/next` shows what `/go` would pick, and the alternatives, without doing anything.
+- **Docs can't drift.** Every PR updates the docs and studio files its change affects, in the same PR. The health check fails a PR that changes mapped code without touching its docs, unless the PR says why none are needed.
 - **A unit fits in a session.** Every unit is sized S (half a session) or M (one session) before it starts. Anything bigger is split first, and anything that starts to spiral is stopped, handed off and split.
 - **All state is in the repo.** `studio/` holds the board as one file per unit, the producer's settings, the asks waiting on you, milestones and playtest reports. Decisions go in `docs/decisions/`. A session's memory is the repo, so nothing depends on a conversation surviving.
 - **Main is the truth.** Every session ends with its work merged to main, finished or not: unfinished code lands switched off, and a failed attempt lands as a handoff note. The next session starts from main and nothing else. The only PRs left open between sessions are the ones waiting for your call.
@@ -48,9 +49,9 @@ What the brief asks of the studio, and what each turns into here.
 | Asked | So the studio |
 |---|---|
 | Creative | Tries ideas as **spikes** in `prototypes/` before committing to them. The **Muse** exists to suggest things nobody asked for. |
-| Original | The Muse is briefed to start from the sim and Bob ("what can only happen here?"), not from other games. Prior art ([06](../docs/06-prior-art.md)) is a check, not a source. |
+| Original | The Muse is briefed to start from the sim and Bob ("what can only happen here?"), not from other games. Prior art ([Prior art](../docs/prior-art.md)) is a check, not a source. |
 | Agile | Plans only the current milestone in detail and the next one in outline. Units are shaped just before they're needed. The harness itself is reviewed at every milestone. |
-| Brave | Every spike states its **question and its kill criterion before any code**. Dropping is a normal outcome, recorded with what was learned, like the lattice and ring in [09](../docs/09-bob-models.md). A dropped idea can come back later as a new unit. |
+| Brave | Every spike states its **question and its kill criterion before any code**. Dropping is a normal outcome, recorded with what was learned, like the lattice and ring in [Bob models](../docs/bob-models.md). A dropped idea can come back later as a new unit. |
 | Thorough | Reproduce first (a replay or a failing test), then fix. Every session starts and ends on a green [health check](#health), and an independent Critic reads every PR. Code is written for change: data over code, as with materials. |
 | Transparent | Draft PR from the first push, the studio page, one file per unit with a log, nothing done off the record. |
 | Documented | Decisions as short records in `docs/decisions/`; design docs updated in the same PR as the change; the concept doc kept in step. |
@@ -72,8 +73,8 @@ pixelbob/
 
   docs/                     THE GAME: design and tech, describing what is
     README.md               index and TL;DR
-    01-game-overview.md … 11-worlds.md
-                            the core design docs; they stay here, numbered and flat, so links keep working
+    game-overview.md, art-direction.md, simulation.md, bob.md, worlds.md, …
+                            the design docs: flat, named by subject, no numbers
     decisions/              one record per decision: the why and the history (planned)
     img/                    pictures the docs use
 
@@ -87,6 +88,7 @@ pixelbob/
     asks/                   (planned) one file per question waiting on the producer
     playtests/              (planned) the producer's reports, and the Tester's
     board.ts                (planned) generates the board and the studio page
+    doc-map.json            (planned) which docs describe which code, for the docs-in-step check
 
   packages/                 shared libraries the game is built from
     sim/                    the world grid; no DOM
@@ -112,7 +114,7 @@ pixelbob/
   .claude/                  (planned) the studio's wiring
     settings.json           the session start hook
     agents/                 one brief per role
-    skills/                 the commands: go, director, feedback, status
+    skills/                 the commands: go, next, director, feedback, status
   .github/
     workflows/              CI, Pages, previews (and planned: gate check, nightly health, releases, studio page)
     pull_request_template.md
@@ -121,8 +123,8 @@ pixelbob/
 
 What goes where:
 
-- **`docs/` describes what is; `studio/` holds what's being done and what's next; `docs/decisions/` keeps why.** A design doc is updated in the same PR as the change it describes. Planning never goes in `docs/`; `05-roadmap.md` stays as the history of the phases and points to `studio/` for what's next.
-- **The design docs stay in `docs/`**, numbered and flat, because the concept doc, the README and each other link to them. A new design doc gets the next number. A subject that outgrows one doc gets a folder beside the numbered docs (say `docs/worlds/` when each world's levels need their own pages), linked from its numbered doc, which becomes the summary.
+- **`docs/` describes what is; `studio/` holds what's being done and what's next; `docs/decisions/` keeps why.** A design doc is updated in the same PR as the change it describes. Planning never goes in `docs/`; `roadmap.md` stays as the history of the phases and points to `studio/` for what's next.
+- **Design docs are named by subject, not numbered** (`bob.md`, `worlds.md`). Numbers only recorded when a doc was written: they weren't a reading order, renumbering breaks links, and parallel branches would race for the next one. Reading order lives in the table in `docs/README.md`. A subject that outgrows one doc gets a folder of the same name beside it (say `docs/worlds/` when each world's levels need their own pages), and the doc becomes its summary.
 - **Code that ships** lives in `packages/` and `game/`. Nothing there imports from `prototypes/` or `tools/`. A prototype that survives is rebuilt properly, not moved.
 - **Content is data**, beside the game that uses it (`game/levels/`, `game/scenarios/`, `game/replays/`), so a designer or the producer can change it without touching code.
 - **`packages/` stays renderer-agnostic** except `render/`, so the sim, Bob and the bots run in Node and in workers.
@@ -153,6 +155,7 @@ A PR's title becomes the squash commit on main, so the titles are the project's 
 - **Why**: one or two lines.
 - **What**: up to five bullets, one line each.
 - **Play** (if it changes play): the scenario link and what to look for.
+- **Docs**: what was brought in step, or `none needed, because …`.
 - **Health**: the one-line result of the end-of-session check.
 - **Next**: follow-ups, if any.
 
@@ -207,7 +210,7 @@ idea ─► shaped ─► ready ─► doing ─► review ─► (playtest) ─
    └──────────┴────────┴────────┴─────────┴──────────────► dropped (with why, and what was learned)
 ```
 
-- **idea**: a line of why. Anyone can add one. Ideas that aren't units yet stay in [10 Ideas](../docs/10-ideas.md).
+- **idea**: a line of why. Anyone can add one. Ideas that aren't units yet stay in [Ideas](../docs/ideas.md).
 - **shaped**: has *Done when* and *Not this*, a size, and a role.
 - **ready**: nothing in `needs` is open.
 - **doing**: a session has it; there's a draft PR. Only seen on the board while a session runs: by the end it has moved on.
@@ -260,7 +263,7 @@ The repo holds the plan and the work. GitHub holds the conversation around the w
 | **Issue form** | A bug form (`.github/ISSUE_TEMPLATE/bug.yml`) asking for the build, the scenario, what happened, what you expected, and the replay, for when you or anyone else file from GitHub directly. `/feedback` fills in the same fields. |
 | **PRs** | One per unit; short (see [PRs](#prs)). `Fixes #N` closes the issue when it merges. Review comments are how you or anyone else can say something about a change after the fact; the next session reads them. |
 | **Rulesets** on `main` | Enforce what `CLAUDE.md` asks: no direct pushes, squash merge only, and the CI health check and the gate check must pass before anything merges. |
-| **A gate check** | An Action that finds PRs touching gated files (`studio/producer.md`, `direction.md`, milestones, `.claude/` and the health check's rules, the colour language in `docs/02`, the kit's palette), labels them `gated`, and stays red until the PR also has the label `producer-ok`. Only you add that label. Code owners can't do this job: the studio's PRs are opened under your GitHub account, and GitHub doesn't let you approve your own PR. Since the studio uses your account, the check can't stop it from adding the label deliberately; it does stop a gated change slipping through by accident, which is the real risk. |
+| **A gate check** | An Action that finds PRs touching gated files (`studio/producer.md`, `direction.md`, milestones, `.claude/` and the health check's rules, the colour language in `docs/art-direction.md`, the kit's palette), labels them `gated`, and stays red until the PR also has the label `producer-ok`. Only you add that label. Code owners can't do this job: the studio's PRs are opened under your GitHub account, and GitHub doesn't let you approve your own PR. Since the studio uses your account, the check can't stop it from adding the label deliberately; it does stop a gated change slipping through by accident, which is the real risk. |
 | **Releases** | Each alpha and beta is a tag and a GitHub Release: notes generated from the squash-merged PR titles since the last release (another reason the titles are short and plain), plus a link to the frozen build and a zip of it to play offline. |
 | **Actions** | What's there now (CI, Pages, PR previews), plus: CI runs `pnpm health`; a **nightly health check on main** that opens an issue if it fails (dependencies rot even when nobody pushes, and it uses no session budget); the studio page rebuilt on PR and issue events; releases cut from tags; filmstrips posted in the preview comment on a PR. |
 | **Pages** | The game builds, the prototypes, the concept doc and the studio page. |
@@ -283,15 +286,15 @@ Each role is a brief in `.claude/agents/<role>.md`: what it's for, what it reads
 | Role | Does | Reads first | May change | Never |
 |---|---|---|---|---|
 | **Director** | Your one point of contact. Asks what you mean, routes it, keeps `direction.md` and the board, picks what `/go` does, sizes and splits, keeps the docs in step, runs retros. | `producer.md`, `direction.md`, the board, open PRs, feedback issues | `studio/`, `docs/decisions/`, routing | Write game code. Decide taste for you. |
-| **Designer** | Mechanics, levels, puzzles, difficulty, pacing, what fun is. Drills into your intent. Shapes ideas into units with *Done when*, and writes the playtest questions. | `docs/01`, `08`, `10`, `11`, taste notes, playtests | design docs, `studio/work/`, level and scenario data | Ship code beyond level data. |
-| **Muse** | Divergent thinking. Pitches what nobody asked for, challenges assumptions ("does Bob need to jump at all?"), starts from what only this sim can do. Output is idea cards and spike proposals, never decisions. | the sim and Bob docs, `10-ideas`, recent playtests | `docs/10-ideas.md`, new `idea` units | Shape or build. |
-| **Art director** | The look: colour language, lighting, Bob's painter, consistency with the stills' kit. Reviews anything visual against golden images. | `docs/02`, `11`, `kit/`, `draw.ts` | the kit, `packages/render`, palettes, golden images | Change the colour language without a gated ask. |
-| **Planner** | Turns a shaped design into a technical approach and session-sized units with order and dependencies; spots the risky unknown and puts a spike in front of it. | design docs, the code it touches, `03`, `04` | `studio/work/`, `docs/decisions/` | Build. |
+| **Designer** | Mechanics, levels, puzzles, difficulty, pacing, what fun is. Drills into your intent. Shapes ideas into units with *Done when*, and writes the playtest questions. | game overview, Bob, ideas, worlds docs; taste notes, playtests | design docs, `studio/work/`, level and scenario data | Ship code beyond level data. |
+| **Muse** | Divergent thinking. Pitches what nobody asked for, challenges assumptions ("does Bob need to jump at all?"), starts from what only this sim can do. Output is idea cards and spike proposals, never decisions. | the sim and Bob docs, ideas doc, recent playtests | `docs/ideas.md`, new `idea` units | Shape or build. |
+| **Art director** | The look: colour language, lighting, Bob's painter, consistency with the stills' kit. Reviews anything visual against golden images. | art direction and worlds docs, `kit/`, `draw.ts` | the kit, `packages/render`, palettes, golden images | Change the colour language without a gated ask. |
+| **Planner** | Turns a shaped design into a technical approach and session-sized units with order and dependencies; spots the risky unknown and puts a spike in front of it. | design docs, the code it touches, simulation and tech docs | `studio/work/`, `docs/decisions/` | Build. |
 | **Prototyper** | Spikes: fast, throwaway, one question each, with a kill criterion. Answers with a verdict and what was learned. | the unit's question | `prototypes/NN-*` only | Import spike code into packages or the game; it's rebuilt properly if it survives. |
 | **Engineer** | Production code: packages, the game, fixes. Reproduces before fixing. Tests with the change. Designs for extension. | `CLAUDE.md`, the code, the unit | `packages/`, `game/`, tests | Change design intent silently; it raises an ask or a note. |
-| **Toolsmith** | Tools for you (tweak panels, level and puzzle editor, scenario links, replay viewer) and for us (the board, bots' harness, render scripts). | the formats in `04`, the board | `tools/`, `studio/board.ts`, editor prototypes | Change game rules to suit a tool. |
+| **Toolsmith** | Tools for you (tweak panels, level and puzzle editor, scenario links, replay viewer) and for us (the board, bots' harness, render scripts). | the formats in the tech doc, the board | `tools/`, `studio/board.ts`, editor prototypes | Change game rules to suit a tool. |
 | **Tester** | Automated play: scripted and bot runs, replays of your runs as regression tests, invariants and fuzzing, performance budgets, filmstrips, browser smoke tests. Writes playtest reports. | the unit, scenarios, replays | `tests/`, `studio/playtests/`, bot code | Fix what it finds (it opens an issue with a replay). |
-| **Critic** | Independent review of every PR before merge: correctness, the conventions in `CLAUDE.md`, determinism, tests that test the claim, docs in step, size. Fresh eyes: it never sees the author's reasoning, only the diff and the unit. | the diff, the unit, `CLAUDE.md` | PR comments | Push code. |
+| **Critic** | Independent review of every PR before merge: correctness, the conventions in `CLAUDE.md`, determinism, tests that test the claim, docs that still say true things, size. Fresh eyes: it never sees the author's reasoning, only the diff and the unit. | the diff, the unit, `CLAUDE.md` | PR comments | Push code. |
 | **Release** | Builds: preview scenarios and handoff cards for each PR, alpha and beta builds at milestones, changelogs and release notes. | the milestone, merged units | `.github/workflows/`, `game/scenarios/`, release notes | Cut a milestone build without you. |
 
 Roles are added when the work needs them, by a decision record and a PR: an **Audio** role in phase 3 is the likely first. A role that keeps being skipped is retired the same way.
@@ -313,7 +316,7 @@ What every session does on `/go`:
 4. **Work** in the role's hat. Spikes state the question and kill criterion first; fixes reproduce first.
 5. **Check.** `pnpm health --quick` as often as useful while working, and the Tester for anything that changes play.
 6. **Review.** The Critic as a subagent. Its blocking findings are fixed before the PR leaves draft; the rest are answered on the PR.
-7. **Ship.** PR description per the template: the unit, what changed, decisions, how to test (the preview link to the scenario, what to look for), follow-ups. Update the unit's log and status, any docs, the concept doc if it's affected.
+7. **Ship.** Bring the docs and the studio in step (see [Keeping docs and the studio in step](#keeping-docs-and-the-studio-in-step)): the unit's status and log, the docs the doc map names for what changed, decisions, the concept doc if it's affected. Then write the PR description per the template.
 8. **Health check again.** `pnpm health` on the final commit, with everything pushed. Its summary goes in the PR description as proof.
 9. **Merge**, unless the PR is gated: CI green, then squash-merge (see [Main is the truth](#main-is-the-truth)). If it can't be made green, the broken part comes out and the handoff lands instead.
 10. **Report** to you in five lines or so: what was done, the link, the health result, what's waiting on you.
@@ -362,7 +365,7 @@ Checks are grouped in tiers and run in order. A tier that fails stops the run, b
 | **2. Dependencies** | Install from the lockfile (`--frozen-lockfile`); `node_modules` matches the lockfile; every workspace package resolves | "tsc not found" because nothing was installed, as happened when this plan was written |
 | **3. Repo** | On a session branch, not `main`; no conflict markers; every top-level folder is in the [repo map](#repo-structure); how far behind `main` the branch is; at the end, also: tree clean, everything pushed, a PR open | Work that wasn't pushed before the container was thrown away |
 | **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim` or `packages/bob`, no DOM in either | Main red, or a convention quietly broken |
-| **5. Studio** | Every unit, ask and milestone file parses, with valid fields and statuses; every `needs` exists; the board generates; links between docs resolve; scenarios load; golden replays still give their recorded outcome | A typo in a unit's status that hides it from the board |
+| **5. Studio and docs** | Every unit, ask and milestone file parses, with valid fields and statuses; every `needs` exists; the board generates; no unit on main is `doing` or `review`; links between docs resolve; every doc is in the docs index; and on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step). Scenarios load; golden replays still give their recorded outcome | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
 | **6. Budgets** (later) | The sim step and render stay within their time budgets on the benchmark scene | A change that quietly costs 3 ms a frame |
 
 - **Quick and full.** `pnpm health` runs everything; it should take a couple of minutes at most. `pnpm health --quick` skips the slow checks (build, replays, budgets) for use while working. Sessions start and end on the full run, and so does CI.
@@ -391,6 +394,33 @@ The health check is only useful if it grows with the repo, so these rules apply:
 - **Every surprise becomes a check.** A failure a session hits that the health check didn't predict gets a check in the same PR as the fix. The first one is in this plan: missing dependencies.
 - **Checks can fail.** Each check has a test that feeds it a broken fixture and expects a failure, so a check that always passes is caught.
 - **Slow or noisy checks are fixed.** Each milestone retro looks at how long the run takes and which checks have been noisy.
+
+## Keeping docs and the studio in step
+
+Updating the docs and the studio's files is part of the loop, not a step a session can forget. Three layers make that so: the session does it, the health check enforces it, and the Critic checks it's right.
+
+**1. In the loop.** The *Ship* step comes before the end-of-session health check, and a session can't merge until that check is green. So docs are updated in the same PR as the change, before it merges, never "later".
+
+**2. Enforced by the health check.** These run on every branch, at the end of the session and in CI, comparing the branch with main:
+
+- **The doc map.** `studio/doc-map.json` maps code paths to the docs that describe them, for example:
+  - `packages/bob/**` → `docs/bob.md`;
+  - `packages/sim/src/materials.ts` → `docs/materials.md`;
+  - `prototypes/00-stills/src/kit/**` → `docs/art-direction.md` and `concept/`;
+  - `scripts/health/**` → the Health section of this doc;
+  - `.claude/**` → this doc and the producer guide.
+
+  If a PR changes a mapped path and none of its docs, the check fails. The way past is a line in the PR description, `Docs: none needed, because …`, so skipping is a decision that's written down, never an oversight.
+- **The unit.** A PR that changes anything outside `studio/` must change a unit file, its status and its log, or say `Unit: none, because …` (a dependency bump, say).
+- **Studio invariants.** On main, no unit is `doing` or `review` (those only exist while a session runs), every `done` unit names its PR, every open ask names what it blocks, and every closed bug issue's fix names it.
+- **Indexes and the map.** Every doc is listed in `docs/README.md`; every top-level folder is in the [repo map](#repo-structure); every role in `.claude/agents/` is in [the roles table](#the-roles); every command in `.claude/skills/` is in the producer guide.
+- **Generated, not written.** The board and the studio page are generated from the files and never committed, so they can't disagree with them.
+
+**3. Checked by the Critic.** The checks prove the docs were touched, not that they're right. The Critic reads the changed docs against the diff: does the doc still say true things, and does `CLAUDE.md` still hold? When the map is missing a path, the Critic adds it to the map in the same PR.
+
+And a sweep, because some drift is slow: the retro at the end of each milestone includes a `tidy` unit that reads each doc against the code and fixes what's gone stale.
+
+The doc map grows like the health check: a PR that adds a package, a prototype or a format adds its entries.
 
 ### Autonomy levels
 
@@ -463,7 +493,7 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 
 - **Tweak panels** with every number and settings saved in the URL (the Bob playground has this), extended to levels.
 - **Scenario links** you can make yourself: "start me here" from any moment in a build.
-- **Level and puzzle editor** in the browser: paint materials and place things on the format in [04](../docs/04-tech-and-toolchain.md#level-format), play it at once, and share it as a link or submit it as a file the studio picks up.
+- **Level and puzzle editor** in the browser: paint materials and place things on the format in [Tech and toolchain](../docs/tech-and-toolchain.md#level-format), play it at once, and share it as a link or submit it as a file the studio picks up.
 - **Replay viewer**: watch your runs and the bots' side by side.
 - **Remix**: copy any level or scenario as the start of a new one.
 
@@ -471,7 +501,7 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 
 - **GitHub**: every unit is a PR: draft from the first push, merged by the end of the session. Labels by kind and role, plus `gated` and `playtest`.
 - **The studio page** on Pages (`…/pixelbob/studio/`), regenerated on every merge and whenever a PR opens or closes: in flight, needs you (asks and playtest requests), next up, milestone progress, recently done and dropped, decisions, builds, and your fun and difficulty ratings over time. Linked from the site index above the prototypes.
-- **`/status`** prints the same in a session.
+- **`/status`** prints the same in a session, and **`/next`** shows what `/go` would do next and why.
 
 ## Building the studio
 
@@ -479,7 +509,7 @@ The order it gets built in, each a unit of its own. The first three make the har
 
 1. **Health check (S).** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, the nightly run on main, and a test for each check. It comes first because every unit after it starts and ends with the check.
 2. **Folder and board (S).** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record, and the studio tier of the health check.
-3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `director`, `feedback` and `status` skills, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
+3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `next`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
 4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
 5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button (copy to clipboard).
 6. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.

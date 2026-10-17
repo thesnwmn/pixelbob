@@ -7,7 +7,7 @@ const FIRE: RGB[] = ["#3a0d08", "#8a1e0e", "#d8401a", "#ff7a1c", "#ffb53a", "#ff
 /**
  * Flame as dancing pixels: a heat field that scrolls upward through noise and
  * cools with height, mapped through a fire ramp. In the game every one of
- * these is a short-lived "fire" cell (docs/03-simulation.md).
+ * these is a short-lived "fire" cell (docs/simulation.md).
  */
 export function flame(buf: Buf, cx: number, by: number, w: number, h: number, t: number, seed: number, k = 1): void {
   for (let y = Math.floor(by - h); y <= by; y++)

@@ -1,4 +1,4 @@
-# 04 Tech and toolchain
+# Tech and toolchain
 
 ## Stack
 
@@ -75,7 +75,7 @@ The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at
 
 ## Input
 
-Pointer Events for mouse and touch together; the Gamepad API; keyboard. Touch layout is in [01](01-game-overview.md). The sandbox needs pinch-zoom and two-finger pan on phones.
+Pointer Events for mouse and touch together; the Gamepad API; keyboard. Touch layout is in [Game overview](game-overview.md). The sandbox needs pinch-zoom and two-finger pan on phones.
 
 ## Commands (today)
 

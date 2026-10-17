@@ -22,7 +22,7 @@ You don't need to plan, size, review code or merge, except PRs that need your ca
 
 ## The commands
 
-Four, typed into a session. Anything you type without a command goes to the Director too.
+Five, typed into a session. Anything you type without a command goes to the Director too.
 
 ### `/go`
 
@@ -78,9 +78,21 @@ Then it writes the report to the repo, raises a GitHub issue for each thing that
 /feedback split gate: splitting is great but I kept losing track of which piece was me. fun 4, difficulty right.
 ```
 
+### `/next`
+
+"What would you do next?" without doing it. The Director runs the same start as `/go` (health check, sync) and the same choice, then stops and shows:
+
+```
+Next: piece HUD (build, S, engineer). Why: split action merged; playtest said you lost track of your piece.
+Then: second Green level (shape, M, designer); bug #12 drop sticks to ice (fix, S).
+Needs you first: nothing. Health: green.
+```
+
+It changes nothing. Then `/go` takes the top pick, or `/go <one of the others>`, or `/director` to reorder. Use it to steer before spending budget.
+
 ### `/status`
 
-What's in flight, what needs you, what's next, how the milestone is going, recent builds. Same as the studio page.
+What's in flight, what needs you, what's queued, how the milestone is going, recent builds. Same as the studio page. `/status` is the state of things; `/next` is the decision `/go` would make.
 
 ## Playtesting
 

@@ -77,7 +77,7 @@ const FOOT_LEAD = 12;
 const TENSE = 0.85;
 
 /**
- * What Bob is made of (docs/08-bob.md; docs/09-bob-models.md for why): a viscoelastic
+ * What Bob is made of (docs/bob.md; docs/bob-models.md for why): a viscoelastic
  * fluid. Particles push and pull on every neighbour within reach (a pressure that keeps his
  * volume and draws his surface in, which is surface tension), and neighbours are linked by springs that flow when held
  * stretched (plasticity) and form and break as particles move. Temperature turns the knobs

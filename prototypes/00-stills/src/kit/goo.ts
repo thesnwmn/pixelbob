@@ -4,7 +4,7 @@ import { Buf, Kind } from "./buf.ts";
 
 /**
  * The real Bob in the stills. A still is painted, not simulated, but Bob is goo
- * (docs/08-bob.md) and his shapes only look right when they come from the goo: so a
+ * (docs/bob.md) and his shapes only look right when they come from the goo: so a
  * scene builds a throwaway sim world from its own pixels, drops the actual Bob into
  * it, plays him a few seconds of input, and paints the particles where they ended up.
  * Deterministic, like everything else here.

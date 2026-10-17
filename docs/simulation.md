@@ -1,4 +1,4 @@
-# 03 Simulation
+# Simulation
 
 The brief: everything, Bob included, is pixels with physics, joined by forces whose strength depends on the material. Doing that literally (a spring between every pair of neighbouring pixels in the world) is too slow and too unstable for big fluid volumes. So we split the world by behaviour.
 
@@ -37,7 +37,7 @@ The first cut implements this section: `World` stores `mat`, `shade`, `temp`, `l
 - **Plants grow on water**: a plant cell next to water drinks it and passes growth energy up to a new tip.
 - **Mushrooms grow from spores**: a spore resting on dirt, wood or plants underground (rock wall behind it) sprouts a stem, far more readily near water. The stem climbs on stored energy and opens a domed, glowing cap; caps now and then drop new spores, so colonies spread. Spores that find nowhere to grow dry up.
 
-Every material and its interactions are listed in [07 Materials](07-materials.md).
+Every material and its interactions are listed in [Materials](materials.md).
 
 Settled worlds cost about 1.3 ms a step at 480×270; a busy one about 3 ms (Node, desktop CPU).
 
@@ -70,7 +70,7 @@ Each step, a cheap diffusion between neighbours, weighted by conductivity. Air c
 
 ## Bob as particles
 
-Built in `packages/bob`. [08 Bob](08-bob.md) has the detail and [09 Bob models](09-bob-models.md) the story: the first plan below (bonds plus shape matching) was built, as were a pressure-ring blob, and both lost to a fluid.
+Built in `packages/bob`. [Bob](bob.md) has the detail and [Bob models](bob-models.md) the story: the first plan below (bonds plus shape matching) was built, as were a pressure-ring blob, and both lost to a fluid.
 
 The plan was bonds between neighbours plus shape matching to a rest shape. Built, that's a great jelly but a poor liquid: every liquid thing (pouring, dripping, picking up bits, setting after melting) had to swap his remembered shape for a new one, and every swap was a jolt. So Bob is a **viscoelastic fluid**, about 280 particles, one per pixel:
 
@@ -116,7 +116,7 @@ Grass blades, leaves, vines and canopies are **particles on springs anchored to 
 
 - The grid runs on a fixed step of 60 Hz. The renderer interpolates bodies; the grid is shown as of its last step.
 - **Deterministic**: seeded RNG, fixed step, no reading the clock in the sim. Makes replays, tests and bug reports possible.
-- Start in plain TypeScript with typed arrays and measure. Move the grid step to a worker, then to WASM, only when profiling says so (see [04](04-tech-and-toolchain.md)).
+- Start in plain TypeScript with typed arrays and measure. Move the grid step to a worker, then to WASM, only when profiling says so (see [Tech and toolchain](tech-and-toolchain.md)).
 
 ## Open questions
 

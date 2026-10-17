@@ -5,7 +5,7 @@ import { hash2 } from "./rng.ts";
 /**
  * The material palette. Each material is a short ramp of colours; a pixel picks
  * one by hash so surfaces have grain without noise textures. These are the
- * proposed in-game colours too (docs/02-art-direction.md).
+ * proposed in-game colours too (docs/art-direction.md).
  */
 export interface Material {
   name: string;

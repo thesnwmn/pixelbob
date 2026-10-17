@@ -1,0 +1,21 @@
+{
+  "name": "@pixelbob/game",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The game: the sim and Bob in a level, started from a scenario (?scenario=<id>) with its handoff card, and the feedback button",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@pixelbob/bob": "workspace:*",
+    "@pixelbob/render": "workspace:*",
+    "@pixelbob/sim": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}

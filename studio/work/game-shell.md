@@ -3,8 +3,10 @@ title: Game shell and scenarios
 kind: build
 role: engineer
 size: M
-status: ready
+status: done
 milestone: m1-green-alpha
+pr: 21
+scenario: shell
 needs: [first-milestone]
 ---
 
@@ -18,3 +20,6 @@ The real game, distinct from the prototypes, and the way a playtest drops the pr
 
 ## Not this
 Replays (own unit), levels (the milestone's own units), the title screen and map.
+
+## Log
+- 2026-10-17 done, #21 ([session](../sessions/2026-10-17-2118-game-shell.md)). `game/` with four scenarios (`start`, `shell`, `ice`, `runny`) on Bob's test course, the card, the feedback button, and a `code/scenarios` health check. Replays, levels and portrait framing are left for their own units.

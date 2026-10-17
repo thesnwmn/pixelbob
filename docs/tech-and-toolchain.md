@@ -23,7 +23,7 @@ packages/
   render/     WebGL2 renderer and the CPU pass that turns cells into its textures (shared by the sandbox and the playground).
   play/       (planned) input, recording and replaying, the headless runner, bots. No DOM.
   levels/     (planned) level format, loading/saving, generation helpers.
-game/         (planned) the game itself, built to …/pixelbob/game/ (the game-shell unit)
+game/         the game: a level, Bob, the handoff card and the feedback button (see below)
 prototypes/
   00-stills/      art direction: one shot per world and Bob's states (CPU renderer, real goo Bob)
   01-sandbox/     world sandbox: dig, paint materials, heat, light
@@ -57,7 +57,7 @@ Copied from familiar-ground:
 - `deploy-pages.yml`: on push to main, and when a PR or issue opens or closes (for the studio page's PRs and bugs), build `_site/` and push it to the `gh-pages` branch (keeping `preview/pr-*/`).
 - `pr-preview.yml`: on each PR push, build and publish to `gh-pages:/preview/pr-N/`, and comment the URL on the PR.
 - `pr-cleanup.yml`: delete the preview folder when the PR closes.
-- `scripts/build-site.mjs`: collects the concept doc and every `prototypes/*/dist` into `_site/` with an index page, and writes the [studio page](../studio/README.md#transparency) to `_site/studio/`.
+- `scripts/build-site.mjs`: collects the concept doc, the game (with a link to each scenario on the index) and every `prototypes/*/dist` into `_site/` with an index page, and writes the [studio page](../studio/README.md#transparency) to `_site/studio/`.
 
 The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at `…/pixelbob/preview/pr-N/`.
 
@@ -68,6 +68,16 @@ The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at
 - **Sim unit tests** (Vitest): sand piles at the right angle, water levels out, oil floats, lava + water → stone + steam, heat spreads. Bob has behaviour tests too: he conserves particles, settles still, picks up a bit without a jolt, dangles and drips, keeps steering the piece you had, climbs tacky walls only when you push in, and runs the course. Deterministic seeds make them exact.
 - **Golden images** (planned, Playwright): render fixed scenes at fixed times and compare. `prototypes/00-stills/scripts/render.ts` already renders stills headlessly in Node, which is enough for cheap image diffs.
 - **Perf checks** (planned): a benchmark scene in CI that fails if a step gets much slower.
+
+## The game
+
+`game/` is the game itself, apart from the prototypes: a Vite app built to `…/pixelbob/game/` (and `…/preview/pr-N/game/` in a PR's preview). Nothing in it imports from `prototypes/`.
+
+- `src/scenario.ts`: the [scenario](../studio/README.md#scenarios-putting-you-where-the-change-is) format, one JSON file per scenario in `game/scenarios/`, named by its id. A scenario names a level and its seed, where Bob starts (`at`, in cells across; he's put on the ground there), his temperature and tweaks, the camera's zoom and look, and the handoff card (`changed`, `try`, `lookFor`, `known`, `questions`). `?scenario=<id>` starts there; without one the game starts at `start`. The health check (`code/scenarios`) checks every file.
+- `src/levels.ts`: the levels a scenario can name. For now only `course`, Bob's test course; the level format adds the Green's.
+- `src/play.ts`: a scenario being played (the world and Bob, stepped at 60 Hz). No DOM, so the tests run every scenario in Node, and replays and bots will too.
+- `src/report.ts`: the feedback report. The Feedback button (or F) asks for fun, difficulty, frustration, notes and the card's questions, and copies a report with the build, commit and scenario, to paste into `/feedback`.
+- `src/main.ts`: the browser side: the card, the form, keyboard and touch input, the camera and the renderer.
 
 ## Level format
 
@@ -88,6 +98,7 @@ pnpm dev:stills       # art stills at http://localhost:5180
 pnpm dev:sandbox      # world sandbox at http://localhost:5181
 pnpm dev:bob          # Bob playground at http://localhost:5182
 pnpm dev:concept      # concept doc at http://localhost:5183
+pnpm dev:game         # the game at http://localhost:5184 (?scenario=<id>)
 pnpm health           # the health check (--quick skips the build, --end at the end of a session)
 pnpm board            # the studio's board (--github adds open PRs and bugs)
 pnpm typecheck

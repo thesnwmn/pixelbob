@@ -100,11 +100,11 @@ pixelbob/
     play/                   (planned) input, recording and replaying, the headless runner, bots; no DOM
     levels/                 (planned) the level format: load, save, decorate
 
-  game/                     (planned) the game itself: a Vite app, built to …/pixelbob/game/
-    src/                    title, map, levels, HUD, saves, the feedback button
-    levels/                 the levels: material PNGs plus entity JSON
+  game/                     the game itself: a Vite app, built to …/pixelbob/game/
+    src/                    the scenario format, playing one, the feedback button (planned: title, map, HUD, saves)
+    levels/                 (planned) the levels: material PNGs plus entity JSON
     scenarios/              start points with handoff cards, for `?scenario=`
-    replays/                recorded runs with their expected outcomes; the health check replays them
+    replays/                (planned) recorded runs with their expected outcomes; the health check replays them
 
   prototypes/               spikes: throwaway, one question each
     00-stills/ 01-sandbox/ 02-bob/ …
@@ -537,11 +537,11 @@ Set in `producer.md`.
 
 ### Scenarios: putting you where the change is
 
-A **scenario** is a small data file in `game/scenarios/`: a level, where Bob starts, his size, temperature and pieces, any tweaks, the camera, and a **handoff card**: what changed, what to try, what to look for, known issues. `?scenario=<id>` starts the game there (the Bob playground's `?at=<x>` is the seed of this). Every PR that changes play links its scenario from the PR description: one click from GitHub, or the phone, into the right spot.
+A **scenario** is a small data file in `game/scenarios/`: a level, where Bob starts, his temperature and tweaks (size is one), the camera, and a **handoff card**: what changed, what to try, what to look for, known issues. `?scenario=<id>` starts the game there, and without one it starts at `start`. The format is in [Tech and toolchain](../docs/tech-and-toolchain.md#the-game), and the health check checks every scenario. Every PR that changes play links its scenario from the PR description: one click from GitHub, or the phone, into the right spot.
 
 ### Feedback: with a replay attached
 
-The build has a feedback button (and a key). It opens a short form: fun, difficulty (too easy / right / too hard), frustration, and free text, prefilled with the build, the scenario and the questions from the handoff card. It also attaches a **replay**: the inputs you pressed, frame by frame. The sim and Bob are deterministic, so the replay plus the build reproduces exactly what you saw, which makes "it did something weird on the second jump" a test case rather than a mystery.
+The build has a feedback button (and a key, F). It opens a short form: fun, difficulty (too easy / right / too hard), frustration, and free text, prefilled with the build, the scenario and the questions from the handoff card. It will also attach a **replay** (with the replays unit; not yet): the inputs you pressed, frame by frame. The sim and Bob are deterministic, so the replay plus the build reproduces exactly what you saw, which makes "it did something weird on the second jump" a test case rather than a mystery.
 
 The button copies the report (with the replay, compressed) to paste into a session with `/feedback`, which works on any device and needs no server or sign-in. Notes can also be typed straight into `/feedback` without the button.
 

@@ -2,7 +2,7 @@
 
 How you work with the studio: what you type, what comes back, and where to look. [The studio](README.md) is how it works inside.
 
-**Status:** in use. Everything here works except what's marked planned: the game's builds, scenarios, the feedback button and the tools come with the game's milestones ([building the studio](README.md#building-the-studio)).
+**Status:** in use. Everything here works except the alpha and beta builds, replays and the tools, which come with the game's milestones ([building the studio](README.md#building-the-studio)).
 
 ## Your two jobs
 

@@ -1,5 +1,8 @@
 // Tier 4, code: it type-checks, the tests pass, the site builds, and the conventions in
 // CLAUDE.md that a script can test still hold.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { parseScenario } from "../../../game/src/scenario.ts";
 import { type Check, type Ctx, fail, findInCode, pass, sourceFiles, tail } from "./check.ts";
 
 const pnpmScript = (id: string, script: string, hint: string, slow = false): Check => ({
@@ -19,7 +22,7 @@ export const test = pnpmScript("code/test", "test", "A failing test: the output 
 export const build = pnpmScript("code/build", "build:site", "The site doesn't build: a prototype's Vite build, or scripts/build-site.mjs.", true);
 
 /** Where simulation and generation live: they must be deterministic. */
-export const DETERMINISTIC = ["packages/sim/src", "packages/bob/src", "prototypes/00-stills/src"];
+export const DETERMINISTIC = ["packages/sim/src", "packages/bob/src", "game/src", "prototypes/00-stills/src"];
 
 export const determinism: Check = {
   id: "code/no-math-random",
@@ -34,14 +37,14 @@ export const determinism: Check = {
 };
 
 /** Packages that run in Workers and Node, so may not touch the DOM. */
-export const NO_DOM = ["packages/sim/src", "packages/bob/src"];
+export const NO_DOM = ["packages/sim/src", "packages/bob/src", "game/src/play.ts", "game/src/levels.ts", "game/src/scenario.ts", "game/src/report.ts"];
 const DOM_GLOBALS = /\b(document|window|navigator|localStorage|sessionStorage|requestAnimationFrame|HTML\w*Element|CanvasRenderingContext2D|OffscreenCanvas|ImageData)\b/;
 
 export const noDom: Check = {
   id: "code/no-dom",
   tier: 4,
   repro: `grep -rnE "document|window|HTML.*Element|requestAnimationFrame" ${NO_DOM.join(" ")}`,
-  hint: "packages/sim and packages/bob are renderer-agnostic (no DOM), so they run in a Worker and in Node. Move DOM code to packages/render or the app.",
+  hint: "packages/sim, packages/bob and the game's play, levels, scenario and report are renderer-agnostic (no DOM), so they run in a Worker and in Node. Move DOM code to packages/render or game/src/main.ts.",
   run({ root }) {
     const files = NO_DOM.flatMap((d) => sourceFiles(root, d));
     const hits = findInCode(root, files, DOM_GLOBALS);
@@ -49,5 +52,30 @@ export const noDom: Check = {
   },
 };
 
+export const SCENARIOS = "game/scenarios";
+
+export const scenarios: Check = {
+  id: "code/scenarios",
+  tier: 4,
+  repro: "pnpm --filter @pixelbob/game test",
+  hint: "A scenario in game/scenarios/ doesn't follow the format in game/src/scenario.ts (studio/README.md#scenarios-putting-you-where-the-change-is), so its ?scenario= link would show an error.",
+  run({ root }) {
+    const dir = join(root, SCENARIOS);
+    const names = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".json")).sort() : [];
+    const problems: string[] = [];
+    for (const name of names) {
+      let raw: unknown;
+      try {
+        raw = JSON.parse(readFileSync(join(dir, name), "utf8"));
+      } catch (e) {
+        problems.push(`${SCENARIOS}/${name}: not JSON (${(e as Error).message})`);
+        continue;
+      }
+      for (const error of parseScenario(name.replace(/\.json$/, ""), raw).errors) problems.push(`${SCENARIOS}/${name}: ${error}`);
+    }
+    return problems.length ? fail(`${problems.length} problem${problems.length === 1 ? "" : "s"}`, problems.join("\n")) : pass(`${names.length} scenario${names.length === 1 ? "" : "s"}`);
+  },
+};
+
 // Cheap scans first, so a broken convention shows before the slow runs.
-export const CODE = [determinism, noDom, typecheck, test, build];
+export const CODE = [determinism, noDom, scenarios, typecheck, test, build];

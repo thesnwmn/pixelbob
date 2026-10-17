@@ -82,11 +82,16 @@ export function workspaceDirs(root: string): string[] {
 }
 
 /** Every file under `dir` (relative to root) with one of `exts`, skipping node_modules and dist. */
+/** The source files under `dir`, or `dir` itself if it's a file. */
 export function sourceFiles(root: string, dir: string, exts = [".ts", ".mjs", ".js"]): string[] {
   const out: string[] = [];
   const walk = (rel: string) => {
     const abs = join(root, rel);
     if (!existsSync(abs)) return;
+    if (!statSync(abs).isDirectory()) {
+      out.push(rel);
+      return;
+    }
     for (const name of readdirSync(abs).sort()) {
       if (name === "node_modules" || name === "dist") continue;
       const child = join(rel, name);

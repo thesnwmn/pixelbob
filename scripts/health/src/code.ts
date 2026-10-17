@@ -37,14 +37,14 @@ export const determinism: Check = {
 };
 
 /** Packages that run in Workers and Node, so may not touch the DOM. */
-export const NO_DOM = ["packages/sim/src", "packages/bob/src", "game/src/play.ts", "game/src/levels.ts", "game/src/scenario.ts", "game/src/report.ts"];
+export const NO_DOM = ["packages/sim/src", "packages/bob/src", "game/src/play.ts", "game/src/levels.ts", "game/src/scenario.ts", "game/src/report.ts", "game/src/replay.ts", "game/src/filmstrip.ts"];
 const DOM_GLOBALS = /\b(document|window|navigator|localStorage|sessionStorage|requestAnimationFrame|HTML\w*Element|CanvasRenderingContext2D|OffscreenCanvas|ImageData)\b/;
 
 export const noDom: Check = {
   id: "code/no-dom",
   tier: 4,
   repro: `grep -rnE "document|window|HTML.*Element|requestAnimationFrame" ${NO_DOM.join(" ")}`,
-  hint: "packages/sim, packages/bob and the game's play, levels, scenario and report are renderer-agnostic (no DOM), so they run in a Worker and in Node. Move DOM code to packages/render or game/src/main.ts.",
+  hint: "packages/sim, packages/bob and the game's play, levels, scenario, report, replay and filmstrip are renderer-agnostic (no DOM), so they run in a Worker and in Node. Move DOM code to packages/render or game/src/main.ts.",
   run({ root }) {
     const files = NO_DOM.flatMap((d) => sourceFiles(root, d));
     const hits = findInCode(root, files, DOM_GLOBALS);
@@ -77,5 +77,18 @@ export const scenarios: Check = {
   },
 };
 
+export const replays: Check = {
+  id: "code/replays",
+  tier: 4,
+  slow: true,
+  repro: "node game/scripts/replays.ts",
+  hint: "A replay in game/replays/ no longer comes to the outcome it expects: the change altered how that run plays. If that's the point (a level got easier), run `node game/scripts/replays.ts --update` and say so in the PR; if not, it's a bug. See studio/README.md#automated-playtesting.",
+  run({ sh }) {
+    const r = sh("node", ["game/scripts/replays.ts"]);
+    const last = r.out.trim().split("\n").pop() ?? "";
+    return r.code === 0 ? pass(last) : fail(last || "the replays didn't run", tail(r.out));
+  },
+};
+
 // Cheap scans first, so a broken convention shows before the slow runs.
-export const CODE = [determinism, noDom, scenarios, typecheck, test, build];
+export const CODE = [determinism, noDom, scenarios, typecheck, test, replays, build];

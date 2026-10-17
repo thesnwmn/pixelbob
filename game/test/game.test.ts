@@ -3,7 +3,9 @@ import { RANGES, runniness } from "@pixelbob/bob";
 import { LOOKS } from "@pixelbob/render";
 import { describe, expect, it } from "vitest";
 import { LEVELS } from "../src/levels.ts";
-import { Play } from "../src/play.ts";
+import { filmstrip } from "../src/filmstrip.ts";
+import { Play, checkReplay, runReplay } from "../src/play.ts";
+import { decode, encode, findReplay, parseReplayFile, quantize, type Frame } from "../src/replay.ts";
 import { buildName, report } from "../src/report.ts";
 import { LEVEL_IDS, LEVEL_WIDTHS, LOOK_IDS, TWEAK_KEYS, parseScenario, type Scenario } from "../src/scenario.ts";
 
@@ -119,6 +121,7 @@ describe("the feedback report", () => {
       difficulty: "right",
       notes: "Rolled well.\n",
       answers: [{ question: "Was the card enough?", answer: "Yes" }, { question: "Anything missing?", answer: " " }],
+      replay: "pixelbob-replay v1 shell 2: 8*2",
     });
     expect(text).toBe(
       [
@@ -143,9 +146,114 @@ describe("the feedback report", () => {
         "  (not answered)",
         "",
         "## Replay",
-        "none: replays aren't recorded yet",
+        "```",
+        "pixelbob-replay v1 shell 2: 8*2",
+        "```",
         "",
       ].join("\n"),
     );
+  });
+});
+
+const byId = new Map(scenarios.map((s) => [s.id, s]));
+/** A short run with every kind of input: rolling, a stick at odd angles, jumps, crouching, climbing. */
+const wiggle = (i: number) => ({ move: Math.sin(i / 7) * 1.3, jump: i % 40 < 5, down: i % 50 < 6 ? 0.3 : 0, up: i % 70 < 4 ? 1 : 0 });
+
+describe("replays", () => {
+  it("round input to eighths, the same way every time", () => {
+    expect(quantize({ move: 0.37, jump: true })).toEqual({ move: 0.375, jump: true, down: 0, up: 0 });
+    expect(quantize({ move: -3, jump: false, down: 2, up: -1 })).toEqual({ move: -1, jump: false, down: 1, up: 0 });
+  });
+
+  it("encode as runs, wrapped, and decode to the same frames", () => {
+    const frames: Frame[] = Array.from({ length: 300 }, (_, i) => quantize(wiggle(i)));
+    const text = encode("ice", frames, 60);
+    expect(text.startsWith("pixelbob-replay v1 ice 300: ")).toBe(true);
+    expect(Math.max(...text.split("\n").map((l) => l.length))).toBeLessThanOrEqual(60);
+    expect(decode(text)).toEqual({ replay: { scenario: "ice", frames }, errors: [] });
+    expect(encode("start", [quantize({ move: 1, jump: false }), quantize({ move: 1, jump: false }), quantize({ move: -0.5, jump: true, down: 1 })])).toBe("pixelbob-replay v1 start 3: 8*2 -4jd8");
+  });
+
+  it("say what's wrong with a broken one", () => {
+    expect(decode("replay v1 ice 3: 8*3").errors).toEqual(['replay: starts "pixelbob-replay v1 <scenario> <frames>:"']);
+    expect(decode("pixelbob-replay v1 ice 3: 8*2").errors).toEqual(["replay: says 3 frames but has 2"]);
+    expect(decode("pixelbob-replay v1 ice 3: 9*3").errors[0]).toContain('"9*3" isn\'t a run');
+    expect(decode("pixelbob-replay v1 ice 0: 8*0").errors[0]).toContain('"8*0" isn\'t a run');
+  });
+
+  it("are found in a pasted feedback report", () => {
+    expect(findReplay("## Replay\n```\npixelbob-replay v1 ice 2: 8*2\n```\n")).toBe("pixelbob-replay v1 ice 2: 8*2");
+    expect(findReplay("no replay here")).toBe("");
+  });
+
+  it("play back exactly the run that was recorded", () => {
+    const play = new Play(byId.get("ice")!);
+    for (let i = 0; i < 240; i++) play.step(wiggle(i));
+    const { replay } = decode(play.replay());
+    const again = runReplay(byId.get("ice")!, replay!);
+    expect(again.frame).toBe(240);
+    expect(Array.from(again.bob.view().x)).toEqual(Array.from(play.bob.view().x));
+    expect([again.bob.main!.cx, again.bob.main!.cy]).toEqual([play.bob.main!.cx, play.bob.main!.cy]);
+    expect(again.outcome()).toEqual(play.outcome());
+  });
+
+  it("start again on restart", () => {
+    const play = new Play(byId.get("start")!);
+    for (let i = 0; i < 10; i++) play.step({ move: 1, jump: false });
+    play.restart();
+    play.step({ move: 0, jump: true });
+    expect(play.replay()).toBe("pixelbob-replay v1 start 1: 0j");
+  });
+
+  it("are checked against the outcome they expect", () => {
+    const text = encode("start", Array.from({ length: 30 }, () => quantize({ move: 1, jump: false })));
+    const { file } = parseReplayFile("roll", { note: "Rolls right.", replay: text, expect: { frames: 30, finished: 0, home: 0, bob: 100 } });
+    expect(checkReplay(file!, byId).problems).toEqual([]);
+    expect(checkReplay({ ...file!, expect: { ...file!.expect, home: 40, frames: 31 } }, byId).problems).toEqual(["frames: expected 31, got 30", "home: expected 40, got 0"]);
+    expect(checkReplay({ ...file!, replay: { ...file!.replay, scenario: "moon" } }, byId).problems).toEqual(["it plays moon, which isn't in game/scenarios/"]);
+  });
+
+  it("files say what's wrong with them", () => {
+    const { errors } = parseReplayFile("Bad", { replay: 3, expect: { frames: 1.5, home: -1, speed: 2 }, extra: true });
+    expect(errors.map((e) => e.split(":")[0])).toEqual([
+      'the id "Bad" (the file name) isn\'t kebab-case',
+      "extra",
+      "note",
+      "replay",
+      "expect.speed",
+      "expect.frames",
+      "expect.finished",
+      "expect.home",
+      "expect.bob",
+    ]);
+  });
+});
+
+describe("the kept replays", () => {
+  const dir = new URL("../replays/", import.meta.url);
+  for (const f of readdirSync(dir).filter((f) => f.endsWith(".json")))
+    it(`${f} is in the format (code/replays plays it)`, () => {
+      const { errors } = parseReplayFile(f.replace(/\.json$/, ""), JSON.parse(readFileSync(new URL(f, dir), "utf8")));
+      expect(errors).toEqual([]);
+    });
+});
+
+describe("filmstrips", () => {
+  it("show key frames of a run, side by side, following Bob", () => {
+    const text = encode("start", Array.from({ length: 120 }, () => quantize({ move: 1, jump: false })));
+    const strip = filmstrip(byId.get("start")!, decode(text).replay!, { shots: 3, cw: 40, ch: 30, scale: 2 });
+    expect(strip.frames).toEqual([40, 80, 120]);
+    expect([strip.w, strip.h]).toEqual([3 * 80 + 2 * 2, 60]);
+    expect(strip.rgba.length).toBe(strip.w * strip.h * 4);
+    // He's rose pink, the one hue nothing else uses: some of each shot is him.
+    for (let k = 0; k < 3; k++) {
+      let pink = 0;
+      for (let y = 0; y < 60; y++)
+        for (let x = k * 82; x < k * 82 + 80; x++) {
+          const o = (y * strip.w + x) * 4, [r, g, b] = [strip.rgba[o], strip.rgba[o + 1], strip.rgba[o + 2]];
+          if (r > 180 && r - g > 50 && b > g) pink++;
+        }
+      expect(pink, `shot ${k}`).toBeGreaterThan(20);
+    }
   });
 });

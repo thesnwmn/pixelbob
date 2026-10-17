@@ -137,6 +137,7 @@ form.onsubmit = async (e) => {
     frustration: num("frustration"),
     notes: $<HTMLTextAreaElement>("#notes").value,
     answers: questions.map((question, i) => ({ question, answer: form.querySelector<HTMLTextAreaElement>(`[data-q="${i}"]`)!.value })),
+    replay: play.replay(),
   };
   const text = report(f);
   out.value = text;

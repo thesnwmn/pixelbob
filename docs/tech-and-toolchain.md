@@ -21,7 +21,7 @@ packages/
   sim/        grid CA, materials, temperature, reactions. No DOM.
   bob/        Bob: goo (a viscoelastic particle fluid), his body (collisions, heat, controller, pieces), the test course, his painter. No DOM.
   render/     WebGL2 renderer and the CPU pass that turns cells into its textures (shared by the sandbox and the playground).
-  play/       (planned) input, recording and replaying, the headless runner, bots. No DOM.
+  play/       (planned) bots, if they outgrow game/ (recording, replaying and the headless runner are in game/src). No DOM.
   levels/     (planned) level format, loading/saving, generation helpers.
 game/         the game: a level, Bob, the handoff card and the feedback button (see below)
 prototypes/
@@ -75,8 +75,10 @@ The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at
 
 - `src/scenario.ts`: the [scenario](../studio/README.md#scenarios-putting-you-where-the-change-is) format, one JSON file per scenario in `game/scenarios/`, named by its id. A scenario names a level and its seed, where Bob starts (`at`, in cells across; he's put on the ground there), his temperature and tweaks, the camera's zoom and look, and the handoff card (`changed`, `try`, `lookFor`, `known`, `questions`). `?scenario=<id>` starts there; without one the game starts at `start`. The health check (`code/scenarios`) checks every file.
 - `src/levels.ts`: the levels a scenario can name. For now only `course`, Bob's test course; the level format adds the Green's.
-- `src/play.ts`: a scenario being played (the world and Bob, stepped at 60 Hz). No DOM, so the tests run every scenario in Node, and replays and bots will too.
-- `src/report.ts`: the feedback report. The Feedback button (or F) asks for fun, difficulty, frustration, notes and the card's questions, and copies a report with the build, commit and scenario, to paste into `/feedback`.
+- `src/play.ts`: a scenario being played (the world and Bob, stepped at 60 Hz), recording its input. No DOM, so the tests run every scenario in Node, and so do replays (`runReplay`) and, later, bots.
+- `src/replay.ts`: the replay format. Each frame's input is rounded to eighths before Bob sees it, so what's recorded is exactly what ran, then run-length encoded as text: `pixelbob-replay v1 <scenario> <frames>: 8*120 8j*8 0d8*30 …` (move, `j` jump, `d` down, `u` up, each in eighths, `*` a count). A replay is of the run since the start or the last restart. Kept replays are `game/replays/<id>.json` (a `note` saying why it's kept, the `replay`, and the outcome it should `expect`: frames, the frame it finished, % of Bob home, % of Bob left). The health check (`code/replays`, a slow check) plays them all with `node game/scripts/replays.ts`, which also keeps a new one (`--add <id> <file> <note>`, from a pasted feedback report) and rewrites the outcomes when a change means to alter them (`--update`).
+- `src/filmstrip.ts`: key frames of a run side by side, cropped around Bob, from the game's cell colours and Bob's painter but unlit. `node game/scripts/filmstrip.ts <replay id or file> <out.png> [shots] [scale]` writes one.
+- `src/report.ts`: the feedback report. The Feedback button (or F) asks for fun, difficulty, frustration, notes and the card's questions, and copies a report with the build, commit, scenario and the replay, to paste into `/feedback`.
 - `src/main.ts`: the browser side: the card, the form, keyboard and touch input, the camera and the renderer.
 
 ## Level format

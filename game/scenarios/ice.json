@@ -3,7 +3,7 @@
   "level": "course",
   "at": 925,
   "card": {
-    "changed": "Starts Bob just before the ice on the test course, to show a scenario can drop you anywhere.",
+    "changed": "Starts Bob a little before the ice on the test course, to show a scenario can drop you anywhere.",
     "try": ["Slide across the ice on momentum, thaw under the brazier, then jump the spikes."],
     "lookFor": ["Whether you start in the right spot, on the ground, with the camera on Bob."],
     "known": [],

@@ -22,7 +22,9 @@ button {
 }
 button.primary, button.on { background: var(--accent); color: #1a1408; border-color: var(--accent); }
 #touch { position: absolute; inset: auto 0 calc(6px + env(safe-area-inset-bottom)) 0; display: none; justify-content: space-between; padding: 0 16px; pointer-events: none; font-size: 12px; color: #e9e2d677; }
-@media (pointer: coarse) { #touch { display: flex; } #note { bottom: calc(26px + env(safe-area-inset-bottom)); } }
+@media (pointer: coarse) { #touch { display: flex; gap: 12px; white-space: nowrap; } #note { bottom: calc(28px + env(safe-area-inset-bottom)); } }
+/* Narrow screens: the bar takes the top row, and the HUD goes under it. */
+@media (max-width: 600px) { #hud { top: calc(52px + env(safe-area-inset-top)); } #note { max-width: calc(100% - 20px); } #bar button { padding: 6px 8px; } }
 
 /* The card, the feedback form and errors: a sheet over the paused game. */
 .sheet { position: fixed; inset: 0; background: #0009; display: grid; place-items: center; padding: 12px; overflow-y: auto; }

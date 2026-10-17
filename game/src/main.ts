@@ -24,11 +24,11 @@ for (const [path, raw] of Object.entries(files)) {
 }
 const params = new URLSearchParams(location.search);
 const asked = params.get("scenario");
-const scenario = scenarios.get(asked ?? "start");
+const scenario = scenarios.get(asked || "start");
 if (!scenario) {
   const list = [...scenarios.values()].map((s) => `<li><a href="?scenario=${esc(s.id)}">${esc(s.id)}</a>: ${esc(s.title)}</li>`).join("");
   $("#error .box").innerHTML =
-    `<h2>No scenario "${esc(asked ?? "start")}"</h2>` +
+    `<h2>No scenario "${esc(asked || "start")}"</h2>` +
     (broken.length ? `<p class="meta">Broken: ${broken.map(esc).join("<br>")}</p>` : "") +
     `<p>These are in this build:</p><ul>${list}</ul>`;
   $("#error").hidden = false;
@@ -58,6 +58,7 @@ const look = LOOKS[scenario.camera.look] ?? LOOKS.day;
 function restart() {
   play.restart();
   shade = new Shade(play.level.world, scenario!.seed);
+  best = 0;
   const s = play.start();
   cam.x = s.x; cam.y = s.y;
 }
@@ -73,11 +74,11 @@ new ResizeObserver(resize).observe(canvas);
 resize();
 
 const cam = { z: scenario.camera.zoom, x: play.start().x, y: play.start().y };
-/** The view keeps the canvas's aspect; at zoom z about 330 / z cells fit its height. */
+/** The view keeps the canvas's aspect; at zoom z about 330 / z cells fit its height (its width, on a portrait screen). */
 function view(): View {
   const { w: W, h: H } = play.level.world;
   const aspect = canvas.width / Math.max(1, canvas.height);
-  let h = Math.min(H, 330 / cam.z), w = h * aspect;
+  let h = Math.min(H, (330 / cam.z) / Math.min(1, aspect)), w = h * aspect;
   if (w > W) { w = W; h = w / aspect; }
   return { x0: Math.max(0, Math.min(W - w, cam.x - w / 2)), y0: Math.max(0, Math.min(H - h, cam.y - h / 2)), w, h };
 }
@@ -165,6 +166,9 @@ fsEl.onclick = () => (document.fullscreenElement ? document.exitFullscreen() : d
 
 const keys = new Set<string>();
 const input: Input = { move: 0, jump: false, down: 0, up: 0 };
+const JUMP_KEYS = [" ", "w", "arrowup"];
+/** A jump pressed since the last step, so a tap shorter than a frame still reaches the sim. */
+let jumpTap = false;
 const stick = { id: -1, x0: 0, y0: 0, move: 0, down: 0, up: 0 }, jumpTouch = new Set<number>();
 window.addEventListener("keydown", (e) => {
   if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
@@ -181,6 +185,7 @@ window.addEventListener("keydown", (e) => {
   else if (k === "p") togglePause();
   else if (k === "r") restart();
   keys.add(k);
+  if (JUMP_KEYS.includes(k)) jumpTap = true;
   if ([" ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) e.preventDefault();
 });
 window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
@@ -192,14 +197,14 @@ function readInput() {
   input.down = k("s", "arrowdown") ? 1 : stick.down;
   // Up climbs a tacky wall he's pushing into (and, off a wall, jumps like space).
   input.up = k("w", "arrowup") ? 1 : stick.up;
-  input.jump = k(" ", "w", "arrowup") || jumpTouch.size > 0;
+  input.jump = k(...JUMP_KEYS) || jumpTouch.size > 0 || jumpTap;
 }
 // Touch: the left half is a stick (drag), the right half is the jump button.
 canvas.addEventListener("pointerdown", (e) => {
   canvas.setPointerCapture(e.pointerId);
   const r = canvas.getBoundingClientRect();
   if (e.clientX - r.left < r.width / 2) Object.assign(stick, { id: e.pointerId, x0: e.clientX, y0: e.clientY, move: 0, down: 0, up: 0 });
-  else jumpTouch.add(e.pointerId);
+  else { jumpTouch.add(e.pointerId); jumpTap = true; }
 });
 canvas.addEventListener("pointermove", (e) => {
   if (e.pointerId !== stick.id) return;
@@ -228,6 +233,7 @@ function tick(now: number) {
     acc += dt;
     let n = 0;
     while (acc >= STEP && n < 3) { play.step(input); acc -= STEP; n++; }
+    if (n) jumpTap = false;
     if (n === 3) acc = 0;
   }
   const { bob, level } = play, p = bob.main;
@@ -245,7 +251,7 @@ function tick(now: number) {
   best = Math.max(best, home);
   hud.textContent =
     `${scenario!.title}\n` +
-    (p ? `Bob ${Math.round((bob.count / bob.total) * 100)}% · ${bob.pieces.length} piece${bob.pieces.length > 1 ? "s" : ""}\n` : "Bob is gone. R to restart.\n") +
+    (p ? `Bob ${Math.round((bob.count / bob.total) * 100)}%\n` : "Bob is gone. R to restart.\n") +
     `${play.seconds().toFixed(1)} s` + (best ? ` · home ${home}% (best ${best}%)` : "");
   note.textContent = p ? level.note(p.cx) : "";
   requestAnimationFrame(tick);

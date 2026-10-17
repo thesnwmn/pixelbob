@@ -20,4 +20,4 @@ The m0-studio retro's sweep ([Keeping docs and the studio in step](../README.md#
 Changing what the docs decide (design, direction, the colour language): that's a call for the producer, raised as an ask.
 
 ## Log
-- 2026-10-17 done, #22: twelve stale lines fixed across nine docs, three doc-map entries added. What was stale: [the session log](../sessions/2026-10-17-2110-docs-sweep.md).
+- 2026-10-17 done, #22: stale lines fixed across eight docs, the doc map extended. What was stale: [the session log](../sessions/2026-10-17-2110-docs-sweep.md).

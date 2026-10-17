@@ -88,8 +88,8 @@ pnpm dev:stills       # art stills at http://localhost:5180
 pnpm dev:sandbox      # world sandbox at http://localhost:5181
 pnpm dev:bob          # Bob playground at http://localhost:5182
 pnpm dev:concept      # concept doc at http://localhost:5183
-pnpm health          # the health check (--quick skips the build, --end at the end of a session)
-pnpm board           # the studio's board (--github adds open PRs and bugs)
+pnpm health           # the health check (--quick skips the build, --end at the end of a session)
+pnpm board            # the studio's board (--github adds open PRs and bugs)
 pnpm typecheck
 pnpm test
 pnpm build:site       # _site/ as deployed to Pages

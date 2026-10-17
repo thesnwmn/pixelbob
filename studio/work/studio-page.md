@@ -3,7 +3,8 @@ title: Studio page
 kind: tool
 role: toolsmith
 size: S
-status: ready
+status: doing
+pr: 15
 milestone: m0-studio
 ---
 

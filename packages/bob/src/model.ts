@@ -1,12 +1,16 @@
 import type { World } from "@pixelbob/sim";
 import type { Tweaks } from "./tweaks.ts";
 
-/** What the player is asking for this step. move is -1..1; down (0..1, optional) presses down. */
-export interface Input { move: number; jump: boolean; down?: number }
+/**
+ * What the player is asking for this step. move is -1..1; down and up (0..1, optional) press
+ * down and up (down squashes or pours him; on a tacky wall he's pushing into, up and down
+ * climb him up and down it).
+ */
+export interface Input { move: number; jump: boolean; down?: number; up?: number }
 
 /** A connected bit of Bob. pieces[0] is always the biggest: the one with the eyes. */
 export interface Piece {
-  /** Members are order[start .. start + len) (of the model's view, for drawing and counting). */
+  /** Members are order[start .. start + len) (of his view, for drawing and counting). */
   start: number;
   len: number;
   cx: number; cy: number;
@@ -25,11 +29,10 @@ export interface Piece {
 export type Losses = { boiled: number; dissolved: number; crushed: number; fell: number };
 
 /**
- * What the playground, the painter and the tests need from a Bob, however he's modelled
- * (see docs/09-bob-models.md). Everything is measured in "particles": one per pixel of him.
+ * What the playground, the painter and the tests need from Bob. Everything is measured in
+ * "particles": one per pixel of him.
  */
 export interface BobModel {
-  readonly kind: ModelKind;
   tweaks: Tweaks;
   /** Fixed temperature for all of him, or null to exchange heat with the world. */
   fixedTemp: number | null;
@@ -63,4 +66,3 @@ export interface BobView {
   facing: number;
 }
 
-export type ModelKind = "lattice" | "goo" | "skin";

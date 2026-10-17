@@ -1,4 +1,4 @@
-import { BobPainter, COURSE_H, COURSE_W, DEFAULTS, DEFAULT_MODEL, MODELS, RANGES, buildCourse, createBob, frozenness, runniness, sectionAt, type BobModel, type Course, type ModelKind, type Tweaks } from "@pixelbob/bob";
+import { BobPainter, COURSE_H, COURSE_W, DEFAULTS, RANGES, buildCourse, createBob, frozenness, runniness, sectionAt, type Course, type Tweaks } from "@pixelbob/bob";
 import { GLRenderer, LOOKS, Shade, type View } from "@pixelbob/render";
 import { CAT, Cat, M, World } from "@pixelbob/sim";
 
@@ -19,15 +19,12 @@ for (const k of Object.keys(RANGES) as (keyof typeof RANGES)[]) {
 }
 if (params.get("drive") === "crawl") tweaks.drive = "crawl";
 let fixedTemp: number | null = params.has("temp") ? Number(params.get("temp")) : null;
-// Which way of modelling Bob (docs/09-bob-models.md).
-let kind: ModelKind = MODELS.find((m) => m.kind === params.get("model"))?.kind ?? DEFAULT_MODEL;
 
 function saveUrl() {
   const q = new URLSearchParams();
   for (const k of Object.keys(RANGES) as (keyof typeof RANGES)[]) if (tweaks[k] !== DEFAULTS[k]) q.set(k, String(tweaks[k]));
   if (tweaks.drive !== DEFAULTS.drive) q.set("drive", tweaks.drive);
   if (fixedTemp !== null) q.set("temp", String(fixedTemp));
-  if (kind !== DEFAULT_MODEL) q.set("model", kind);
   if (state.look !== "day") q.set("look", state.look);
   const s = q.toString();
   history.replaceState(null, "", s ? `?${s}` : location.pathname);
@@ -36,7 +33,7 @@ function saveUrl() {
 // ---- World, course and Bob ----
 
 let world: World, shade: Shade, course: Course;
-let bob: BobModel = createBob(kind, tweaks, seed);
+const bob = createBob(tweaks, seed);
 const painter = new BobPainter();
 let best = 0, startAt = 0, finishedAt = 0;
 function rebuild() {
@@ -64,7 +61,7 @@ function respawn() {
 }
 
 // For debugging and scripted playthroughs from the browser console.
-(window as unknown as { pixelbob: unknown }).pixelbob = { get bob() { return bob; }, get world() { return world; }, get course() { return course; } };
+(window as unknown as { pixelbob: unknown }).pixelbob = { bob, get world() { return world; }, get course() { return course; } };
 
 let gl: GLRenderer;
 try {
@@ -98,24 +95,6 @@ for (const k of Object.keys(RANGES) as (keyof typeof RANGES)[]) {
 const driveEl = $<HTMLSelectElement>("#drive");
 driveEl.value = tweaks.drive;
 driveEl.onchange = () => { tweaks.drive = driveEl.value === "crawl" ? "crawl" : "roll"; saveUrl(); };
-// Model picker: a new Bob of the chosen kind, at the start (or ?at=).
-const modelEl = $<HTMLSelectElement>("#model");
-for (const m of MODELS) modelEl.append(new Option(m.name, m.kind));
-modelEl.value = kind;
-const showModel = () => {
-  const m = MODELS.find((x) => x.kind === kind)!;
-  modelEl.title = m.blurb;
-  for (const [k, inp] of inputs) inp.closest("label")!.classList.toggle("unused", m.ignores.includes(k as keyof Tweaks));
-};
-modelEl.onchange = () => {
-  kind = modelEl.value as ModelKind;
-  bob = createBob(kind, tweaks, seed);
-  respawn();
-  showModel();
-  saveUrl();
-  modelEl.blur();
-};
-showModel();
 const worldTempEl = $<HTMLInputElement>("#worldtemp"), tempEl = $<HTMLInputElement>("#temp"), tempVal = $("#tempval");
 const syncTemp = () => {
   worldTempEl.checked = fixedTemp === null;
@@ -211,8 +190,8 @@ $<HTMLButtonElement>("#zout").onclick = () => setZoom(cam.z / 1.25);
 // ---- Input: keyboard, touch sticks, edit brush ----
 
 const keys = new Set<string>();
-const input = { move: 0, jump: false, down: 0 };
-const stick = { id: -1, x0: 0, y0: 0, move: 0, down: 0 }, jumpTouch = new Set<number>();
+const input = { move: 0, jump: false, down: 0, up: 0 };
+const stick = { id: -1, x0: 0, y0: 0, move: 0, down: 0, up: 0 }, jumpTouch = new Set<number>();
 window.addEventListener("keydown", (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   keys.add(e.key.toLowerCase());
@@ -229,6 +208,8 @@ function readInput() {
   const k = (...a: string[]) => a.some((x) => keys.has(x));
   input.move = (k("d", "arrowright") ? 1 : 0) - (k("a", "arrowleft") ? 1 : 0) || stick.move;
   input.down = k("s", "arrowdown") ? 1 : stick.down;
+  // Up climbs a tacky wall he's pushing into (and, off a wall, jumps like space).
+  input.up = k("w", "arrowup") ? 1 : stick.up;
   input.jump = k(" ", "w", "arrowup") || jumpTouch.size > 0;
 }
 
@@ -247,7 +228,7 @@ canvas.addEventListener("pointerdown", (e) => {
   if (state.mode === "play") {
     // Touch: left half is a stick (drag), right half is the jump button.
     const r = canvas.getBoundingClientRect();
-    if (e.clientX - r.left < r.width / 2) { stick.id = e.pointerId; stick.x0 = e.clientX; stick.y0 = e.clientY; stick.move = stick.down = 0; }
+    if (e.clientX - r.left < r.width / 2) { stick.id = e.pointerId; stick.x0 = e.clientX; stick.y0 = e.clientY; stick.move = stick.down = stick.up = 0; }
     else jumpTouch.add(e.pointerId);
     return;
   }
@@ -259,6 +240,7 @@ canvas.addEventListener("pointermove", (e) => {
   if (e.pointerId === stick.id) {
     stick.move = Math.max(-1, Math.min(1, (e.clientX - stick.x0) / 40));
     stick.down = Math.max(0, Math.min(1, (e.clientY - stick.y0 - 15) / 30));
+    stick.up = Math.max(0, Math.min(1, (stick.y0 - e.clientY - 15) / 30));
     return;
   }
   if (!ptr.down) return;
@@ -268,7 +250,7 @@ canvas.addEventListener("pointermove", (e) => {
   Object.assign(ptr, { x, y, lx: x, ly: y });
 });
 const up = (e: PointerEvent) => {
-  if (e.pointerId === stick.id) { stick.id = -1; stick.move = stick.down = 0; }
+  if (e.pointerId === stick.id) { stick.id = -1; stick.move = stick.down = stick.up = 0; }
   jumpTouch.delete(e.pointerId);
   ptr.down = false;
 };
@@ -330,7 +312,7 @@ function tick(now: number) {
   const lost = Object.entries(bob.losses).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(", ");
   const time = ((finishedAt || frame) - startAt) / 60;
   hud.textContent =
-    `${fps.toFixed(0)} fps · sim ${simMs.toFixed(1)} ms · ${MODELS.find((m) => m.kind === kind)!.name}\n` +
+    `${fps.toFixed(0)} fps · sim ${simMs.toFixed(1)} ms\n` +
     (p ? `Bob ${alive}% · ${bob.pieces.length} piece${bob.pieces.length > 1 ? "s" : ""} · main ${Math.round((p.len / bob.total) * 100)}% · ${p.temp.toFixed(0)}°C ${stateName(p.temp)}\n` : "Bob is gone. R to respawn.\n") +
     (lost ? `lost: ${lost}\n` : "") +
     `at the finish: ${pct}% (best ${best}%)${finishedAt ? ` in ${time.toFixed(1)} s` : ""}`;

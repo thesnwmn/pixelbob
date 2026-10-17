@@ -1,6 +1,6 @@
 import { M, World } from "@pixelbob/sim";
 import { describe, expect, it } from "vitest";
-import { COURSE_H, COURSE_W, DEFAULTS, MODELS, buildCourse, createBob, muscleAt, runniness, type BobModel, type Input, type ModelKind, type Tweaks } from "../src/index.ts";
+import { COURSE_H, COURSE_W, DEFAULTS, buildCourse, createBob, muscleAt, runniness, type BobModel, type Input, type Tweaks } from "../src/index.ts";
 
 const FLOOR = 150;
 /** A wide world with a floor of `m` (and anything extra painted by `extra`). */
@@ -30,10 +30,7 @@ function churn(b: BobModel) {
   return fast;
 }
 
-// The models offered in the playground; BOB_MODELS=skin (say) tests one that isn't yet.
-const only = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.BOB_MODELS;
-describe.each(only ? (only.split(",") as ModelKind[]) : MODELS.map((m) => m.kind))("%s", (kind: ModelKind) => {
-const make = (o: Partial<Tweaks> = {}) => createBob(kind, { ...DEFAULTS, ...o });
+const make = (o: Partial<Tweaks> = {}) => createBob({ ...DEFAULTS, ...o });
 function bob(world: World, o: Partial<Tweaks> = {}, temp: number | null = null, x = 60): BobModel {
   const b = make(o);
   b.fixedTemp = temp;
@@ -265,8 +262,7 @@ describe("temperature", () => {
 });
 
 describe("tearing", () => {
-  // (Skin's bits are little pressurised balls: they bounce and roll on for a while.)
-  (kind === "skin" ? it.fails : it)("spikes slice him into a few pieces, not crumbs", () => {
+  it("spikes slice him into a few pieces, not crumbs", () => {
     const w = ground(M.rock, (w) => { for (let x = 30; x < 90; x += 2) for (let y = FLOOR - 3; y < FLOOR; y++) w.set(x, y, M.spike); });
     const b = make();
     b.spawn(w, 60, FLOOR - 40);
@@ -336,7 +332,7 @@ describe("feel", () => {
     return { top: top / b.total, fell: fell / b.total };
   };
 
-  (kind === "lattice" ? it.fails : it)("he keeps steering the piece he was steering, even when another is bigger", () => {
+  it("he keeps steering the piece he was steering, even when another is bigger", () => {
     const w = ground(), b = make({ size: 5 });
     b.spawn(w, 60, FLOOR - 8, 20, [{ x: 200, y: FLOOR - 10, r: 8 }]);
     run(b, w, 60);
@@ -347,20 +343,34 @@ describe("feel", () => {
     expect(b.main!.cx).toBeGreaterThan(70); // and it's the one that rolls
   });
 
-  (kind === "goo" ? it : it.fails)("on tacky surfaces he pulls himself up: moss up a 60° slope, gum up a wall", () => {
-    const climb = (m: number, steep: number) => {
+  it("on tacky surfaces he climbs: rolls up moss; holds on to gum while pushing in, climbs it with up, lets go", () => {
+    const wall = (m: number, steep: number) => {
       const w = new World(320, 200, 1);
       for (let x = 0; x < 320; x++) { const top = x < 60 ? 170 : Math.max(5, Math.round(170 - (x - 60) * steep)); for (let y = top; y < 200; y++) w.set(x, y, x < 60 ? M.rock : m); }
       const b = make();
       b.spawn(w, 40, 155);
+      return { w, b };
+    };
+    const climb = (m: number, steep: number, input: Input) => {
+      const { w, b } = wall(m, steep);
       let top = Infinity;
-      for (let f = 0; f < 300; f++) { b.step(w, { move: 1, jump: false }); top = Math.min(top, b.main!.cy); }
+      for (let f = 0; f < 300; f++) { b.step(w, input); top = Math.min(top, b.main!.cy); }
       return 160 - top;
     };
-    expect(climb(M.rock, 1.73)).toBeLessThan(10); // too steep to roll up
-    expect(climb(M.moss, 1.73)).toBeGreaterThan(60);
-    expect(climb(M.moss, 99)).toBeLessThan(10); // moss won't hold him on a wall
-    expect(climb(M.gum, 99)).toBeGreaterThan(60);
+    const push = { move: 1, jump: false }, climbUp = { move: 1, jump: false, up: 1 };
+    expect(climb(M.rock, 1.73, climbUp)).toBeLessThan(10); // too steep to roll or climb
+    expect(climb(M.moss, 1.73, push)).toBeGreaterThan(60); // moss: grippy enough to roll up
+    expect(climb(M.moss, 99, climbUp)).toBeLessThan(10); // but won't hold him on a wall
+    expect(climb(M.gum, 99, push)).toBeLessThan(5); // pushing in alone: he holds, doesn't climb
+    expect(climb(M.gum, 99, climbUp)).toBeGreaterThan(60); // up climbs
+    // Halfway up, pushing in holds him there; letting go, he falls.
+    const { w, b } = wall(M.gum, 99);
+    for (let f = 0; f < 400 && b.main!.cy > 125; f++) b.step(w, climbUp);
+    const y = b.main!.cy;
+    run(b, w, 90, push);
+    expect(Math.abs(b.main!.cy - y)).toBeLessThan(6);
+    run(b, w, 90);
+    expect(b.main!.cy - y).toBeGreaterThan(20);
   });
 
   it("left alone he settles down: no buzzing or fluttering", () => {
@@ -375,12 +385,7 @@ describe("feel", () => {
     expect(jiggle / n).toBeLessThan(2); // px/s, on average
   });
 
-  /** v1 (the lattice) can't do these: kept as a record of what it gets wrong. */
-  const v2 = kind === "lattice" ? it.fails : it;
-  /** Nor the skin this one: a ring rolls off a ledge like a tread instead of hanging from it. */
-  const hangs = kind === "lattice" || kind === "skin" ? it.fails : it;
-
-  hangs("runny, a little over a ledge he hangs down from it; further, a drop pulls away and the rest stays", () => {
+  it("runny, a little over a ledge he hangs down from it; further, a drop pulls away and the rest stays", () => {
     expect(dangle(-1).fell).toBe(0);
     const hang = dangle(2);
     expect(hang.fell).toBe(0);
@@ -390,7 +395,7 @@ describe("feel", () => {
     expect(drip.top).toBeGreaterThan(0.15);
   });
 
-  v2("picking up the pit's lost bit is gentle, and afterwards he sets round again", () => {
+  it("picking up the pit's lost bit is gentle, and afterwards he sets round again", () => {
     const world = new World(COURSE_W, COURSE_H, 7);
     const course = buildCourse(world), pit = course.marks.pit;
     const b = make();
@@ -439,5 +444,4 @@ describe("course", () => {
     expect(b.main!.cx).toBeGreaterThan(end);
     expect(b.countIn(course.finish.x0, 0, COURSE_W, COURSE_H) / b.total).toBeGreaterThan(0.5);
   }, 60_000);
-});
 });

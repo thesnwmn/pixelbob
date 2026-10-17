@@ -16,7 +16,7 @@
         <canvas id="view"></canvas>
         <div id="hud"></div>
         <div id="note"></div>
-        <div id="touch"><span class="l">◀ drag ▶ · down to pour</span><span class="r">tap / hold to jump</span></div>
+        <div id="touch"><span class="l">◀ drag ▶ · down to pour · up to climb</span><span class="r">tap / hold to jump</span></div>
         <aside id="panel" hidden>
           <div class="head"><b>Bob</b><button id="defaults" title="Back to the default numbers">Defaults</button><button id="close" aria-label="Close">✕</button></div>
           <div id="sliders"></div>
@@ -30,7 +30,6 @@
       </div>
       <div id="bar">
         <div class="row">
-          <select id="model" aria-label="How Bob is modelled"></select>
           <div id="modes" class="seg"><button data-mode="play" class="on">Play</button><button data-mode="edit">Edit</button></div>
           <div id="tools" class="seg"></div>
           <label class="size">size <input id="size" type="range" min="1" max="16" value="4" /></label>

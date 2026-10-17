@@ -40,7 +40,7 @@ export function buildCourse(world: World, seed = 7): Course {
   const MOSS = 175, RESIN = 120, GUM = 55;
   const HILLS = L + 190, ROUGH = L + 375, STEPS = L + 535, ICE = L + 710, THAW = L + 900, SPIKES = L + 1000, LAVA = L + 1110, PIT = L + 1220, MELT = L + 1250, SLOT = L + 1290, POOL = L + 1350, FINISH = L + 1520;
   const sections: Section[] = [
-    { name: "Climbing gym", x0: 0, x1: L - 10, note: "Tacky surfaces: push into them and he pulls himself up. Moss holds on 60° slopes, resin on 70°, gum on walls. A lost bit of Bob waits on each top." },
+    { name: "Climbing gym", x0: 0, x1: L - 10, note: "Tacky surfaces. Moss: grippy enough to roll up a 60° slope. Resin and gum: push into them to hold on, up to climb, down to climb down (gum climbs walls fast). A lost bit of Bob waits on each top." },
     { name: "Flat", x0: L - 10, x1: HILLS, note: "Roll left and right; let go and he coasts. (Climbing gym to the left.)" },
     { name: "Smooth hills", x0: HILLS, x1: ROUGH - 30, note: "Momentum up and over." },
     { name: "Rough ground", x0: ROUGH - 30, x1: STEPS - 30, note: "Bumps snag his underside; jagged teeth more so." },

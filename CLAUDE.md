@@ -18,8 +18,8 @@ A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer.
 - Prototypes are Vite apps under `prototypes/NN-name/` with `base: "./"` so they work under the GitHub Pages sub-path. `scripts/build-site.mjs` picks up any prototype that has a `dist/` after `pnpm build`.
 - `packages/sim` (the world grid) must stay renderer-agnostic: no DOM, so it runs in a Web Worker and in Node tests. Material behaviour is data in `packages/sim/src/materials.ts`; the step only knows categories.
 - `packages/render` is the WebGL2 renderer (`gl.ts`, the GPU port of the stills' lighting) and `shade.ts`, which turns cells into its textures; the sandbox and the Bob playground share it.
-- `packages/bob` is Bob: renderer-agnostic like the sim. `body.ts` is what every model shares (particles, collisions, water, heat, controller, pieces); `blob.ts` (lattice), `goo.ts` and `skin.ts` are the models, picked with `createBob(kind)`. Material effects on Bob are data too (`friction`, `sharp`). See `docs/08-bob.md` and `docs/09-bob-models.md`.
-- Bob's tests run against every model in `MODELS`; a behaviour a model can't do is an `it.fails`, not a skipped test.
+- `packages/bob` is Bob: renderer-agnostic like the sim. `goo.ts` is what he's made of (a viscoelastic fluid: pressure, surface tension, plastic springs, a will to be round); `body.ts` is how his particles meet the world (collisions, water, heat, the controller, pieces). Material effects on Bob are data too (`friction`, `sharp`, `tack`). See `docs/08-bob.md`, and `docs/09-bob-models.md` for why he's goo and not a lattice or a ring.
+- Nothing about Bob should switch: temperature turns his knobs continuously, never swaps a remembered shape (every swap is a jolt).
 - Deterministic: never use `Math.random()` in generation or simulation. Use `World.rand()` in the sim and the seeded helpers in `kit/rng.ts` in the stills.
 - Hot loops use typed arrays (structure of arrays), not an object per cell. `noUncheckedIndexedAccess` is off for that reason.
 - Only erasable TypeScript syntax (no enums, no parameter properties): `erasableSyntaxOnly` is on so Node can run `.ts` files directly.

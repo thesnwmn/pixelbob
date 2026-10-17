@@ -28,7 +28,7 @@ export interface Tweaks {
   gravity: number;
   /** 0..2: how fast he takes on the heat or cold of a strong source nearby. */
   soak: number;
-  /** 0..1: runny, how stringy he is: 0 drips like water, 1 strings out like honey (goo model). */
+  /** 0..1: runny, how stringy he is: 0 drips like water, 1 strings out like honey. */
   stringy: number;
   /** 0.2..3: how long he holds a heat or chill once away from sources (higher = longer). */
   hold: number;

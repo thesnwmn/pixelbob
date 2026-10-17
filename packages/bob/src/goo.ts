@@ -1,6 +1,6 @@
 import { TACK, type World } from "@pixelbob/sim";
 import { Body, NB } from "./body.ts";
-import type { Piece } from "./model.ts";
+import type { BobModel, Input, Piece } from "./model.ts";
 import { DEFAULTS, type Tweaks } from "./tweaks.ts";
 
 /** Neighbours closer than this push and pull on each other (px). */
@@ -56,22 +56,30 @@ const HOLD = 1500;
 const FLOOR_DRAG = 0.3;
 const WALL_DRAG = 0.05;
 /** How much a tacky surface (at full tack) stops him sliding along it, per substep. */
-const GRIP = 0.6;
+const GRIP = 1;
 /** How hard a tacky surface (at full tack) holds on, px/s², and how fast he climbs one (x his speed). */
 const TACK_HOLD = 8000;
 const CLIMB = 0.6;
 /** Leaning into a tacky surface he's climbing (px/s²), up to this speed towards it. */
 const HUG = 300;
 const HUG_SPEED = 15;
+/** Hanging on a tacky wall: how much narrower than his floor dome, and how much of his will to be round he lets go of (so he droops into a drop). */
+const PRESS = 0.2;
+const DROOP = 1;
+/** Not pushing into a tacky wall, it holds him only this well (he slides off). */
+const LOOSE = 0.25;
+/** Clinging to something this wall-like, pushing into it holds him (up and down climb) instead of rolling him. */
+const WALLISH = 0.3;
+const HANG_TACK = 0.5;
 /** How far ahead of the rest of him his underside may creep when oozing (px/s). */
 const FOOT_LEAD = 12;
 /** How much a runny Bob holding still firms himself up (0..1). */
 const TENSE = 0.85;
 
 /**
- * Bob model 2, "goo" (docs/09-bob-models.md): a viscoelastic fluid. Particles push and pull
- * on every neighbour within reach (a pressure that keeps his volume and draws his surface
- * in, which is surface tension), and neighbours are linked by springs that flow when held
+ * What Bob is made of (docs/08-bob.md; docs/09-bob-models.md for why): a viscoelastic
+ * fluid. Particles push and pull on every neighbour within reach (a pressure that keeps his
+ * volume and draws his surface in, which is surface tension), and neighbours are linked by springs that flow when held
  * stretched (plasticity) and form and break as particles move. Temperature turns the knobs
  * continuously:
  *   - frozen: stiff springs that never flow, held to the shape he froze in;
@@ -82,7 +90,6 @@ const TENSE = 0.85;
  * splits or picks up a bit.
  */
 export class Goo extends Body {
-  readonly kind = "goo";
   /** Rest offsets (from the piece's middle) frozen particles are held to. */
   private rx = new Float32Array(0);
   private ry = new Float32Array(0);
@@ -120,19 +127,23 @@ export class Goo extends Body {
   /** Particles of the piece he's steering clinging to something tacky, last step. */
   private cling = 0;
   private clung = 0;
+  /** Which way the tacky surfaces he's clinging to are (summed over the particles touching them). */
+  private cgx = 0;
+  private cgy = 0;
+  private clungX = 0;
+  private clungY = 0;
+  /** How tacky, on average, what he's clinging to is. */
+  private ctack = 0;
+  private clungTack = 0;
+  /** How much he's hanging on a tacky wall (0..1, eased): he droops and narrows. */
+  private press = 0;
+  /** How wall-like (rather than floor-like) what he's clinging to is (0..1, eased). */
+  private wally = 0;
   /** Seconds before runny Bob sticks again (just jumped off). */
   private unstick = 0;
 
   constructor(tweaks: Tweaks = DEFAULTS, seed = 1) {
     super(tweaks, seed, 6);
-    this.relRunny = 0;
-    // (Runny, gravity and surface tension decide how he puddles, not his will.)
-    this.sagRunny = 0.6;
-    // (A jelly that shifts its weight as it turns needs more effort to roll than a firm one.)
-    this.rollGain = 2;
-    this.settleRate = 0.4;
-    this.keepControl = true;
-    this.pourGain = 0.3;
   }
 
   protected alloc(cap: number): void {
@@ -165,7 +176,8 @@ export class Goo extends Body {
     // Below the yield, stress still fades, over a couple of seconds (never when frozen).
     this.creep[i] = 0.5 * (1 - fz) * (1 - tn * rn);
     // His will to be round: memory, and gone when runny or frozen.
-    this.round[i] = per(tw.memory * (1 - rn)) * (1 - fz);
+    // (Hanging on a wall he mostly lets go of it: gravity draws him down into a drop.)
+    this.round[i] = per(tw.memory * (1 - rn) * (this.piece[i] === 0 ? 1 - DROOP * this.press : 1)) * (1 - fz);
     // Runny honey is thick: neighbours drag each other along (threads, not splashes).
     this.visc[i] = (0.15 + 0.45 * tw.stringy) * rn;
     // Held to his frozen shape.
@@ -225,10 +237,30 @@ export class Goo extends Body {
   protected override crawl(p: Piece, dir: number, ooze: number, m: number, grounded: boolean): void {
     // Not oozing or pouring anywhere, he tenses up and holds the shape he's in (main piece only).
     this.tense = dir || (this.input.down ?? 0) > 0.05 ? 0 : Math.min(1, m);
-    // Clinging to something tacky and pushing towards it, he hugs it: all of him leans in, so
-    // he doesn't lever himself off it while his foot climbs.
-    if (dir && this.clung > 1 && dir * p.vx < HUG_SPEED)
-      for (let k = p.start; k < p.start + p.len; k++) this.vx[this.order[k]] += dir * HUG * Math.min(1, m) * (1 / 60);
+    // Clinging to a tacky wall or steep slope and pushing into it, he hugs it: all of him leans
+    // in and presses flat against it, so he hangs there instead of peeling off under his own
+    // weight, and doesn't lever himself off while his foot climbs. Pushing away lets go; not
+    // pushing at all, he soon slides off.
+    const gl = Math.hypot(this.clungX, this.clungY), wall = gl > 0 ? Math.abs(this.clungX) / gl : 0;
+    let pressTo = 0;
+    if (this.clung > 1 && wall > 0.3) {
+      const ux = this.clungX / gl, uy = this.clungY / gl;
+      if (dir * ux < -0.3) this.unstick = 0.2;
+      else if (dir * ux > 0.3) {
+        // (As hard as the surface lets him: moss gives him little to hug, gum plenty.)
+        const t = this.clungTack, hug = HUG * t * Math.min(1, m) * (1 / 60);
+        pressTo = wall * t;
+        // (Only what's near the wall leans in, fading to nothing on his far side: the rest of
+        // him hangs, and gravity draws it down into a drop.)
+        if (p.vx * ux + p.vy * uy < HUG_SPEED)
+          for (let k = p.start; k < p.start + p.len; k++) {
+            const i = this.order[k], near = Math.max(0, Math.min(1, ((this.x[i] - p.cx) * ux + (this.y[i] - p.cy) * uy) / Math.max(2, p.radius) + 0.5));
+            this.vx[i] += ux * hug * near * 2; this.vy[i] += uy * hug * near * 2;
+          }
+      }
+    }
+    this.press += (pressTo - this.press) * 0.15;
+    this.wally += ((this.clung > 1 ? wall : 0) - this.wally) * 0.15;
     if (!dir || !ooze) return;
     const target = dir * this.tweaks.speed * 0.6 * Math.min(1, m);
     // His underside creeps along the surface towards the speed he wants (like a slug's foot),
@@ -245,6 +277,24 @@ export class Goo extends Body {
   protected override rigidMain(): boolean {
     const p = this.pieces[0];
     return !!p && this.frz[this.order[p.start]] === 1;
+  }
+
+  /** Hanging on a tacky wall and pushing into it, he holds on rather than rolling up it (up and down climb). */
+  protected override rollDir(dir: number): number {
+    return this.hanging() && dir * this.clungX > 0 ? 0 : dir;
+  }
+
+  /**
+   * On something wall-like and tacky enough to hang from (resin, gum: not moss, which is just
+   * very grippy ground he rolls up), where pushing into it holds him and up and down climb.
+   */
+  private hanging(): boolean {
+    return this.clung > 1 && this.wally > WALLISH && this.clungTack >= HANG_TACK;
+  }
+
+  /** Climbing a wall, up climbs: the up key doesn't also wind up a jump (space still does). */
+  protected override jumpHeld(input: Input): boolean {
+    return input.jump && !(this.clung > 1 && (input.up ?? 0) > 0.05 && input.move * this.clungX > 0);
   }
 
   protected override jumped(): void {
@@ -472,7 +522,8 @@ export class Goo extends Body {
 
   /** Wanted width and height factors (product 1) for a piece's spread. */
   private aspect(pi: number, p: Piece): [number, number] {
-    if (pi === 0) return [this.sx, this.sy];
+    // (Hanging on a wall, he's no wider than tall: his floor dome would stick him out from it.)
+    if (pi === 0) { const a = this.sx / (1 + this.press * (this.sx - 1 + PRESS)); return [a, 1 / a]; }
     // Bits with no will of their own slump, as far as cohesion lets them.
     const rn = Math.min(1, Math.max(0, (p.temp - 35) / 25));
     const a = Math.max(0.3, (0.5 + 0.45 * this.tweaks.cohesion) * (1 - 0.4 * rn));
@@ -501,33 +552,42 @@ export class Goo extends Body {
     const pull = (d: number, k: number, t = 0) => { const g = (HOLD * k + TACK_HOLD * t) * h2; return Math.max(-g, Math.min(g, d * ADHESION * Math.max(k, t))); };
     // Pushing towards a tacky wall, the side of him touching it creeps up it (a gecko's foot).
     const climb = CLIMB * this.tweaks.speed * this.h * Math.min(1, this.tweaks.muscle * live);
-    let held = 0;
+    // (held: how strongly he's held here; gx, gy: which way the tacky surfaces are.)
+    let held = 0, gx = 0, gy = 0;
+    // On a tacky wall he only holds on while he pushes into it; then up and down climb.
+    const up = Math.max(0, Math.min(1, this.input.up ?? 0)) - Math.max(0, Math.min(1, this.input.down ?? 0));
+    const atWall = this.hanging() && this.input.move * this.clungX > 0;
     if (fy > 1 - TOUCH && this.solid(world, cx, cy + 1)) {
       const t = tack(cx, cy + 1), k = Math.max(r, t);
       if (k > 0) { ny += pull(cy + 1 - 0.02 - ny, r, t); held = Math.max(held, k); }
+      if (t > 0) gy += t;
       const d = Math.max(FLOOR_DRAG * r, GRIP * t);
-      // (His foot walks: on a tacky floor it creeps the way he's pushing, as on a wall.)
-      const foot = t > 0 && this.piece[i] === 0 && this.input.move ? this.input.move * climb * Math.sqrt(t) : this.tread[i] * this.h;
+      // (His foot walks: on a tacky floor it creeps the way he's pushing; at a wall, only while
+      // he climbs, so the treads of a steep staircase take him up and over, not on their own.)
+      const walk = t > 0 && this.piece[i] === 0 && this.input.move && (!atWall || up !== 0);
+      const foot = walk ? this.input.move * Math.sign(atWall ? up : 1) * climb * Math.sqrt(t) : this.tread[i] * this.h;
       if (d > 0) nx = this.px[i] + foot + (nx - this.px[i] - foot) * (1 - d);
     }
     if (fy < TOUCH && this.solid(world, cx, cy - 1)) {
       const t = tack(cx, cy - 1), k = Math.max(r, t);
       if (k > 0) { ny += pull(cy + 0.02 - ny, r, t); held = Math.max(held, k); }
+      if (t > 0) gy -= t;
       const d = Math.max(0.3 * r, GRIP * tack(cx, cy - 1));
       if (d > 0) nx = this.px[i] + (nx - this.px[i]) * (1 - d);
     }
     for (const side of [1, -1]) {
       if (!(side > 0 ? fx > 1 - TOUCH : fx < TOUCH) || !this.solid(world, cx + side, cy)) continue;
-      const k = tack(cx + side, cy);
-      if (k > 0) { nx += pull((side > 0 ? cx + 1 - 0.02 : cx + 0.02) - nx, k, k); held = Math.max(held, k); }
+      const pressing = this.input.move * side > 0.2;
+      const k = tack(cx + side, cy) * (this.piece[i] === 0 && !pressing ? LOOSE : 1);
+      if (k > 0) { nx += pull((side > 0 ? cx + 1 - 0.02 : cx + 0.02) - nx, k, k); held = Math.max(held, k); gx += side * k; }
       // (A tacky wall holds along itself too, and if he's pushing towards it, his foot on it
       // creeps upward: the rest of him is pulled up after it.)
-      const d = Math.max(WALL_DRAG * r, GRIP * k);
+      const d = Math.max(WALL_DRAG * r, Math.min(1, GRIP * k));
       if (d > 0) ny = this.py[i] + (ny - this.py[i]) * (1 - d);
-      if (k > 0 && this.piece[i] === 0 && this.input.move * side > 0) ny -= climb * Math.min(1, this.input.move * side) * Math.sqrt(k);
+      if (k > 0 && this.piece[i] === 0 && pressing && atWall) ny -= climb * up * Math.sqrt(k);
     }
     // Clinging to something tacky counts as footing for the piece he's steering.
-    if (held > 0 && this.piece[i] === 0) this.cling += 1 / this.sub;
+    if (held > 0 && this.piece[i] === 0) { this.cling += 1 / this.sub; this.ctack += held / this.sub; this.cgx += gx / this.sub; this.cgy += gy / this.sub; }
     // Holding on never pulls him into a solid (keep where collisions put him, on that axis).
     if (this.solid(world, Math.floor(nx), Math.floor(ny))) {
       if (!this.solid(world, Math.floor(nx), Math.floor(y0))) ny = y0;
@@ -539,8 +599,8 @@ export class Goo extends Body {
 
   protected override footing(p: Piece): boolean {
     const c = this.cling;
-    this.clung = c;
-    this.cling = 0;
+    this.clung = c; this.clungX = this.cgx; this.clungY = this.cgy; this.clungTack = c > 0 ? this.ctack / c : 0;
+    this.cling = this.cgx = this.cgy = this.ctack = 0;
     return p.ground + c >= Math.max(1, p.radius * 0.35);
   }
 
@@ -578,4 +638,9 @@ export class Goo extends Body {
       if (other) { joins++; this.breaks.merge++; this.dirty = true; }
     }
   }
+}
+
+/** A fresh Bob. */
+export function createBob(tweaks: Tweaks = DEFAULTS, seed = 1): BobModel {
+  return new Goo(tweaks, seed);
 }

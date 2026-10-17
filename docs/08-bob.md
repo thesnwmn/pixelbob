@@ -4,23 +4,31 @@ How Bob is built, how he moves, and what every material and effect does to him. 
 
 ## What he is
 
-This section describes the first model, the **lattice**. Bob can also be modelled as **goo** (the playground's default) or a **skin**: see [09 Bob models](09-bob-models.md). Everything after this section (moving, temperature, materials) applies to all of them.
+Bob is a **viscoelastic fluid**: a material, not a shape. Temperature turns its knobs continuously, so he never switches from one remembered shape to another, and nothing jolts when he melts, sets, splits or picks up a bit. [09 Bob models](09-bob-models.md) says why it's this, and what else was tried. The material is `goo.ts`; `body.ts` is how his particles meet the world (collisions, water, heat, the controller).
 
 - **About 280 particles**, one per pixel of his body (radius 9 by default), each with position, velocity and temperature.
-- **Bonds** join each particle to its 8 neighbours. They are XPBD distance constraints that can break, and they re-form when particles touch.
-- **Shape matching** (`memory`) pulls every connected piece towards its rest shape, rotated to fit. This is what keeps him a blob instead of a puddle.
-  - The rest shape is a disc.
-  - The target is squashed in world space, so the squash doesn't roll round with him. **The piece he controls remembers being round**: a slight dome on the ground (`sag`), squashed and stretched by jumping. **Every other bit slumps flat**, as far as cohesion lets it (a thin film at low cohesion, a thick lump at high; runny bits spread further). A flat bit that becomes the main piece rounds back up.
-  - When a piece tears off or rejoins, it keeps the memory of the piece most of it came from, and newcomers take their place in it. Its round target is its current outline inflated evenly into a circle of the right size, then settled onto an even grid, so neighbours stay neighbours and nothing is packed tighter than particles can sit; it relaxes there in about a second.
-  - Bonds settle to the spacing of his rest shape, so they agree with the shape memory (bonds between particles that aren't neighbours in it go slack). Before this, bits merging back on while squashed made bonds that held him flat, and a flat lump can't roll.
-- **Steps:** 10 substeps per 1/60 s frame, one constraint pass each.
-  - Order: forces → shape matching → bonds → particle spacing → collision with the grid.
-  - The whole thing is deterministic, like the world.
+- **Pressure and surface tension** (double density relaxation, Clavet et al. 2005).
+  - Every particle pushes on neighbours within 3 px when crowded, so he keeps his volume.
+  - It pulls on them when sparse, as at his surface. So drops round off, a thread is drawn into the drop at its end, and he gathers himself up.
+  - Separate pieces draw together as much as `cohesion` says, without gaining speed from it.
+- **Springs** between near neighbours.
+  - They form whenever particles come close, at the length they are, so nothing jolts, and break when they've flowed too long.
+  - Stress beyond a small yield flows into a new rest length, and any stress fades over a couple of seconds, so he never stays locked in a strained shape.
+  - Normally he's a jelly that forgets dents. Runny, he flows like honey, and it's the springs that string out into threads.
+- **A will to be round** (`memory`).
+  - His outline is measured in 24 directions from his middle, and each particle moves in or out in proportion toward a circle of his area.
+  - That circle is squashed in the world frame: **the piece he steers** is a slight dome on the ground (`sag`), squashed and stretched by jumping, while **every other bit** wants to be flatter, as far as cohesion lets it.
+  - It never moves or spins him, so he rolls freely, and it's capped so an odd shape (a drop on a thread) isn't dragged about.
+  - A surface well inside his outline is the edge of a hole, and it closes.
+  - Hanging on a wall, he lets go of it, so he droops into a drop.
+- **Frozen**, a piece is held to the shape it froze in. That's the only shape he ever remembers, and it's taken from where he already is.
+- **Settling.** Normally his wobble is damped toward moving and turning as one, so he settles without his rolling being braked. Runny, viscosity drags neighbours along (`stringy`), so he drips and strings out instead of splashing.
+- **Steps:** 6 substeps per 1/60 s frame. Order: forces → springs → pressure → shape → collision with the grid, then viscosity. The whole thing is deterministic, like the world.
 - **Collision:** particles are points against solid cells (static or powder), resolved one axis at a time.
   - Friction comes from the material under him.
   - He can step up a single pixel. Smooth slopes (staircases of 1 px steps) roll freely, while 2 px or larger bumps snag his underside. That difference is the whole of "rough terrain".
 - **Liquids:** buoyancy by density (he's 10.5 to water's 10, so he sinks slowly, about 2 px/s) and heavy drag by viscosity. He doesn't push liquid cells aside yet.
-- **Keeping it calm.** Shape matching only ever reshapes a piece, never moves or spins it: half-frozen, his particles pull with different strengths, and uneven pulls used to push him along by themselves (enough to launch him off a slope). Pieces pushing apart, and bits drifting together, move particles without giving them speed, and no particle may move faster than 120 px/s relative to its piece. Without these, stiff or freshly cut pieces fling bits across the screen.
+- **Keeping it calm.** Pieces pushing apart, and bits drifting together, move particles without giving them speed, and no particle may move faster than 120 px/s relative to its piece. Without these, stiff or freshly cut pieces fling bits across the screen.
 - **Slopes for rigid pieces.** A pixel slope is a staircase and collisions push straight up off each step, so a frozen lump wouldn't feel the slope at all. Frozen pieces on the ground get gravity along the slope fitted through the surface under them, against friction from their weight: they creep down ice and stay put on rock.
 
 ## How he moves: everything is deformation
@@ -31,19 +39,19 @@ Bob has no feet, wheels or jetpack. **Every action is Bob changing his own shape
 |---|---|---|---|
 | **Roll** (default drive) | Turns his body like a tank tread (a torque about his centre). Friction at the bottom turns the spin into travel. | Muscle (he can deform), grip (friction underneath), ground | Frozen (can't deform). Ice: he spins in place. In the air: only a weak spin. |
 | **Crawl / ooze** | His underside runs like a conveyor along whatever it touches, and friction does the pushing. Runny Bob uses this automatically because he can't hold a shape to roll with. | Muscle, grip | Same as rolling. |
-| **Climb** (goo) | On a tacky surface, pushing into it: the part of him touching it creeps along it, up a wall too, while the rest of him hugs it. | Muscle, tack | Frozen. Too steep for the surface's tack: he slides back down. |
+| **Climb** | On resin or gum, push into it to hold on; up climbs (the part of him touching it creeps up, like a gecko's foot, the rest hanging below as a drop), down climbs down, neither holds. Up on a wall climbs rather than jumping; space still jumps. | Muscle, tack | Frozen. Not pushing in: he slides off. |
 | **Coast** | Momentum. Letting go, he grips gently and slows over about a second. | Nothing | Sticky ground stops him sooner, ice later. |
 | **Jump** | Hold to squash (the wind-up is him holding a deformed shape), release to spring. Pushes off along the average contact normal, so slopes and walls angle the jump. | Muscle to wind up; **footing**: only what he's touching can push back, so jumps from a point (a spike tip, a corner) are weak | Frozen: can't squash, so can't jump. In the air: there's nothing to push. Forgiving timing: coyote time 0.15 s, and a jump released up to 0.15 s before landing fires on touchdown. |
 | **Steer in the air** | A small sideways push (`air`). Physically a cheat, kept small. | | |
 | **Swim** | Holding jump in liquid paddles upward; move steers. Let go to leap out: with no ground to squash against, the leap is uncharged and only 60% of a land jump, so water is a trap you can climb out of but not one you leave easily. | Muscle | Frozen sinks like a stone. |
-| **Squash / pour** (down) | Holding down squashes him, a squat that lowers him under things: a good squash when normal, less when cold, none when frozen. Runny, it pours him down into gaps beneath him (into a pit, over an edge); only the parts with nothing under them are pushed, and his bonds may stretch further while he does. | Pliability (temperature) | Frozen: nothing. |
-| **Squeeze** | No collider, so particles go wherever there's room. But bonds and shape memory resist big deformations, so at room temperature he won't fit through a slot much smaller than him. | Low memory (heat) | Normal Bob is blocked by a 4 px slot; runny Bob pours through it in about 2 s. |
+| **Squash / pour** (down) | Holding down squashes him, a squat that lowers him under things: a good squash when normal, less when cold, none when frozen. Runny, it pours him down into gaps beneath him (into a pit, over an edge); only the parts with nothing under them are pushed, gently, so over an edge he lowers himself on a thread. | Pliability (temperature) | Frozen: nothing. |
+| **Squeeze** | No collider, so particles go wherever there's room. But his springs and his will to be round resist big deformations, so at room temperature he won't fit through a slot much smaller than him. | Runny (heat) | Normal Bob is blocked by a 4 px slot; runny Bob flows through it. |
 
 So **muscle** (how hard he can deform himself) and **grip** (what the surface gives back) are the two halves of every move. Temperature mostly acts on muscle and memory, and materials mostly act on grip and on what touching them does to him.
 
 ## Temperature
 
-Each particle has its own temperature, and heat spreads through him along his bonds. The rules are tuned for play, not physics: **get heat or cold from a visible source, then use it before it wears off.**
+Each particle has its own temperature, and heat spreads through him from neighbour to neighbour. The rules are tuned for play, not physics: **get heat or cold from a visible source, then use it before it wears off.**
 
 - **Sources shine.** Anything hotter than 150 °C (lava, fire, glowing steel) or colder than −5 °C (ice, snow) within 24 px warms or chills the particles facing it, falling off with distance (1/d, so it carries). His near side changes first and it spreads through him; he soaks it up all the way through in a few seconds, and can fine-tune by where he stands. Radiated heat alone tops out at about 92 °C, short of boiling.
 - **He holds it.** Away from sources he drifts back towards the temperature around him slowly: runny lasts several seconds after leaving a brazier, and a chill lingers too. Water cools him faster than air (a dip ends a melt).
@@ -53,27 +61,29 @@ Each particle has its own temperature, and heat spreads through him along his bo
 
 So he can be half frozen, with a cold side lagging behind the warm side.
 
-| State | Range | Muscle | Shape | Bonds | What it means |
+| State | Range | Muscle | Shape | Springs | What it means |
 |---|---|---|---|---|---|
 | Frozen | below −8 °C | none | rigid, set in the pose he froze in | don't stretch-tear, but **crack** on impact | Can't roll or jump; slides like a block (friction from his weight; long on ice, short on rock), drifts slowly down icy slopes, doesn't bounce, and cracks into chunks if dropped about 20 px |
 | Cold | −8 to 8 °C | ramps 0 → full | stiffening | stiffening | Sluggish |
-| Normal | 8 to 35 °C | full | bouncy jelly | stretchy | Default |
-| Warm / runny | 35 to 60 °C | weakening | memory fades to almost none, and what's left is a flat puddle | **taffy**: bonds take on whatever length they're pulled to | Switches from rolling to oozing; slumps into a puddle about 4 px high; pours under low gaps; stays poured until cool |
+| Normal | 8 to 35 °C | full | jelly that settles round | springy, slowly forgetting dents | Default |
+| Warm / runny | 35 to 60 °C | weakening | his will to be round fades to none: gravity and surface tension make a puddle | flow freely: **honey** (how stringy: `stringy`) | Switches from rolling to oozing (a slug's foot); a puddle about 8 px high; flows under low gaps; drips and dangles |
 | Boiling | above 100 °C | weak | | | Particles boil off as steam cells: he shrinks |
 
 **Shaking free.** Below 0 °C, struggling warms him: a trickle while you hold a direction, and a jolt for every change of direction and every tap of jump. Rattling back and forth works a frozen Bob loose in a few seconds, up to 0 °C and no further: enough to move a little at half strength, not to thaw properly (that needs a heat source or time).
 
-**Sticky when runny.** Like honey: a properly runny particle (above about 50 °C) that touches a surface holds on against being pulled off it, but still flows along it, slowly; pulled a couple of pixels off, or once the surface it holds has gone (crept past an edge), it lets go. A merely warm Bob isn't sticky: he's still firm, and holding on while firm would prop him out over an edge like a beam. So runny Bob can ooze over an edge and **dangle down** (the course has a cliff to try it on), or hold down to pour into a gap (the course has a lost bit of him at the bottom of a narrow pit). Hang out too far and the holds peel off and he falls; his taffy bonds only stretch so far, so a heavy dangling bit can tear away.
+**Sticky when runny.** Like honey: a runny particle touching a floor or ceiling is held against being pulled off it, with a limited grip, so a heavy enough load peels it away. It drags along the surface too. Walls only drag: he hangs from the lip above.
 
-**Setting again.** While runny his particles flow and swap neighbours and his bonds stretch and re-form all over. When he cools back out of it he is rebuilt like a freshly made Bob: each particle takes a place in an evenly spaced round grid near where it is now, remembers that as its shape, and bonds to its grid neighbours, so he pulls round again instead of staying a lump. A dip in water cools him fast.
+**Dangling.** Holding still while runny, he tenses up: stiffer, flowing much less, and his threads hold. So he can ooze to a ledge and hang there. Push on, or hold down, and he lowers himself over the edge on a thread. Too far, and the drop at the end gets too heavy and the thread snaps at its thinnest point: the drop falls and the rest stays on the ledge. Pull back quickly and the bulge comes back; leave it, and a drop goes. The course has a cliff to try it on, and a lost bit of him at the bottom of a narrow pit to pour in for.
 
-**Thawing.** Frozen, his main piece's target stops being squashed in world space (a frozen dome rolling would otherwise be forced to change shape every frame and shake itself apart). On thawing he takes his current shape as a fresh start, and both his rest shape and his bonds' lengths relax back to a round blob over a second or two.
+**Setting again.** Cooling, his springs firm up and his will to be round comes back, so he rounds up from whatever shape he's in. A dip in water cools him fast.
+
+**Thawing.** Frozen, his main piece isn't squashed in the world frame (a frozen dome rolling would otherwise be forced to change shape every frame), and he's held to the shape he froze in. Thawing, he lets go of it and rounds up.
 
 Colours follow the stills: icy blue with facets and squinting eyes when frozen, orange and glowing when hot with drooping eyes.
 
 ## Coming apart and coming back
 
-Bonds break in four ways:
+Springs break in four ways (and between pieces they form again when the pieces touch):
 
 1. **Overstretched**: past the break strain set by `cohesion`. Judged once a frame, so a hard landing's momentary squeeze doesn't count.
 2. **Blunt impact**: a particle hitting anything faster than a threshold (lower with low cohesion) splashes off as a droplet. At default cohesion only very hard hits do this.
@@ -82,7 +92,7 @@ Bonds break in four ways:
 
 All impacts are judged by how fast the **whole piece** was moving into the surface, not by single particles, which jiggle even when he sits still. So resting on spikes doesn't keep cutting him, and a frozen lump grinding over bumps doesn't crack.
 
-Every connected group is a **piece**. One has the eyes and takes input; the rest sit where they are, slumped flat. In the goo and skin models that's the piece with most of what he was already steering, so after a split you keep the bit you had, even if a bigger one broke off (in the lattice it's simply the biggest). Later: a button to switch between pieces. Pieces draw together when close (surface tension, scaled by `cohesion`) and re-bond when they touch, unless frozen.
+Every connected group is a **piece**. One has the eyes and takes input; the rest sit where they are, slumped flat. That's the piece with most of what he was already steering, so after a split you keep the bit you had, even if a bigger one broke off. Later: a button to switch between pieces. Pieces draw together when close (surface tension, scaled by `cohesion`) and link up when they touch, a few springs a step at the length they are (so a bit joins without a jolt), unless frozen.
 
 **Mass is health and score.** The playground shows what fraction of Bob is alive, how much is in the main piece, what was lost and why (boiled, dissolved, crushed, fell), and the **% of Bob that reached the finish**. That's the level goal idea from the brief: losing bits on jumps and hazards costs you, and you can go back and roll over droplets to pick them up.
 
@@ -92,9 +102,9 @@ Every slider is in the playground's panel and saved in the URL, so a good feel c
 
 | Slider | Default | What it changes |
 |---|---|---|
-| cohesion | 0.6 | Break strain, impact threshold, rejoin chance and pull. 0 = sand castle, 1 = rubber |
-| memory | 0.3 | Pull back to his shape. High = firm ball, low = sloppy |
-| softness | 0.45 | Bond compliance (wobble) |
+| cohesion | 0.6 | Surface tension, how hard he is to tear (stretch and impact), how readily bits draw together and join. 0 = sand castle, 1 = rubber |
+| memory | 0.3 | His will to be round (and how slowly he forgets a dent). High = firm ball, low = sloppy |
+| softness | 0.45 | How springy his springs are (wobble) |
 | muscle | 1 | Strength of rolling, crawling and jumping |
 | grip | 1 | Multiplies every material's friction |
 | speed | 70 px/s | Top rolling speed |
@@ -102,8 +112,10 @@ Every slider is in the playground's panel and saved in the URL, so a good feel c
 | air ctrl | 0.35 | Steering in the air and in water |
 | size | 9 | Radius in particles (respawn to apply) |
 | gravity | 420 px/s² | |
+| heat soak, heat hold | 1, 1 | How fast he takes on a heat source's heat or cold, and how long he keeps it |
+| stringy | 0.6 | Runny, how thick he is: drips at 0, strings out like honey at 1 |
 
-Also: `drive` (roll or crawl), a fixed temperature to try a state without walking into it, and `?at=<x>` in the link to start him partway along the course (the ice is at about 460, the spikes at 600).
+Also: `drive` (roll or crawl), a fixed temperature to try a state without walking into it, and `?at=<x>` in the link to start him partway along the course (the ice is at about 950, the spikes at 1240, the cliff at 1590).
 
 ## Materials and effects on Bob
 
@@ -123,7 +135,7 @@ The whole range, built or not. **Built** means it works in the playground today.
 | glass | Slippery, and slightly sharp | Built (data) |
 | spikes | Sharp: slice him into strips and bits | Built (new material). Later: a hard **edge** (a blade of steel or glass) that splits him cleanly in two, maybe into two halves you control in turn: good as well as bad |
 | rust | Grippy; crumbles under him | Built (rust's own crumbling) |
-| moss, resin, gum | **Tacky** (`tack` 0.35, 0.65, 1): he clings to them at any temperature short of frozen, and pushing into one, the part of him touching it creeps along it (a gecko's foot) while the rest of him hugs it. Moss holds him on 60° slopes, resin on 70°, gum on walls. Green, amber and violet so a player can read the challenge | Built in the goo model (09). The course's climbing gym (left of the start) has a tower of each with a lost bit on top. Paint them with the edit tools. Later: ceilings (gum), vine |
+| moss, resin, gum | **Tacky** (`tack` 0.35, 0.65, 1), at any temperature short of frozen. Moss (green) is grippy enough to roll up a 60° slope. Resin (amber) and gum (violet) are tacky enough to hang from: push into one to hold on (he hangs there as a drop, held at the wall, weight at the bottom), up to climb, down to climb down; stop pushing and he slides off, push away and he lets go. Gum climbs walls fast, resin slowly | Built. The course's climbing gym (left of the start) has a tower of each with a lost bit on top. Paint them with the edit tools. Later: ceilings (gum), vine |
 | vine | Sticky like moss | Later |
 | mushroom cap | Springy: a bounce pad | Later: restitution per material |
 
@@ -152,8 +164,8 @@ The whole range, built or not. **Built** means it works in the playground today.
 | Effect | On Bob | Status |
 |---|---|---|
 | Heat and cold brushes | Change his temperature through the cells | Built |
-| Blasts (gunpowder, methane pops) | An impulse outward that flings particles and tears bonds: big blasts split him | Later: `World.explode` hands Bob an impulse |
-| Electricity | Contracts all his bonds at once: an involuntary hop. Wet Bob conducts. Later puzzles use him as a wire | Later (needs electricity) |
+| Blasts (gunpowder, methane pops) | An impulse outward that flings particles and tears springs: big blasts split him | Later: `World.explode` hands Bob an impulse |
+| Electricity | Contracts all his springs at once: an involuntary hop. Wet Bob conducts. Later puzzles use him as a wire | Later (needs electricity) |
 | Wind, fans | A push on exposed particles: lighter Bob is blown further | Later |
 | Conveyors | Moving ground: friction carries him | Later (a tread velocity per cell, like his own crawl) |
 | Bounce pads | Restitution per material | Later |
@@ -164,7 +176,7 @@ The whole range, built or not. **Built** means it works in the playground today.
 ### Backlog materials, through Bob's eyes
 
 - **Slime / jelly**: a cousin. He merges with it and grows.
-- **Tar and honey**: trap and slow him. Tar blackens him; honey holds him until he pulls free and bonds stretch.
+- **Tar and honey**: trap and slow him. Tar blackens him; honey holds him until he pulls free.
 - **Quicksand**: sucks him down unless he keeps moving.
 - **Concrete**: setting around him pins the particles inside.
 - **Molten metal**: like lava, but it sets into new floors he can roll on.

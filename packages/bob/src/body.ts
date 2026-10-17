@@ -1,5 +1,5 @@
 import { CAT, CONDUCT, Cat, DENSITY, FRICTION, M, MOBILITY, SHARP, type World } from "@pixelbob/sim";
-import type { BobModel, BobView, Input, Losses, ModelKind, Piece } from "./model.ts";
+import type { BobModel, BobView, Input, Losses, Piece } from "./model.ts";
 import { DEFAULTS, frozenness, muscleAt, runniness, type Tweaks } from "./tweaks.ts";
 
 export const DT = 1 / 60;
@@ -31,25 +31,30 @@ const COLD_REACH = 0.1;
 const EMIT = 0.03;
 const EMIT_MAX = 1.5;
 /** Push downward when a runny Bob presses down, px/s². */
-const POUR = 900;
+const POUR = 270;
+/** How much flatter runny Bob wants to be (his sag when fully runny, on top of a dome's). Runny, gravity and surface tension mostly decide how he puddles, not his will. */
+const SAG_RUNNY = 0.6;
+/** How hard his rolling effort spins him up, rad/s² (a jelly shifts its weight as it turns, so it takes some effort). */
+const ROLL = 90;
+/** Share of his wobble (motion apart from moving and turning as one) taken out each step, so he settles. */
+const SETTLE = 0.4;
 /** Jumping out of liquid is weaker than off the ground: falling in is a trap, but one you can climb out of. */
 const WATER_JUMP = 0.6;
 
 const STATIC = Cat.Static, POWDER = Cat.Powder, LIQUID = Cat.Liquid;
 
 /**
- * What every particle Bob shares, whatever holds his particles together: the particles
- * themselves (one per pixel of him), links between them (bonds or springs, which decide
- * what counts as one piece), moving through the world (collisions, friction, water), the
- * controller (rolling, jumping, squashing, pouring), hard hits, heat, and bookkeeping.
+ * Bob's particles and how they meet the world: the particles themselves (one per pixel of
+ * him), the links between them (which decide what counts as one piece), moving through the
+ * world (collisions, friction, water), the controller (rolling, jumping, squashing, pouring),
+ * hard hits, heat, and bookkeeping.
  *
- * A model (Lattice, Goo) supplies the forces inside him: `solve()` runs every substep, and
- * the other hooks let it react to freezing, melting, sticking and pieces changing.
+ * What holds him together is the material, in goo.ts: `solve()` runs every substep, and the
+ * other hooks let it react to freezing, melting, sticking and climbing.
  *
  * Fixed step of 1/60 s split into substeps; deterministic (no Math.random).
  */
 export abstract class Body implements BobModel {
-  abstract readonly kind: ModelKind;
   tweaks: Tweaks;
   fixedTemp: number | null = null;
   /** Substeps per step. */
@@ -76,18 +81,6 @@ export abstract class Body implements BobModel {
   ccell = new Int32Array(0);
   protected fz = new Float32Array(0);
   protected rn = new Float32Array(0);
-  /** Share of a jelly's wobble (motion apart from moving and turning as one) taken out each step. */
-  protected settleRate = 0;
-  /** How hard pressing down pours a runny Bob (x POUR). */
-  protected pourGain = 1;
-  /** After a split, keep steering the piece with most of what he was steering (else: the biggest). */
-  protected keepControl = false;
-  /** How hard his rolling effort turns him (models differ in how well spin becomes travel). */
-  protected rollGain = 1;
-  /** How much flatter runny Bob wants to be (his sag when fully runny, on top of a dome's). */
-  protected sagRunny = 1.4;
-  /** How much faster than the rest of his piece a runny particle may move (x RELMAX). */
-  protected relRunny = 4;
   /** Speed the underside of each particle runs at against floors and ceilings (crawling). */
   protected tread = new Float32Array(0);
   /** Shift from pushing apart overlapping pieces this substep, which mustn't become velocity. */
@@ -131,7 +124,7 @@ export abstract class Body implements BobModel {
   protected sag = 0;
   /** What the player asked for this step. */
   protected input: Input = { move: 0, jump: false };
-  /** How hard the player presses down (0..1), for models that squash. */
+  /** How hard the player presses down (0..1), squashing him. */
   protected squeeze = 0;
 
   protected seed = 1;
@@ -159,14 +152,18 @@ export abstract class Body implements BobModel {
     return this.seed / 4294967296;
   }
 
-  // ---- Hooks for the model ----
+  // ---- Hooks for the material (goo.ts) ----
 
-  /** Make the model's own per-particle arrays. */
+  /** Make the material's own per-particle arrays. */
   protected abstract alloc(cap: number): void;
   /** Once per step per particle, before the controller (fz and rn are set). */
   protected prepare(_i: number, _T: number): void {}
   /** Forces inside him, once per substep, after the free move and before collisions. */
   protected abstract solve(substep: number): void;
+  /** Which way he tries to roll, given which way the player pushes (hanging on a wall, he holds still instead). */
+  protected rollDir(dir: number): number { return dir; }
+  /** Whether the jump button counts as winding up a jump this step. */
+  protected jumpHeld(input: Input): boolean { return input.jump; }
   /** Standing on something he can push against (enough of him touching the ground). */
   protected footing(p: Piece): boolean { return p.ground >= Math.max(1, p.radius * 0.35); }
   /** The main piece's temperature state, once per step (freezing rigid, melting...). */
@@ -177,14 +174,10 @@ export abstract class Body implements BobModel {
   protected jumped(_p: Piece): void {}
   /** A particle touching (or near) a surface after collisions: set qx, qy (default: stays). */
   protected stick(_world: World, i: number, nx: number, ny: number): void { this.qx = nx; this.qy = ny; void i; }
-  /** A piece is new or has changed members (members still carry their old piece index). */
-  protected changed(_members: number[], _pi: number): void {}
   /** Every substep, after velocities are worked out from the moves (viscosity). */
   protected settle(): void {}
   /** After heat, before pieces are regrouped: links may form. */
   protected merge(): void {}
-  /** After pieces are regrouped. */
-  protected relax(): void {}
 
   /** Make a fresh round Bob centred at (cx, cy), plus any stranded bits of him placed around the level. */
   spawn(world: World, cx: number, cy: number, temp = 20, bits: { x: number; y: number; r: number }[] = []): void {
@@ -202,7 +195,6 @@ export abstract class Body implements BobModel {
     pts.forEach(([dx, dy, d], i) => {
       this.x[i] = this.px[i] = Math.round(discs[d].x) + dx + 0.5;
       this.y[i] = this.py[i] = Math.round(discs[d].y) + dy + 0.5;
-      this.spawned(i, dx, dy);
       this.t[i] = temp;
       this.alive[i] = 1;
       this.ctl[i] = d === 0 ? 1 : 0;
@@ -243,16 +235,10 @@ export abstract class Body implements BobModel {
     this.reset();
     this.sx = this.sy = 1;
     this.held = false;
-    this.rebuild(true);
+    this.rebuild();
   }
 
-  /** How many pixels of him particle i stands for, in heat it takes from and gives to what it touches. */
-  protected heatWeight(_i: number): number { return 1; }
-  /** How much of him a group of particles is (which piece is the biggest, and so the main one). */
-  protected weigh(members: number[]): number { return members.length; }
-  /** A particle was placed at (dx, dy) from the middle of its disc. */
-  protected spawned(_i: number, _dx: number, _dy: number): void {}
-  /** Clear the model's state on spawn. */
+  /** Clear the material's state on spawn. */
   protected reset(): void {}
 
   protected bond(a: number, b: number, len: number): void {
@@ -348,7 +334,7 @@ export abstract class Body implements BobModel {
         if (!free) this.kill(i, "crushed");
       }
     }
-    if (!this.count) { this.rebuild(false); return; }
+    if (!this.count) { this.rebuild(); return; }
 
     // Contacts from the last step steer the controller, then start afresh.
     this.control(input);
@@ -393,8 +379,7 @@ export abstract class Body implements BobModel {
     this.damp();
     this.heat(world);
     this.merge();
-    if (this.dirty) this.rebuild(false);
-    this.relax();
+    if (this.dirty) this.rebuild();
     this.stats();
   }
 
@@ -424,10 +409,11 @@ export abstract class Body implements BobModel {
     // Jump: hold to squash (that's him winding up, so it takes muscle), release to spring.
     // In water, holding paddles up and releasing leaps out. Released just before landing, it
     // still fires on touchdown.
-    if (input.jump && m > 0.05) {
+    const jump = this.jumpHeld(input);
+    if (jump && m > 0.05) {
       this.charge = Math.min(1, this.charge + (DT / 0.35) * Math.min(1, m));
       this.held = true;
-    } else if (!input.jump && this.held) {
+    } else if (!jump && this.held) {
       this.held = false;
       this.buffer = 0.15;
       this.banked = this.charge;
@@ -461,7 +447,7 @@ export abstract class Body implements BobModel {
     if (!this.held) this.charge = 0;
     // He settles into a dome on the ground and rounds up in the air (world frame, so it doesn't roll with him).
     // Runny, he slumps much flatter: a puddle that can ooze under low gaps.
-    this.sag += ((grounded ? 0.16 + this.sagRunny * runniness(T) : 0) - this.sag) * 0.15;
+    this.sag += ((grounded ? 0.16 + SAG_RUNNY * runniness(T) : 0) - this.sag) * 0.15;
     // Holding down squashes him: a squat that lowers him under things. How much depends on how
     // pliable he is: a good squash when normal, a little when cold, none when frozen solid
     // (runny, he's already flat, and pours instead; see below).
@@ -482,9 +468,9 @@ export abstract class Body implements BobModel {
         num += ox * vy[i] - oy * vx[i]; den += ox * ox + oy * oy;
       }
       const w = den > 0 ? num / den : 0;
-      const target = (dir * tw.speed) / Math.max(2, p.radius);
+      const target = (this.rollDir(dir) * tw.speed) / Math.max(2, p.radius);
       // Holding still, he grips and stops himself, gently: momentum carries.
-      const accel = (dir ? 45 * this.rollGain : 8) * m * (1 - ooze) * (grounded ? 1 : dir ? tw.air * 0.5 : 0);
+      const accel = (dir ? ROLL : 8) * m * (1 - ooze) * (grounded ? 1 : dir ? tw.air * 0.5 : 0);
       const dw = Math.max(-accel * DT, Math.min(accel * DT, target - w));
       if (dw)
         for (let k = p.start; k < p.start + p.len; k++) {
@@ -509,7 +495,7 @@ export abstract class Body implements BobModel {
     if (down > 0.05 && world)
       for (let k = p.start; k < p.start + p.len; k++) {
         const i = order[k];
-        if (!this.solid(world, Math.floor(x[i]), Math.floor(y[i]) + 1)) vy[i] += POUR * this.pourGain * down * DT;
+        if (!this.solid(world, Math.floor(x[i]), Math.floor(y[i]) + 1)) vy[i] += POUR * down * DT;
       }
     // Swimming up: holding jump in water paddles upward.
     if (swim && input.jump && m > 0.05)
@@ -631,9 +617,9 @@ export abstract class Body implements BobModel {
           mvx += dv * tx; mvy += dv * ty;
         }
       }
-      // Frozen Bob is damped (and jelly, a little, in some models); oozing is all internal motion.
-      // (Some models damp a normal jelly's wobble too: settle says how much per step.)
-      const w = den > 0 ? num / den : 0, k = Math.max(0.8 * f, this.settleRate * (1 - f) * (1 - r));
+      // Frozen Bob keeps no wobble, and normal jelly settles: damped towards moving and
+      // turning as one (which doesn't brake rolling). Runny, oozing is all internal motion.
+      const w = den > 0 ? num / den : 0, k = Math.max(0.8 * f, SETTLE * (1 - f) * (1 - r));
       for (let j = p.start; j < p.start + p.len; j++) {
         const i = order[j], ox = x[i] - cx, oy = y[i] - cy;
         const rx = mvx - w * oy, ry = mvy + w * ox;
@@ -642,7 +628,7 @@ export abstract class Body implements BobModel {
         // No particle races about inside him: splashes stay soft, and the faces of a fresh
         // cut don't spray off when he lands.
         const dx = vx[i] - rx, dy = vy[i] - ry, d2 = dx * dx + dy * dy;
-        const cap = RELMAX * (1 + this.relRunny * r);
+        const cap = RELMAX;
         if (d2 > cap * cap) { const c = cap / Math.sqrt(d2); vx[i] = rx + dx * c; vy[i] = ry + dy * c; }
       }
     }
@@ -808,10 +794,10 @@ export abstract class Body implements BobModel {
     // solids a little; big gaps fast.
     const touch = CAT[m] === Cat.Liquid ? 0.15 : 0.002;
     const k = (m === M.air ? 0.0004 / hold : 0.0004 / hold + CONDUCT[m] * touch) * (1 + Math.abs(gap) / 150);
-    this.t[i] += (gap * Math.min(0.3, k)) / this.heatWeight(i);
+    this.t[i] += gap * Math.min(0.3, k);
     if (m !== M.air && CAT[m] !== Cat.Gas && Math.abs(gap) > 2) {
       // A little at a time: enough to melt snow or freeze water, not to put out lava.
-      world.temp[c] -= Math.max(-EMIT_MAX, Math.min(EMIT_MAX, gap * EMIT * this.heatWeight(i)));
+      world.temp[c] -= Math.max(-EMIT_MAX, Math.min(EMIT_MAX, gap * EMIT));
       world.wake(c % world.w, (c / world.w) | 0);
     }
   }
@@ -821,8 +807,12 @@ export abstract class Body implements BobModel {
     return false;
   }
 
-  /** Group particles into connected pieces (biggest first). Pieces that changed are handed to changed(). */
-  protected rebuild(keepAll: boolean): void {
+  /**
+   * Group particles into connected pieces. pieces[0] is the one he's steering: the one with
+   * most of what he was steering in it (not simply the biggest; only if none of it is left
+   * does the biggest take over). The rest follow, biggest first.
+   */
+  protected rebuild(): void {
     this.dirty = false;
     const n = this.cap, { alive, ba, bb, piece } = this;
     const parent = new Int32Array(n);
@@ -844,24 +834,17 @@ export abstract class Body implements BobModel {
       g.push(i);
     }
     const old = this.pieces;
-    const list = [...groups.values()].sort((a, b) => this.weigh(b) - this.weigh(a) || a[0] - b[0]);
-    if (this.keepControl) {
-      // The piece he's steering stays the one he was steering: the one with most of it in
-      // (not simply the biggest). Only if none of it is left does the biggest take over.
-      const { ctl } = this;
-      let best = -1, most = 0;
-      list.forEach((g, k) => { const w = this.weigh(g.filter((i) => ctl[i])); if (w > most) { most = w; best = k; } });
-      if (best > 0) list.unshift(list.splice(best, 1)[0]);
-    }
+    const list = [...groups.values()].sort((a, b) => b.length - a.length || a[0] - b[0]);
+    const { ctl } = this;
+    let best = -1, most = 0;
+    list.forEach((g, k) => { const w = g.filter((i) => ctl[i]).length; if (w > most) { most = w; best = k; } });
+    if (best > 0) list.unshift(list.splice(best, 1)[0]);
     this.pieces = [];
     let o = 0;
-    for (const [pi, members] of list.entries()) {
+    for (const members of list) {
       const prev = piece[members[0]];
-      // Unchanged: same members, and still (or still not) the main piece.
-      const same = keepAll || (old[prev] !== undefined && old[prev].len === members.length && (prev === 0) === (pi === 0) && members.every((i) => piece[i] === prev));
       const p: Piece = { start: o, len: members.length, cx: 0, cy: 0, vx: 0, vy: 0, temp: 20, radius: 1, ground: old[prev]?.ground ?? 0, nx: 0, ny: -1, wet: 0 };
       for (const i of members) this.order[o++] = i;
-      if (!same) this.changed(members, pi);
       this.pieces.push(p);
     }
     this.pieces.forEach((p, pi) => { for (let k = p.start; k < p.start + p.len; k++) piece[this.order[k]] = pi; });

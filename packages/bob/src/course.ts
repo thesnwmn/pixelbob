@@ -93,15 +93,16 @@ export function buildCourse(world: World, seed = 7): Course {
 
   // Braziers: steel bowls of lava hanging over the path from a post (drawn on the back wall).
   // They're the heat sources: stop underneath and he soaks up their heat. Don't touch the bowl.
-  const brazier = (bx: number, bottom: number) => {
+  const brazier = (bx: number, bottom: number, depth = 3) => {
     for (let y = bottom - 30; y < bottom - 4; y++) world.back[y * w + bx] = 1;
     for (let x = bx; x <= bx + 14; x++) world.back[(bottom - 30) * w + x] = 1;
     for (let y = bottom - 30; y < top[bx + 14]; y++) { world.back[y * w + bx + 14] = 1; world.back[y * w + bx + 15] = 1; }
     for (let x = bx - 5; x <= bx + 5; x++) set(x, bottom, M.steel);
     for (let y = bottom - 4; y < bottom; y++) { set(bx - 5, y, M.steel); set(bx + 5, y, M.steel); }
-    for (let x = bx - 4; x <= bx + 4; x++) for (let y = bottom - 3; y < bottom; y++) hold(x, y, M.lava, 1200);
+    for (let x = bx - 4; x <= bx + 4; x++) for (let y = bottom - depth; y < bottom; y++) hold(x, y, M.lava, 1200);
   };
-  brazier(THAW, G - 13);
+  // A small one: enough to thaw him, not to melt him.
+  brazier(THAW, G - 26, 1);
 
   // Spike pit: a shallow dip lined with spikes.
   for (let x = SPIKES; x < SPIKES + 24; x++) {

@@ -403,8 +403,8 @@ export class Blob {
     // longer make sense: setting again, he takes the shape he's in as a fresh start and rounds
     // up from there (otherwise he'd stay lumpy, particles unable to pass each other).
     const rnP = runniness(T);
-    if (!this.melted && rnP > 0.5) this.melted = true;
-    else if (this.melted && rnP < 0.3) { this.melted = false; this.reform(p); }
+    if (!this.melted && rnP > 0.7) this.melted = true;
+    else if (this.melted && rnP < 0.5) { this.melted = false; this.reform(p); }
 
     // Jump: hold to squash (that's him winding up, so it takes muscle), release to spring.
     // In water, holding paddles up and releasing leaps out. Released just before landing, it
@@ -951,7 +951,7 @@ export class Blob {
     const m = world.mat[c], gap = world.temp[c] - this.t[i];
     // Air barely moves his temperature (he holds a heat); liquids more (a dip cools him off);
     // solids a little; big gaps fast.
-    const touch = CAT[m] === Cat.Liquid ? 0.05 : 0.002;
+    const touch = CAT[m] === Cat.Liquid ? 0.15 : 0.002;
     const k = (m === M.air ? 0.0004 / hold : 0.0004 / hold + CONDUCT[m] * touch) * (1 + Math.abs(gap) / 150);
     this.t[i] += gap * Math.min(0.3, k);
     if (m !== M.air && CAT[m] !== Cat.Gas && Math.abs(gap) > 2) {

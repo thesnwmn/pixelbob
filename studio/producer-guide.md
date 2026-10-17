@@ -145,7 +145,7 @@ Gated PRs (direction, milestones, Bob's character, the colour language, the stud
 
 A few GitHub settings only you can change. The studio will ask for them when it builds its commands (unit 3 in [the studio](README.md#building-the-studio)), with exact steps:
 
-- **A ruleset on `main`**: require a PR, require the `CI` and `gate` checks to pass, allow squash merge only.
+- **A ruleset on `main`**: require a PR, require the `CI`, `pr-title` and `gate` checks to pass, allow squash merge only.
 - That's all. Labels, the bug form and the gate check go in through the studio's own PRs.
 
 To let a gated PR through, add the label `producer-ok` and merge it (or say so in a session and the studio merges it).

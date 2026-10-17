@@ -1,5 +1,6 @@
 <!--
-Title: what changed, in plain words, under ~70 characters. It becomes the squash commit on main.
+Title: type(scope)!: Summary, under ~72 characters, e.g. "fix(bob): Pieces under 20 particles can be steered".
+Types and scopes: studio/README.md#prs. It becomes the squash commit on main, and the pr-title check enforces it.
 Keep every section short. Details go in the unit file, docs or a decision record; link them.
 Delete sections that don't apply.
 -->

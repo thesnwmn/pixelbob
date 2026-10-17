@@ -76,7 +76,7 @@ pixelbob/
     README.md               index and TL;DR
     game-overview.md, art-direction.md, simulation.md, bob.md, worlds.md, …
                             the design docs: flat, named by subject, no numbers
-    decisions/              one record per decision: the why and the history (planned)
+    decisions/              one record per decision: the why and the history
     img/                    pictures the docs use
 
   studio/                   HOW IT'S MADE: the harness and its state
@@ -118,7 +118,7 @@ pixelbob/
     agents/                 one brief per role
     skills/                 the commands: go, next, needs-me, director, feedback, status
   .github/
-    workflows/              CI (`pnpm health`, and nightly), Pages, previews (and planned: gate check, releases, studio page)
+    workflows/              CI (`pnpm health`, and nightly), the PR title check, Pages, previews (and planned: gate check, releases, studio page)
     pull_request_template.md
     ISSUE_TEMPLATE/bug.yml  (planned) the bug form
 ```
@@ -153,7 +153,24 @@ How every session ends:
 
 A PR's title becomes the squash commit on main, so the titles are the project's history. Titles and descriptions are short: enough for you and the next session to understand what happened, and no more. `.github/pull_request_template.md` sets the shape:
 
-- **Title**: what changed, in plain words, under about 70 characters. No prefixes or ticket numbers: `Split action: E / X or a swipe cuts the piece you steer`.
+- **Title**: `type(scope)!: Summary`, [conventional commits](https://www.conventionalcommits.org/) style, under about 72 characters, checked on every PR by the `pr-title` workflow. The summary says what changed in plain words, starting with a capital, with no full stop and no ticket numbers: `feat(bob): Split action, E / X or a swipe cuts the piece you steer`. Why: [PR titles](../docs/decisions/2026-10-17-pr-titles.md).
+  - **Type**, by the unit's kind:
+
+    | Type | For | Unit kinds |
+    |---|---|---|
+    | `feat` | Something new you can play, see or use | build, tool |
+    | `fix` | Something that was wrong now isn't | fix |
+    | `spike` | A throwaway prototype answering one question | spike |
+    | `docs` | Design docs, the concept doc, plans | think, shape |
+    | `test` | Bots, replays, regression runs | test |
+    | `refactor` | The same behaviour, better code | tidy |
+    | `perf` | Faster, within budgets | tidy |
+    | `chore` | Dependencies, studio bookkeeping | tidy |
+    | `ci` | Workflows | tidy |
+    | `release` | Cutting an alpha or beta | release |
+  - **Scope**, optional: one of `sim` `bob` `render` `play` `levels` `game` `stills` `sandbox` `playground` `concept` `studio` `health` `tools` `docs`. Leave it out when a PR spans areas. A PR that adds an area adds its scope to `.github/workflows/pr-title.yml`.
+  - **`!`** when it breaks something saved: levels, replays, saves or scenarios. The Tester re-records what it breaks.
+  - For example: `docs(studio): Plan the agent harness and the producer's guide`, `fix(bob): Pieces under 20 particles can be steered`, `spike(split): Does a swipe split better than a button?`, `feat(levels)!: Entities carry an id, so old replays need re-recording`.
 - **Why**: one or two lines.
 - **What**: up to five bullets, one line each.
 - **Play** (if it changes play): the scenario link and what to look for.

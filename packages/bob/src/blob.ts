@@ -387,7 +387,8 @@ export class Blob {
     }
     if (!this.held) this.charge = 0;
     // He settles into a dome on the ground and rounds up in the air (world frame, so it doesn't roll with him).
-    this.sag += ((grounded ? 0.16 : 0) - this.sag) * 0.15;
+    // Runny, he slumps much flatter: a puddle that can ooze under low gaps.
+    this.sag += ((grounded ? 0.16 + 1.4 * runniness(T) : 0) - this.sag) * 0.15;
     const sq = (1 + this.sag) * (1 + 0.35 * this.charge * Math.min(1, m));
     this.sx = this.rigid ? 1 : this.stretch > 0 ? 0.84 : sq;
     this.sy = 1 / this.sx;

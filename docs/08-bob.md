@@ -46,7 +46,7 @@ Each particle has its own temperature. It exchanges heat with the cell it's in a
 | Frozen | below −8 °C | none | rigid, set in the pose he froze in | don't stretch-tear, but **crack** on impact | Can't roll or jump; slides like a block (friction from his weight; long on ice, short on rock), drifts slowly down icy slopes, doesn't bounce, and cracks into chunks if dropped about 20 px |
 | Cold | −8 to 8 °C | ramps 0 → full | stiffening | stiffening | Sluggish |
 | Normal | 8 to 40 °C | full | bouncy jelly | stretchy | Default |
-| Warm / runny | 40 to 70 °C | weakening | memory fades to almost none | **taffy**: bonds take on whatever length they're pulled to | Switches from rolling to oozing; spreads into a puddle; pours through gaps; stays poured until cool |
+| Warm / runny | 40 to 70 °C | weakening | memory fades to almost none, and what's left is a flat puddle | **taffy**: bonds take on whatever length they're pulled to | Switches from rolling to oozing; slumps into a puddle about 4 px high; pours under low gaps; stays poured until cool |
 | Boiling | above 100 °C | weak | | | Particles boil off as steam cells: he shrinks |
 
 **Shivering.** Below room temperature, trying to move or jump warms him a little (0.15 °C a frame). In mild cold (the course's −15 °C air) that keeps a moving Bob cold and sluggish but able to crawl out; if he stops, he freezes. Without it, a Bob frozen in a cold zone could never move or thaw.

@@ -67,6 +67,8 @@ export function buildCourse(world: World, seed = 7): Course {
       if (d < 0) { set(x, y, M.air); continue; }
       let m: number = d < 1 && (x < 235 || x >= 900) ? M.plant : d < 8 + fbm(x * 0.05, 1, seed, 2) * 6 ? M.dirt : M.rock;
       if (x >= 235 && x < 335 && d < 6) m = M.rock;
+      // Pools are lined with rock: water soaks dirt into mud, which would eat the banks away.
+      if (((x >= 380 && x < 418) || (x >= 790 && x < 880)) && m === M.dirt) m = M.rock;
       set(x, y, m);
     }
 
@@ -104,19 +106,21 @@ export function buildCourse(world: World, seed = 7): Course {
   // The lava pit is held hot by its cells' ambient temperature, so it never crusts over.
   for (let x = 674; x < 690; x++)
     for (let y = G + 4; y < G + 18; y++) {
-      if (y >= G + 8) world.base[y * w + x] = 1200;
-      set(x, y, y < G + 8 ? M.air : M.lava);
+      if (y >= G + 13) world.base[y * w + x] = 1200;
+      set(x, y, y < G + 13 ? M.air : M.lava);
     }
   for (let x = 690; x < 795; x++) for (let k = 0; k < 2; k++) set(x, G + 10 + k, M.stone);
-  for (let y = 0; y < h; y++)
+  for (let x = 735; x < 760; x++) for (let y = G - 40; y < G - 30; y++) set(x, y, M.rock);
+  for (let x = 744; x < 750; x++) for (let y = G - 30; y < G + 6; y++) set(x, y, M.steel);
+  // Hot air, and a heated floor and slot wall, so he melts right through (a cool floor
+  // would keep his underside firm and hold him up as a dome).
+  for (let y = G - 60; y <= G + 11; y++)
     for (let x = 700; x < 790; x++) {
-      const i = y * w + x;
-      if (world.mat[i] !== M.air || y < G - 60) continue;
+      const i = y * w + x, m = world.mat[i];
+      if (m !== M.air && m !== M.stone && m !== M.steel) continue;
       world.base[i] = 90;
       world.temp[i] = 90;
     }
-  for (let x = 735; x < 760; x++) for (let y = G - 40; y < G - 30; y++) set(x, y, M.rock);
-  for (let x = 744; x < 750; x++) for (let y = G - 30; y < G + 6; y++) set(x, y, M.steel);
 
   // Cool-off pool, level with the hot floor.
   for (let x = 795; x < 875; x++) for (let y = G + 10; y < top[x]; y++) set(x, y, M.water);

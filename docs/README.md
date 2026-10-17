@@ -37,6 +37,7 @@ Target: web browser first, on phones and laptops.
 | [06 Prior art](06-prior-art.md) | Games and toys to learn from |
 | [07 Materials](07-materials.md) | Every material in the sim and what it reacts with, plus a backlog of ideas |
 | [08 Bob](08-bob.md) | How Bob is built and moves (every action is him deforming), temperature states, tearing and rejoining, and what every material does to him |
+| [09 Bob models](09-bob-models.md) | Three ways of modelling Bob (lattice, goo, skin), why, and how they compare |
 
 ## The stills
 

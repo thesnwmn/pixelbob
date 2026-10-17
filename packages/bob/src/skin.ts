@@ -14,8 +14,14 @@ const APART = 0.9;
 /** Two points of the same runny ring this close, and at least PINCH_GAP points apart along it, pinch it in two. */
 const PINCH = 0.7;
 const PINCH_GAP = 8;
+/** ...and pulling apart at least this fast (px/s). */
+const PART = 4;
+/** Points this few apart along the skin don't push each other apart. */
+const NEAR = 3;
 /** Touching rings this close join up. */
 const JOIN_R = 0.9;
+/** Chance a touching pair of points joins their rings, each step, at full cohesion. */
+const JOIN_CHANCE = 0.03;
 /** Most the round outline moves a point per substep (px), and the most it scales him by. */
 const ROUND_MAX = 0.08;
 const RATIO = 1.25;
@@ -61,6 +67,21 @@ class Rings extends Body {
 
   constructor(tweaks: Tweaks, seed: number) {
     super(tweaks, seed, 8);
+    // (Runny, surface tension and gravity decide how he puddles, not his will.)
+    this.sagRunny = 0.6;
+    this.settleRate = 0.5;
+    this.pourGain = 0.3;
+  }
+
+  /** Viscosity along the skin: each point's velocity eased towards its neighbours' (more when runny). */
+  protected override settle(): void {
+    const { vx, vy, nxt, prv, rn, alive } = this;
+    for (let i = 0; i < this.used; i++) {
+      if (!alive[i]) continue;
+      const a = prv[i], b = nxt[i], mu = 0.05 + 0.25 * rn[i];
+      vx[i] += ((vx[a] + vx[b]) / 2 - vx[i]) * mu;
+      vy[i] += ((vy[a] + vy[b]) / 2 - vy[i]) * mu;
+    }
   }
 
   protected alloc(cap: number): void {
@@ -148,10 +169,37 @@ class Rings extends Body {
     if (d < 3 || n - d < 3) return false;
     const before = this.walk(a).reduce((s, i) => s + this.ash[i], 0);
     this.swap(a, b);
+    // The skin either side of the cut keeps apart for a moment (or it'd just rejoin).
+    for (const e of [a, b]) {
+      let u = e, v = e;
+      for (let k = 0; k < 5; k++) { this.cool[u] = this.cool[v] = Math.max(this.cool[u], 0.5); u = this.nxt[u]; v = this.prv[v]; }
+    }
     const r1 = this.walk(a), r2 = this.walk(b);
     const A1 = Math.max(0.1, Math.abs(this.polyArea(r1))), A2 = Math.max(0.1, Math.abs(this.polyArea(r2)));
     for (const [r, A] of [[r1, A1], [r2, A2]] as const) for (const i of r) this.ash[i] = (before * A) / (A1 + A2) / r.length;
     return true;
+  }
+
+  /** Most points a ring may have: a few times the perimeter of a circle of its area (a safety net). */
+  private maxPoints(i: number): number {
+    const r = this.rings[this.piece[i]];
+    return r ? 4 * 2 * Math.sqrt(Math.PI * Math.max(4, r.target)) / SPACING : 64;
+  }
+
+  /** How fast the two halves of a ring, either side of i and j, are moving apart (px/s). */
+  private parting(i: number, j: number): number {
+    const { x, y, vx, vy, nxt } = this, h = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]];
+    let side = 0;
+    for (let k = nxt[i], n = 0; n < this.cap; k = nxt[k], n++) {
+      const s = h[side];
+      s[0] += x[k]; s[1] += y[k]; s[2] += vx[k]; s[3] += vy[k]; s[4]++;
+      if (k === j) side = 1;
+      if (k === i) break;
+    }
+    const [a, b] = h;
+    if (!a[4] || !b[4]) return 0;
+    const dx = b[0] / b[4] - a[0] / a[4], dy = b[1] / b[4] - a[1] / a[4], l = Math.hypot(dx, dy) || 1;
+    return ((b[2] / b[4] - a[2] / a[4]) * dx + (b[3] / b[4] - a[3] / a[4]) * dy) / l;
   }
 
   private ringOf(i: number): number {
@@ -202,8 +250,8 @@ class Rings extends Body {
     const tw = this.tweaks, fz = this.fz[i], rn = this.rn[i], sub = this.sub;
     const per = (k: number) => 1 - Math.pow(1 - Math.min(0.95, k), 1 / sub);
     const tn = this.piece[i] === 0 ? 0.85 * this.tense : 0, rf = rn * (1 - tn);
-    this.ks[i] = Math.max(per(0.9) * fz, per(0.6 * (1 - 0.7 * tw.softness) * (1 - 0.8 * rf)));
-    this.round[i] = per(0.6 * tw.memory * (1 - rf)) * (1 - fz);
+    this.ks[i] = Math.max(per(0.9) * fz, per(0.6 * (1 - 0.7 * tw.softness) * (1 - 0.75 * rf)));
+    this.round[i] = per(0.6 * tw.memory * (1 - rn)) * (1 - fz);
     this.stiff[i] = per(0.85 * fz);
   }
 
@@ -212,9 +260,22 @@ class Rings extends Body {
     this.freezeAll();
   }
 
+  /** Oozing, as in the goo model: his underside creeps a little ahead of him, and he leans that way. */
   protected override crawl(p: Piece, dir: number, ooze: number, m: number, grounded: boolean): void {
     this.tense = dir || (this.input.down ?? 0) > 0.05 ? 0 : Math.min(1, m);
-    super.crawl(p, dir, ooze, m, grounded);
+    if (!dir || !ooze) return;
+    const target = dir * this.tweaks.speed * 0.6 * Math.min(1, m);
+    const foot = dir > 0 ? Math.min(target, Math.max(0, p.vx) + 12) : Math.max(target, Math.min(0, p.vx) - 12);
+    for (let k = p.start; k < p.start + p.len; k++) this.tread[this.order[k]] = foot * ooze;
+    const dv = target - p.vx;
+    if (!grounded || dv * dir <= 0) return;
+    const a = Math.min(Math.abs(dv), 260 * ooze * Math.min(1, m) * (1 / 60)) * dir;
+    for (let k = p.start; k < p.start + p.len; k++) this.vx[this.order[k]] += a;
+  }
+
+  /** Each point of skin stands for several pixels of him: it holds and gives off heat for all of them. */
+  protected override heatWeight(i: number): number {
+    return Math.max(1, this.ash[i]);
   }
 
   protected override jumped(): void {
@@ -248,19 +309,21 @@ class Rings extends Body {
     this.apart();
   }
 
-  /** Skin tension: each edge pulls towards its share of the ring's wanted perimeter. */
+  /**
+   * Skin tension: each edge pulls towards its share of the perimeter of a circle of the
+   * ring's area. The skin is never slack (slack skin wrinkles and crosses itself): runny Bob
+   * just pulls weaker, like a drop with little surface tension, and gravity spreads him.
+   */
   private edges(): void {
-    const { x, y, ks, seq, nxt, rn } = this;
+    const { x, y, ks, seq, nxt } = this;
     for (const r of this.rings) {
       if (r.len < 3) continue;
-      // Taut round his area normally; slack when runny (he spreads and sags).
-      let m = 0;
-      for (let k = r.start; k < r.start + r.len; k++) m += rn[seq[k]];
-      m /= r.len;
-      const rest = (2 * Math.sqrt(Math.PI * Math.max(1, r.target)) * (1.04 + 0.7 * m * (1 - 0.85 * this.tenseOf(r)))) / r.len;
+      const rest = (2 * Math.sqrt(Math.PI * Math.max(1, r.target)) * 1.02) / r.len;
       for (let k = r.start; k < r.start + r.len; k++) {
         const a = seq[k], b = nxt[a];
         const dx = x[b] - x[a], dy = y[b] - y[a], d = Math.sqrt(dx * dx + dy * dy) || 1e-6;
+        // (Only pulls: a skin under no tension just lies there.)
+        if (d <= rest) continue;
         const c = (0.5 * (ks[a] + ks[b]) * (d - rest)) / d / 2;
         x[a] += dx * c; y[a] += dy * c; x[b] -= dx * c; y[b] -= dy * c;
       }
@@ -382,7 +445,7 @@ class Rings extends Body {
           const qx = cx + ox, qy = cy + oy;
           if (qx < 0 || qy < 0 || qx >= w || qy >= hh) continue;
           for (let j = head[qy * w + qx]; j >= 0; j = next[j]) {
-            if (j <= i || j === this.nxt[i] || j === this.prv[i]) continue;
+            if (j <= i || this.near(i, j)) continue;
             const dx = x[j] - x[i], dy = y[j] - y[i];
             if (dx * dx + dy * dy < 4 && np < max) { pa[np] = i; pb[np] = j; np++; }
           }
@@ -392,19 +455,44 @@ class Rings extends Body {
     for (const c of cells) head[c] = -1;
   }
 
-  /** Skin never passes through skin: points that aren't neighbours along it keep apart. */
+  /** Within a few points of each other along the same skin (that's one patch of skin, not two touching). */
+  private near(i: number, j: number): boolean {
+    const { nxt, prv } = this;
+    let a = i, b = i;
+    for (let k = 0; k < NEAR; k++) { a = nxt[a]; b = prv[b]; if (a === j || b === j) return true; }
+    return false;
+  }
+
+  /**
+   * Skin never passes through skin: points that aren't neighbours along it keep apart, from
+   * each other and from each other's edges (so an edge can't slip between two points).
+   */
   private apart(): void {
-    const { x, y, pa, pb, piece, fsx, fsy } = this;
+    const { pa, pb } = this;
     for (let k = 0; k < this.np; k++) {
       const i = pa[k], j = pb[k];
-      let dx = x[j] - x[i], dy = y[j] - y[i];
-      const d2 = dx * dx + dy * dy;
-      if (d2 >= APART * APART) continue;
-      const d = Math.sqrt(d2);
-      if (d < 1e-4) { dx = i & 1 ? 1 : -1; dy = 0; } else { dx /= d; dy /= d; }
-      const c = (APART - d) * 0.5;
-      x[i] -= dx * c; y[i] -= dy * c; x[j] += dx * c; y[j] += dy * c;
-      if (piece[i] !== piece[j]) { fsx[i] -= dx * c; fsy[i] -= dy * c; fsx[j] += dx * c; fsy[j] += dy * c; }
+      this.off(i, j, this.nxt[j]);
+      this.off(j, i, this.nxt[i]);
+    }
+  }
+
+  /** Push point i off the edge a–b (and the edge off it) if it's closer than APART. */
+  private off(i: number, a: number, b: number): void {
+    const { x, y, piece, fsx, fsy } = this;
+    if (i === a || i === b || this.near(i, a) && this.near(i, b)) return;
+    const ex = x[b] - x[a], ey = y[b] - y[a], e2 = ex * ex + ey * ey;
+    const u = e2 > 1e-9 ? Math.max(0, Math.min(1, ((x[i] - x[a]) * ex + (y[i] - y[a]) * ey) / e2)) : 0;
+    let dx = x[i] - (x[a] + ex * u), dy = y[i] - (y[a] + ey * u);
+    const d2 = dx * dx + dy * dy;
+    if (d2 >= APART * APART) return;
+    const d = Math.sqrt(d2);
+    if (d < 1e-4) { dx = -ey; dy = ex; const l = Math.sqrt(dx * dx + dy * dy) || 1; dx /= l; dy /= l; } else { dx /= d; dy /= d; }
+    const c = (APART - d) * 0.5;
+    x[i] += dx * c; y[i] += dy * c;
+    x[a] -= dx * c * (1 - u); y[a] -= dy * c * (1 - u); x[b] -= dx * c * u; y[b] -= dy * c * u;
+    if (piece[i] !== piece[a]) {
+      fsx[i] += dx * c; fsy[i] += dy * c;
+      fsx[a] -= dx * c * (1 - u); fsy[a] -= dy * c * (1 - u); fsx[b] -= dx * c * u; fsy[b] -= dy * c * u;
     }
   }
 
@@ -479,14 +567,14 @@ class Rings extends Body {
       let m = 0;
       for (let k = r.start; k < r.start + r.len; k++) m += t[seq[k]];
       m /= r.len;
-      for (let k = r.start; k < r.start + r.len; k++) t[seq[k]] += (m - t[seq[k]]) * 0.03;
+      for (let k = r.start; k < r.start + r.len; k++) t[seq[k]] += (m - t[seq[k]]) * 0.06;
     }
     let changed = false;
     // Re-space: a point added in a long edge, one taken out of a short one (not while frozen).
     for (let i = 0; i < this.used; i++) {
       if (!alive[i] || this.frz[i]) continue;
       const j = nxt[i], d = Math.hypot(x[j] - x[i], y[j] - y[i]);
-      if (d > SPLIT) {
+      if (d > SPLIT && this.ringOf(i) < this.maxPoints(i)) {
         const m = this.take();
         if (m < 0) continue;
         x[m] = this.px[m] = (x[i] + x[j]) / 2; y[m] = this.py[m] = (y[i] + y[j]) / 2;
@@ -510,10 +598,18 @@ class Rings extends Body {
       const i = pa[k], j = pb[k];
       if (!alive[i] || !alive[j] || cool[i] > 0 || cool[j] > 0 || joined.has(piece[i]) || joined.has(piece[j])) continue;
       const d = Math.hypot(x[j] - x[i], y[j] - y[i]);
+      // Which side of each other they're on: the skin's outward direction at each point.
+      const nix = y[nxt[i]] - y[prv[i]], niy = x[prv[i]] - x[nxt[i]], njx = y[nxt[j]] - y[prv[j]], njy = x[prv[j]] - x[nxt[j]];
+      const ji = (x[j] - x[i]) * nix + (y[j] - y[i]) * niy, ij = (x[i] - x[j]) * njx + (y[i] - y[j]) * njy;
       if (piece[i] === piece[j]) {
-        if (d > PINCH || rn[i] < 0.5 || rn[j] < 0.5 || this.along(i, j, PINCH_GAP) >= 0 || this.along(j, i, PINCH_GAP) >= 0) continue;
+        // A neck pinching: the two sides meet from inside him (each is inward of the other).
+        // (Skin folded against itself from outside isn't a neck.)
+        if (d > PINCH || ji >= 0 || ij >= 0 || rn[i] < 0.5 || rn[j] < 0.5 || this.along(i, j, PINCH_GAP) >= 0 || this.along(j, i, PINCH_GAP) >= 0) continue;
+        // ...and only when the two sides are pulling apart (a drop falling away from what holds
+        // it), not when he's just squeezing through somewhere narrow, all moving together.
+        if (this.parting(i, j) < PART) continue;
         if (this.split(i, j)) { joined.add(piece[i]); changed = true; cool[i] = cool[j] = 0.3; }
-      } else if (d < JOIN_R && this.tweaks.cohesion > 0.1 && fz[i] < 0.5 && fz[j] < 0.5 && !this.frz[i] && !this.frz[j]) {
+      } else if (d < JOIN_R && ji > 0 && ij > 0 && this.rand() < JOIN_CHANCE * this.tweaks.cohesion && fz[i] < 0.5 && fz[j] < 0.5 && !this.frz[i] && !this.frz[j]) {
         joined.add(piece[i]); joined.add(piece[j]);
         this.swap(i, j);
         this.breaks.merge++;

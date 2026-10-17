@@ -4,6 +4,8 @@ How Bob is built, how he moves, and what every material and effect does to him. 
 
 ## What he is
 
+This section describes the first model, the **lattice**. Bob can also be modelled as **goo** (the playground's default) or a **skin**: see [09 Bob models](09-bob-models.md). Everything after this section (moving, temperature, materials) applies to all of them.
+
 - **About 280 particles**, one per pixel of his body (radius 9 by default), each with position, velocity and temperature.
 - **Bonds** join each particle to its 8 neighbours. They are XPBD distance constraints that can break, and they re-form when particles touch.
 - **Shape matching** (`memory`) pulls every connected piece towards its rest shape, rotated to fit. This is what keeps him a blob instead of a puddle.

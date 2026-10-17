@@ -239,6 +239,8 @@ export abstract class Body implements BobModel {
     this.rebuild(true);
   }
 
+  /** How many pixels of him particle i stands for, in heat it takes from and gives to what it touches. */
+  protected heatWeight(_i: number): number { return 1; }
   /** How much of him a group of particles is (which piece is the biggest, and so the main one). */
   protected weigh(members: number[]): number { return members.length; }
   /** A particle was placed at (dx, dy) from the middle of its disc. */
@@ -799,10 +801,10 @@ export abstract class Body implements BobModel {
     // solids a little; big gaps fast.
     const touch = CAT[m] === Cat.Liquid ? 0.15 : 0.002;
     const k = (m === M.air ? 0.0004 / hold : 0.0004 / hold + CONDUCT[m] * touch) * (1 + Math.abs(gap) / 150);
-    this.t[i] += gap * Math.min(0.3, k);
+    this.t[i] += (gap * Math.min(0.3, k)) / this.heatWeight(i);
     if (m !== M.air && CAT[m] !== Cat.Gas && Math.abs(gap) > 2) {
       // A little at a time: enough to melt snow or freeze water, not to put out lava.
-      world.temp[c] -= Math.max(-EMIT_MAX, Math.min(EMIT_MAX, gap * EMIT));
+      world.temp[c] -= Math.max(-EMIT_MAX, Math.min(EMIT_MAX, gap * EMIT * this.heatWeight(i)));
       world.wake(c % world.w, (c / world.w) | 0);
     }
   }

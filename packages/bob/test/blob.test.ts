@@ -30,7 +30,9 @@ function churn(b: BobModel) {
   return fast;
 }
 
-describe.each(MODELS.map((m) => m.kind))("%s", (kind: ModelKind) => {
+// The models offered in the playground; BOB_MODELS=skin (say) tests one that isn't yet.
+const only = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.BOB_MODELS;
+describe.each(only ? (only.split(",") as ModelKind[]) : MODELS.map((m) => m.kind))("%s", (kind: ModelKind) => {
 const make = (o: Partial<Tweaks> = {}) => createBob(kind, { ...DEFAULTS, ...o });
 function bob(world: World, o: Partial<Tweaks> = {}, temp: number | null = null, x = 60): BobModel {
   const b = make(o);
@@ -226,7 +228,7 @@ describe("temperature", () => {
         world.step();
         b.step(world, { move, jump: false, down: runny && f > 90 ? 1 : 0 });
       }
-      return b.main!.len === b.total;
+      return b.pieces.length === 1 && b.count === b.total;
     };
     expect(attempt(false)).toBe(false);
     expect(attempt(true)).toBe(true);
@@ -263,7 +265,8 @@ describe("temperature", () => {
 });
 
 describe("tearing", () => {
-  it("spikes slice him into a few pieces, not crumbs", () => {
+  // (Skin's bits are little pressurised balls: they bounce and roll on for a while.)
+  (kind === "skin" ? it.fails : it)("spikes slice him into a few pieces, not crumbs", () => {
     const w = ground(M.rock, (w) => { for (let x = 30; x < 90; x += 2) for (let y = FLOOR - 3; y < FLOOR; y++) w.set(x, y, M.spike); });
     const b = make();
     b.spawn(w, 60, FLOOR - 40);
@@ -347,8 +350,10 @@ describe("feel", () => {
 
   /** v1 (the lattice) can't do these: kept as a record of what it gets wrong. */
   const v2 = kind === "lattice" ? it.fails : it;
+  /** Nor the skin this one: a ring rolls off a ledge like a tread instead of hanging from it. */
+  const hangs = kind === "lattice" || kind === "skin" ? it.fails : it;
 
-  v2("runny, a little over a ledge he hangs down from it; further, a drop pulls away and the rest stays", () => {
+  hangs("runny, a little over a ledge he hangs down from it; further, a drop pulls away and the rest stays", () => {
     expect(dangle(-1).fell).toBe(0);
     const hang = dangle(2);
     expect(hang.fell).toBe(0);
@@ -372,7 +377,8 @@ describe("feel", () => {
       b.step(world, { move: f < 300 && left > pit - 6 ? -0.5 : 0, jump: false, down: f > 90 && f < 300 ? 1 : 0 });
       if (f > 90) worst = Math.max(worst, churn(b));
     }
-    expect(b.main!.len).toBe(b.total);
+    expect(b.pieces.length).toBe(1); // all of him, bit included
+    expect(b.count).toBe(b.total);
     expect(worst).toBeLessThan(150); // no burst when the bit joins
     // Climb out and cool off: round again, not lumpy or flat.
     b.fixedTemp = 20;

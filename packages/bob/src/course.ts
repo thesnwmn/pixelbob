@@ -112,8 +112,8 @@ export function buildCourse(world: World, seed = 7): Course {
 
   // Lava pit to jump, sunk so only its lip is hot.
   for (let x = LAVA; x < LAVA + 16; x++)
-    for (let y = G + 4; y < G + 18; y++) {
-      if (y < G + 13) set(x, y, M.air);
+    for (let y = G + 4; y < G + 22; y++) {
+      if (y < G + 17) set(x, y, M.air);
       else hold(x, y, M.lava, 1200);
     }
 
@@ -146,7 +146,7 @@ export function buildCourse(world: World, seed = 7): Course {
     finish: { x0: FINISH, y0: 0, x1: w, y1: h },
     bits: [{ x: PIT + 3, y: G + 19, r: 2 }],
     sections,
-    marks: { jumps: [STEPS + 27, SPIKES - 8, LAVA - 16], thaw: THAW, melt: MELT, pit: PIT + 3 },
+    marks: { jumps: [STEPS + 27, SPIKES - 8, LAVA - 34], thaw: THAW, melt: MELT, pit: PIT + 3 },
   };
 }
 

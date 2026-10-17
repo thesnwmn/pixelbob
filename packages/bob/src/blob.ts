@@ -47,7 +47,7 @@ const AMBIENT_BOB = 20;
 const RADIANT = 24;
 const SOAK = 0.03;
 /** How strongly hot and cold sources shine (exposure per source cell at 1 px).  */
-const HEAT_REACH = 1.2;
+const HEAT_REACH = 1.8;
 const COLD_REACH = 0.1;
 /** Share of the temperature gap he hands to a cell he touches each step. */
 const EMIT = 0.03;
@@ -56,7 +56,7 @@ const EMIT_MAX = 1.5;
 const POUR = 900;
 /** Runny stickiness: pull per substep back to where a particle holds on, and how far it stretches before letting go. */
 const ADHESION = 0.3;
-const ADH_BREAK = 1.2;
+const ADH_BREAK = 2;
 /** Runny bonds stretch (taffy) up to this length; beyond it they tear, so a heavy dangling bit pulls off. */
 const TAFFY_MAX = 2.4;
 /** Jumping out of liquid is weaker than off the ground: falling in is a trap, but one you can climb out of. */
@@ -143,6 +143,8 @@ export class Blob {
   private banked = 0;
   /** The main piece is frozen rigid. */
   private rigid = false;
+  /** The main piece has been runny (and not set again since). */
+  private melted = false;
   /** The player is asking for something: he shivers, which warms him a little. */
   private effort = false;
   /** How hard he's pouring himself down this step (0..1). */
@@ -227,7 +229,7 @@ export class Blob {
     this.count = this.total = n;
     this.losses = { boiled: 0, dissolved: 0, crushed: 0, fell: 0 };
     this.charge = this.stretch = this.coyote = this.sag = this.buffer = this.banked = 0;
-    this.rigid = false;
+    this.rigid = this.melted = false;
     this.sx = this.sy = 1;
     this.held = false;
     this.rebuild(true);
@@ -397,6 +399,12 @@ export class Blob {
     const fzP = frozenness(T);
     if (!this.rigid && fzP > 0.5) { this.rigid = true; this.reshapePiece(p); }
     else if (this.rigid && fzP < 0.4) { this.rigid = false; this.sag = 0; this.reshapePiece(p); }
+    // Runny, his particles flow and swap neighbours, so their old places in his round shape no
+    // longer make sense: setting again, he takes the shape he's in as a fresh start and rounds
+    // up from there (otherwise he'd stay lumpy, particles unable to pass each other).
+    const rnP = runniness(T);
+    if (!this.melted && rnP > 0.5) this.melted = true;
+    else if (this.melted && rnP < 0.3) { this.melted = false; this.reform(p); }
 
     // Jump: hold to squash (that's him winding up, so it takes muscle), release to spring.
     // In water, holding paddles up and releasing leaps out. Released just before landing, it
@@ -685,16 +693,27 @@ export class Blob {
       // Runny Bob is sticky, like honey: where he touches a surface he holds on, a little.
       // Pulled more than ADH_BREAK away (weight hanging below, a jump), he lets go; crawling
       // drags his hold along with him. So he can ooze over an edge and dangle down.
-      const r = this.rn[i];
-      if (r > 0.3) {
+      // Only properly runny Bob is sticky: a merely warm one is still firm, and holding on
+      // while firm would prop him out over an edge like a beam.
+      const r = Math.max(0, (this.rn[i] - 0.6) / 0.4);
+      if (r > 0) {
         if (this.anch[i]) {
-          this.ax[i] += this.tread[i] * H;
-          const dx = this.ax[i] - nx, dy = this.ay[i] - ny;
-          // Let go if pulled too far, or if the surface it holds isn't there any more (dragged
-          // past an edge, or dug away).
+          // Like honey: it sticks against being pulled off the surface, but still flows along
+          // it, so the hold creeps with him (and with his crawling).
+          const ux = -this.asx[i], uy = -this.asy[i];
+          let dx = this.ax[i] - nx, dy = this.ay[i] - ny;
+          const along = dx * uy - dy * ux;
+          this.ax[i] -= uy * along * 0.05 - this.tread[i] * H; this.ay[i] += ux * along * 0.05;
+          dx = this.ax[i] - nx; dy = this.ay[i] - ny;
+          const off = -(dx * ux + dy * uy), side = dx * uy - dy * ux;
+          // Let go if pulled too far off the surface, or if the surface it holds isn't there
+          // any more (crept past an edge, or dug away).
           const sx = Math.floor(this.ax[i]) + this.asx[i], sy = Math.floor(this.ay[i]) + this.asy[i];
-          if (dx * dx + dy * dy > ADH_BREAK * ADH_BREAK || !this.solid(world, sx, sy)) this.anch[i] = 0;
-          else { nx += dx * ADHESION * r; ny += dy * ADHESION * r; }
+          if (off > ADH_BREAK || !this.solid(world, sx, sy)) this.anch[i] = 0;
+          else {
+            const pull = Math.max(0, off) * ADHESION * r, drag = side * ADHESION * r * 1;
+            nx -= ux * pull - uy * drag; ny -= uy * pull + ux * drag;
+          }
         } else if (cnx[i] || cny[i]) {
           // The surface is on the far side from the contact normal.
           this.anch[i] = 1; this.ax[i] = nx; this.ay[i] = ny;
@@ -932,7 +951,7 @@ export class Blob {
     const m = world.mat[c], gap = world.temp[c] - this.t[i];
     // Air barely moves his temperature (he holds a heat); liquids more (a dip cools him off);
     // solids a little; big gaps fast.
-    const touch = CAT[m] === Cat.Liquid ? 0.01 : 0.002;
+    const touch = CAT[m] === Cat.Liquid ? 0.05 : 0.002;
     const k = (m === M.air ? 0.0004 / hold : 0.0004 / hold + CONDUCT[m] * touch) * (1 + Math.abs(gap) / 150);
     this.t[i] += gap * Math.min(0.3, k);
     if (m !== M.air && CAT[m] !== Cat.Gas && Math.abs(gap) > 2) {
@@ -1027,6 +1046,26 @@ export class Blob {
     if (pi === 0) return [this.sx, this.sy];
     const a = Math.max(0.2, (0.45 + 0.45 * this.tweaks.cohesion) * (1 - 0.5 * runniness(temp)));
     return [1 / a, a];
+  }
+
+  /**
+   * Rebuild a piece like a newly made Bob: every particle takes a place in an evenly spaced
+   * round grid near where it is now (neighbours stay neighbours), remembers that as its rest
+   * shape straight away, and bonds to its grid neighbours. Used when he sets again after being
+   * runny: by then his bonds have stretched and re-formed all over and his particles have
+   * swapped places, so his old structure would hold him in a lump instead of pulling him round.
+   */
+  private reform(p: Piece): void {
+    const members = Array.from(this.order.subarray(p.start, p.start + p.len)), pi = this.piece[members[0]];
+    this.reshape(members, 1, 1, true);
+    const { rx, ry, hx, hy } = this, at = new Map<number, number>(), key = (gx: number, gy: number) => (gy + 512) * 1024 + gx + 512;
+    for (const i of members) { rx[i] = hx[i]; ry[i] = hy[i]; at.set(key(Math.round(hx[i] * 2), Math.round(hy[i] * 2)), i); }
+    for (let k = this.nb - 1; k >= 0; k--) if (this.piece[this.ba[k]] === pi) this.unbond(k);
+    for (const i of members)
+      for (const [ox, oy] of [[1, 0], [0, 1], [1, 1], [-1, 1]]) {
+        const j = at.get(key(Math.round((hx[i] + ox) * 2), Math.round((hy[i] + oy) * 2)));
+        if (j !== undefined) this.bond(i, j, Math.hypot(ox, oy));
+      }
   }
 
   /** Take the piece's current shape as its rest shape (freezing and thawing). */

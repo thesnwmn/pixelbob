@@ -240,6 +240,19 @@ describe("temperature", () => {
     expect(attempt(true)).toBe(true);
   });
 
+  it("after melting and setting again he's a round Bob that rolls", () => {
+    const w = ground(), b = bob(w);
+    b.fixedTemp = 80;
+    for (let f = 0; f < 240; f++) b.step(w, { move: f % 120 < 60 ? 1 : -1, jump: false, down: f % 80 < 20 ? 1 : 0 });
+    b.fixedTemp = 20;
+    run(b, w, 240);
+    const s = size(b);
+    expect(s.h).toBeGreaterThan(11); // not a puddle or a slab
+    const x0 = b.main!.cx;
+    run(b, w, 120, { move: 1, jump: false });
+    expect(b.main!.cx - x0).toBeGreaterThan(60);
+  });
+
   it("frozen, he freezes the water around him", () => {
     const w = ground(M.rock, (w) => { for (let y = FLOOR - 30; y < FLOOR; y++) for (let x = 0; x < 320; x++) w.set(x, y, M.water); });
     const b = new Blob(DEFAULTS);

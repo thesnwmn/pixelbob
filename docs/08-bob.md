@@ -60,7 +60,9 @@ So he can be half frozen, with a cold side lagging behind the warm side.
 
 **Shaking free.** Below 0 °C, struggling warms him: a trickle while you hold a direction, and a jolt for every change of direction and every tap of jump. Rattling back and forth works a frozen Bob loose in a few seconds, up to 0 °C and no further: enough to move a little at half strength, not to thaw properly (that needs a heat source or time).
 
-**Sticky when runny.** A runny particle that touches a surface holds on there, a little: pulled more than about a pixel away it lets go, and crawling drags its hold along. So runny Bob can ooze over an edge and **dangle down** (the course has a cliff to try it on), or hold down to pour into a gap (the course has a lost bit of him at the bottom of a narrow pit). Hang out too far and the holds peel off and he falls; his taffy bonds only stretch so far, so a heavy dangling bit can tear away.
+**Sticky when runny.** Like honey: a properly runny particle (above about 58 °C) that touches a surface holds on against being pulled off it, but still flows along it, slowly; pulled a couple of pixels off, or once the surface it holds has gone (crept past an edge), it lets go. A merely warm Bob isn't sticky: he's still firm, and holding on while firm would prop him out over an edge like a beam. So runny Bob can ooze over an edge and **dangle down** (the course has a cliff to try it on), or hold down to pour into a gap (the course has a lost bit of him at the bottom of a narrow pit). Hang out too far and the holds peel off and he falls; his taffy bonds only stretch so far, so a heavy dangling bit can tear away.
+
+**Setting again.** While runny his particles flow and swap neighbours and his bonds stretch and re-form all over. When he cools back out of it he is rebuilt like a freshly made Bob: each particle takes a place in an evenly spaced round grid near where it is now, remembers that as its shape, and bonds to its grid neighbours, so he pulls round again instead of staying a lump. A dip in water cools him fast.
 
 **Thawing.** Frozen, his main piece's target stops being squashed in world space (a frozen dome rolling would otherwise be forced to change shape every frame and shake itself apart). On thawing he takes his current shape as a fresh start, and both his rest shape and his bonds' lengths relax back to a round blob over a second or two.
 
@@ -119,6 +121,7 @@ The whole range, built or not. **Built** means it works in the playground today.
 | spikes | Sharp: slice him into strips and bits | Built (new material). Later: a hard **edge** (a blade of steel or glass) that splits him cleanly in two, maybe into two halves you control in turn: good as well as bad |
 | rust | Grippy; crumbles under him | Built (rust's own crumbling) |
 | vine, moss | Sticky: he can cling and climb slowly | Later: needs per-material stickiness pulling particles onto the surface (the "cling" ability) |
+| very high-grip surfaces | Grip on corners and edges lets him roll or pull himself up and over them; grippy enough walls, and he rolls straight up them | Later: builds on the runny holds (a hold that works at any temperature, per material) |
 | mushroom cap | Springy: a bounce pad | Later: restitution per material |
 
 ### Things he's in

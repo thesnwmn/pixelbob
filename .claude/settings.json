@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && pnpm health --quick || true",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

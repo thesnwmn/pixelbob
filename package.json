@@ -4,6 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "scripts": {
+    "health": "node scripts/health/health.mjs",
     "dev:stills": "pnpm --filter @pixelbob/00-stills dev",
     "dev:sandbox": "pnpm --filter @pixelbob/01-sandbox dev",
     "dev:bob": "pnpm --filter @pixelbob/02-bob dev",

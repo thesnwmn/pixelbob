@@ -1,0 +1,14 @@
+{
+  "name": "@pixelbob/health",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The health check: is this repo ready to develop on? Runs at the start and end of every session and in CI.",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0"
+  }
+}

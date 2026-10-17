@@ -25,6 +25,11 @@ describe("code/no-math-random", () => {
 
 describe("code/no-dom", () => {
   it("passes on renderer-agnostic code", () => expect(noDom.run(ctx(tmpDir({ "packages/sim/src/a.ts": "export const windowSize = 4;\n" }))).status).toBe("pass"));
+  it("fails on the DOM in the game's headless play", () => {
+    const r = noDom.run(ctx(tmpDir({ "game/src/play.ts": "export const w = window.innerWidth;\n", "game/src/main.ts": "document.title = 'ok';\n" })));
+    expect(r.status).toBe("fail");
+    expect(r.out).toBe("game/src/play.ts:1: export const w = window.innerWidth;");
+  });
   it("fails on the DOM in Bob", () => {
     const r = noDom.run(ctx(tmpDir({ "packages/bob/src/draw.ts": "const c = document.createElement('canvas');\n" })));
     expect(r.status).toBe("fail");

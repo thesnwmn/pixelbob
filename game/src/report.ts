@@ -34,7 +34,8 @@ export function report(f: Feedback): string {
   const lines = [
     "Pixelbob feedback",
     "---",
-    `build: ${f.build} (${f.commit})`,
+    `build: ${f.build}`,
+    `commit: ${f.commit}`,
     `scenario: ${f.scenario || "none"}`,
     `played: ${f.seconds.toFixed(0)} s`,
     `fun: ${f.fun ?? "?"}`,

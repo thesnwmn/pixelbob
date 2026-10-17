@@ -537,7 +537,7 @@ Set in `producer.md`.
 
 ### Scenarios: putting you where the change is
 
-A **scenario** is a small data file in `game/scenarios/`: a level, where Bob starts, his size, temperature and pieces, any tweaks, the camera, and a **handoff card**: what changed, what to try, what to look for, known issues. `?scenario=<id>` starts the game there, and without one it starts at `start`. The format is in [Tech and toolchain](../docs/tech-and-toolchain.md#the-game), and the health check checks every scenario. Every PR that changes play links its scenario from the PR description: one click from GitHub, or the phone, into the right spot.
+A **scenario** is a small data file in `game/scenarios/`: a level, where Bob starts, his temperature and tweaks (size is one), the camera, and a **handoff card**: what changed, what to try, what to look for, known issues. `?scenario=<id>` starts the game there, and without one it starts at `start`. The format is in [Tech and toolchain](../docs/tech-and-toolchain.md#the-game), and the health check checks every scenario. Every PR that changes play links its scenario from the PR description: one click from GitHub, or the phone, into the right spot.
 
 ### Feedback: with a replay attached
 

@@ -172,6 +172,8 @@ window.addEventListener("keydown", (e) => {
     return;
   }
   const k = e.key.toLowerCase();
+  // Held keys repeat: only movement cares, and it reads the held set.
+  if (e.repeat) { if ([" ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) e.preventDefault(); return; }
   if (k === "escape") { showCard(false); showFeedback(false); }
   else if (k === "f") showFeedback(feedbackEl.hidden !== false);
   else if (k === "h" || k === "?") showCard(cardEl.hidden !== false);

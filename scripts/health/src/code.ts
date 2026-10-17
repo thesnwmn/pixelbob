@@ -37,14 +37,14 @@ export const determinism: Check = {
 };
 
 /** Packages that run in Workers and Node, so may not touch the DOM. */
-export const NO_DOM = ["packages/sim/src", "packages/bob/src"];
+export const NO_DOM = ["packages/sim/src", "packages/bob/src", "game/src/play.ts", "game/src/levels.ts", "game/src/scenario.ts", "game/src/report.ts"];
 const DOM_GLOBALS = /\b(document|window|navigator|localStorage|sessionStorage|requestAnimationFrame|HTML\w*Element|CanvasRenderingContext2D|OffscreenCanvas|ImageData)\b/;
 
 export const noDom: Check = {
   id: "code/no-dom",
   tier: 4,
   repro: `grep -rnE "document|window|HTML.*Element|requestAnimationFrame" ${NO_DOM.join(" ")}`,
-  hint: "packages/sim and packages/bob are renderer-agnostic (no DOM), so they run in a Worker and in Node. Move DOM code to packages/render or the app.",
+  hint: "packages/sim, packages/bob and the game's play, levels, scenario and report are renderer-agnostic (no DOM), so they run in a Worker and in Node. Move DOM code to packages/render or game/src/main.ts.",
   run({ root }) {
     const files = NO_DOM.flatMap((d) => sourceFiles(root, d));
     const hits = findInCode(root, files, DOM_GLOBALS);

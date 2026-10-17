@@ -4,9 +4,10 @@
 //
 // No imports, so the health check can run `parseScenario` on the files from Node.
 
-/** The levels a scenario can name. Each is built by `LEVELS` in levels.ts (a test keeps them in step). */
-export const LEVEL_IDS = ["course"] as const;
-export type LevelId = (typeof LEVEL_IDS)[number];
+/** The levels a scenario can name, and their width in cells. Each is built by `LEVELS` in levels.ts (a test keeps them in step). */
+export const LEVEL_WIDTHS = { course: 1880 } as const;
+export type LevelId = keyof typeof LEVEL_WIDTHS;
+export const LEVEL_IDS = Object.keys(LEVEL_WIDTHS) as LevelId[];
 
 /** The renderer's lighting presets (`LOOKS` in packages/render). */
 export const LOOK_IDS = ["day", "dusk", "night", "work"] as const;
@@ -61,7 +62,8 @@ export function parseScenario(id: string, raw: unknown): { scenario?: Scenario; 
   const seed = raw.seed ?? 7;
   if (!Number.isInteger(seed)) bad("seed: an integer");
   const at = raw.at;
-  if (at !== undefined && !(typeof at === "number" && at > 0)) bad("at: a positive number of cells");
+  const width = LEVEL_WIDTHS[level as LevelId];
+  if (at !== undefined && !(typeof at === "number" && at > 0 && (!width || at < width))) bad(`at: a number of cells across the level${width ? `, 1 to ${width - 1}` : ""}`);
 
   const rawBob = raw.bob ?? {};
   const bob: Scenario["bob"] = { tweaks: {} };

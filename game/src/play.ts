@@ -42,6 +42,7 @@ export class Play {
     if (at === undefined) return spawn;
     const x = Math.max(1, Math.min(world.w - 2, Math.round(at)));
     // The ground is the top of the solid run up from the bottom (not, say, a brazier overhead).
+    // So a column open to the bottom of the world, or with a cave in it, puts him low: pick `at` on solid ground.
     let top = world.h - 1;
     const open = (y: number) => {
       const c = CAT[world.mat[y * world.w + x]];

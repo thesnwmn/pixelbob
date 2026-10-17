@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { LEVELS } from "../src/levels.ts";
 import { Play } from "../src/play.ts";
 import { buildName, report } from "../src/report.ts";
-import { LEVEL_IDS, LOOK_IDS, TWEAK_KEYS, parseScenario, type Scenario } from "../src/scenario.ts";
+import { LEVEL_IDS, LEVEL_WIDTHS, LOOK_IDS, TWEAK_KEYS, parseScenario, type Scenario } from "../src/scenario.ts";
 
 const dir = new URL("../scenarios/", import.meta.url);
 const scenarios: Scenario[] = readdirSync(dir)
@@ -19,6 +19,7 @@ const scenarios: Scenario[] = readdirSync(dir)
 describe("the scenario format", () => {
   it("names what the game has: its levels, the renderer's looks and Bob's tweaks", () => {
     expect([...LEVEL_IDS].sort()).toEqual(Object.keys(LEVELS).sort());
+    for (const id of LEVEL_IDS) expect(LEVELS[id].build(7).world.w, id).toBe(LEVEL_WIDTHS[id]);
     expect([...LOOK_IDS].sort()).toEqual(Object.keys(LOOKS).sort());
     expect([...TWEAK_KEYS].sort()).toEqual(Object.keys(RANGES).sort());
   });
@@ -50,6 +51,10 @@ describe("the scenario format", () => {
       "card.changed",
       "card.try",
     ]);
+  });
+
+  it("keeps Bob's start inside the level", () => {
+    expect(parseScenario("far", { title: "Far", level: "course", at: 14400 }).errors).toEqual(["at: a number of cells across the level, 1 to 1879"]);
   });
 
   it("isn't fooled by something that isn't an object", () => {
@@ -119,7 +124,8 @@ describe("the feedback report", () => {
       [
         "Pixelbob feedback",
         "---",
-        "build: preview/pr-21 (abc1234)",
+        "build: preview/pr-21",
+        "commit: abc1234",
         "scenario: shell",
         "played: 42 s",
         "fun: 4",

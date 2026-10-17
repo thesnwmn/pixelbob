@@ -1,8 +1,8 @@
-# 02 Art direction
+# Art direction
 
 The look: crisp pixels, a lit simulated layer over a dim back wall, and colour that comes from light and from things that glow rather than from saturated textures. Moody by default: most of every screen is dark, and the light tells you where to look.
 
-Everything below can be seen in `prototypes/00-stills`: one shot per world ([11 Worlds](11-worlds.md)) and a sheet of Bob's states, with controls for Bob's colour and for looking at the light on its own. The [concept doc](https://thesnwmn.github.io/pixelbob/concept/) shows them with the logo, menus and HUD.
+Everything below can be seen in `prototypes/00-stills`: one shot per world ([Worlds](worlds.md)) and a sheet of Bob's states, with controls for Bob's colour and for looking at the light on its own. The [concept doc](https://thesnwmn.github.io/pixelbob/concept/) shows them with the logo, menus and HUD.
 
 ## Two renderers, one look
 
@@ -63,7 +63,7 @@ Material ramps live in `prototypes/00-stills/src/kit/materials.ts` and `packages
 | Teal glow | Light, and glow goo |
 | Toxic green | Gas and acid: it hurts |
 
-- **Each world has a two-colour light story** ([11](11-worlds.md#the-run)): warm against cool, and the warm one is usually where the heat is.
+- **Each world has a two-colour light story** ([Worlds](worlds.md#the-run)): warm against cool, and the warm one is usually where the heat is.
 - **Hazards are hot colours.** Bob must never be confused with one. Hot Bob turning orange near lava is the one deliberate exception, because that *is* the danger signal.
 
 ## Bob's look

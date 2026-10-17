@@ -1,6 +1,6 @@
-# 09 Bob models
+# Bob models
 
-Bob is goo: a viscoelastic fluid ([08 Bob](08-bob.md#what-he-is) says how he works). This doc records how that was decided, because two other ways of modelling him were built, played and compared first. All three were in the playground side by side, behind the same behaviour tests, and goo won clearly; the other two were then removed (they're in the git history: the lattice is `packages/bob/src/blob.ts` and the skin `skin.ts`, before "Goo is Bob").
+Bob is goo: a viscoelastic fluid ([Bob](bob.md#what-he-is) says how he works). This doc records how that was decided, because two other ways of modelling him were built, played and compared first. All three were in the playground side by side, behind the same behaviour tests, and goo won clearly; the other two were then removed (they're in the git history: the lattice is `packages/bob/src/blob.ts` and the skin `skin.ts`, before "Goo is Bob").
 
 ## Why not the first one
 

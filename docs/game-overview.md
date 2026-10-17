@@ -1,4 +1,4 @@
-# 01 Game overview
+# Game overview
 
 ## Pillars
 
@@ -9,7 +9,7 @@
 
 ## Bob
 
-A rose-pink jelly about 20 world pixels wide, made of about 280 particles (one per pixel of his body). He's a **viscoelastic fluid**, goo, not a shape: see [08 Bob](08-bob.md) for how he works and [09 Bob models](09-bob-models.md) for why. The playground (`prototypes/02-bob`) has everything marked built below.
+A rose-pink jelly about 20 world pixels wide, made of about 280 particles (one per pixel of his body). He's a **viscoelastic fluid**, goo, not a shape: see [Bob](bob.md) for how he works and [Bob models](bob-models.md) for why. The playground (`prototypes/02-bob`) has everything marked built below.
 
 | Ability | How it works in the sim | Feel | Built |
 |---|---|---|---|
@@ -19,7 +19,7 @@ A rose-pink jelly about 20 world pixels wide, made of about 280 particles (one p
 | Squeeze | No rigid collider: runny, his particles flow under a 4 px gap that stops him at room temperature | Oozes through like a slug | Yes |
 | Dangle | Runny and holding still, he tenses: he hangs off a ledge, lowers himself on a thread; too far and the thread snaps and a drop falls | Honey off a spoon | Yes |
 | Climb | Tacky surfaces (moss, resin, gum): push into a wall to hold on, up and down to climb; he hangs as a drop | Gecko-ish; sheds a few crumbs (less for a clean climb) | Yes |
-| Split | Spikes slice him, hard landings splash him; you keep steering the piece you had | Bits left behind to go back for | By hazards only; a split action is an [idea](10-ideas.md) |
+| Split | Spikes slice him, hard landings splash him; you keep steering the piece you had | Bits left behind to go back for | By hazards only; a split action is an [idea](ideas.md) |
 | Merge | Pieces that touch link up, a few springs a frame at the length they are | Gentle gloop, no jolt | Yes |
 | Absorb | Some fluids can be taken in (water swells him, glow goo makes him glow) | He changes colour and size | No |
 
@@ -53,11 +53,11 @@ Interactions worth building first: water + lava â†’ steam + rock; fire + wood â†
 
 ## Worlds
 
-Seven worlds, each a biome with its own materials and light, each teaching one new thing: The Green (rolling, momentum, grip), Glow Caverns (runny: pour, dangle, drip), Sticky Ruins (climbing), Frozen Grotto (cold: rigid, freezing water), The Foundry (splitting on purpose, machines), The Sump (absorbing) and The Core (everything at once). See [11 Worlds](11-worlds.md).
+Seven worlds, each a biome with its own materials and light, each teaching one new thing: The Green (rolling, momentum, grip), Glow Caverns (runny: pour, dangle, drip), Sticky Ruins (climbing), Frozen Grotto (cold: rigid, freezing water), The Foundry (splitting on purpose, machines), The Sump (absorbing) and The Core (everything at once). See [Worlds](worlds.md).
 
 ## Puzzle seeds
 
-The prototype course already proves a few: thaw under a brazier to jump the spikes; melt to get under a low slot; pour into a narrow pit for a lost bit that rolling over can't reach; dangle off a cliff to reach down; climb moss, resin and gum towers for bits on top. More in [10 Ideas](10-ideas.md).
+The prototype course already proves a few: thaw under a brazier to jump the spikes; melt to get under a low slot; pour into a narrow pit for a lost bit that rolling over can't reach; dangle off a cliff to reach down; climb moss, resin and gum towers for bits on top. More in [Ideas](ideas.md).
 
 - Freeze Bob to make him rigid enough to wedge a door; warm him to get him back.
 - Split off a chunk of Bob to hold a pressure plate while the rest goes on.

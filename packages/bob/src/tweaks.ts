@@ -1,7 +1,7 @@
 /**
  * Bob's tunable numbers. The playground shows a slider for each one; they are
  * his "normal" (room temperature) values. Temperature then scales them per
- * particle through `phase()` (see docs/08-bob.md).
+ * particle through `phase()` (see docs/bob.md).
  */
 export interface Tweaks {
   /** 0..1: how hard he is to tear apart, and how readily torn-off bits rejoin. */

@@ -1,10 +1,10 @@
-# 08 Bob
+# Bob
 
-How Bob is built, how he moves, and what every material and effect does to him. The physics is in `packages/bob` and the playground is `prototypes/02-bob` (`pnpm dev:bob`). [03 Simulation](03-simulation.md#bob-as-particles) has the original plan; this doc records what was built and why.
+How Bob is built, how he moves, and what every material and effect does to him. The physics is in `packages/bob` and the playground is `prototypes/02-bob` (`pnpm dev:bob`). [Simulation](simulation.md#bob-as-particles) has the original plan; this doc records what was built and why.
 
 ## What he is
 
-Bob is a **viscoelastic fluid**: a material, not a shape. Temperature turns its knobs continuously, so he never switches from one remembered shape to another, and nothing jolts when he melts, sets, splits or picks up a bit. [09 Bob models](09-bob-models.md) says why it's this, and what else was tried. The material is `goo.ts`; `body.ts` is how his particles meet the world (collisions, water, heat, the controller).
+Bob is a **viscoelastic fluid**: a material, not a shape. Temperature turns its knobs continuously, so he never switches from one remembered shape to another, and nothing jolts when he melts, sets, splits or picks up a bit. [Bob models](bob-models.md) says why it's this, and what else was tried. The material is `goo.ts`; `body.ts` is how his particles meet the world (collisions, water, heat, the controller).
 
 - **About 280 particles**, one per pixel of his body (radius 9 by default), each with position, velocity and temperature.
 - **Pressure and surface tension** (double density relaxation, Clavet et al. 2005).
@@ -193,4 +193,4 @@ The whole range, built or not. **Built** means it works in the playground today.
 - **Slot sizes.** Normal Bob only squeezes through gaps a bit smaller than him, so "too big to fit" puzzles work. Is that the right line?
 - **Performance:** about 2.4 ms a frame for 280 particles in Node (6 substeps). Fine on desktop; to be measured on phones before adding more bodies.
 
-Gameplay ideas that came up while building and playing him, and aren't built, are in [10 Ideas](10-ideas.md).
+Gameplay ideas that came up while building and playing him, and aren't built, are in [Ideas](ideas.md).

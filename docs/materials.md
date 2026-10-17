@@ -1,4 +1,4 @@
-# 07 Materials
+# Materials
 
 The material catalogue: what exists in `packages/sim` today, how each one behaves and what it reacts with, and a backlog of ideas. Behaviour numbers (density, flammability, conductivity…, and `friction` and `sharp` for Bob) live in `packages/sim/src/materials.ts`; reactions live in `packages/sim/src/world.ts`.
 
@@ -49,7 +49,7 @@ Anything denser falls through anything lighter, with drag through liquids and po
 | rubble | powder | What blasts turn rock and dirt into. |
 | toxic gas | gas | Heavy (sinks into hollows) and glows. Burns explosively fast. |
 | acid | liquid | Eats most things and is used up doing it; sometimes leaves toxic gas. |
-| glow goo | liquid | Glows; lights caves. (Bob could absorb it to glow; see [01](01-game-overview.md).) |
+| glow goo | liquid | Glows; lights caves. (Bob could absorb it to glow; see [Game overview](game-overview.md).) |
 
 ### Systems the materials share
 
@@ -62,7 +62,7 @@ Anything denser falls through anything lighter, with drag through liquids and po
   - gunpowder in range is lit, which is how trails chain.
 
   Methane occasionally causes a small one when it ignites. Later this is the hook for mining charges, collapsing bridges and creatures.
-- **Pressure.** Connected liquid evens out its level through U-bends and flooded caves, with a surge past level before it settles; pours run across basins with inertia (see [03](03-simulation.md)).
+- **Pressure.** Connected liquid evens out its level through U-bends and flooded caves, with a surge past level before it settles; pours run across basins with inertia (see [Simulation](simulation.md)).
 - **Drag.** Pushing through liquids and powders is probabilistic. Sinking through water runs at about half speed, and buried light powders rise slowly instead of popping out.
 
 ## Backlog
@@ -119,7 +119,7 @@ Ideas not built yet, grouped by what they'd add. Effort is relative to the curre
 
 ### What Bob will care about
 
-Most of this list exists so that Bob has things to react to (see [01](01-game-overview.md), and [08 Bob](08-bob.md#materials-and-effects-on-bob) for the full table of what each material does to him, built and planned):
+Most of this list exists so that Bob has things to react to (see [Game overview](game-overview.md), and [Bob](bob.md#materials-and-effects-on-bob) for the full table of what each material does to him, built and planned):
 - **Mud and tar** slow him.
 - **Salt** shrinks him; **water** swells him.
 - **Electricity** jolts him.

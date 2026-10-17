@@ -1,6 +1,6 @@
-# 10 Ideas
+# Ideas
 
-Ideas raised while building and playing the prototypes that aren't built yet, so they aren't lost. Gameplay first. Where an idea came from a playtest of the Bob playground, it says so; the rest come from the design docs. What *is* built is in [01](01-game-overview.md#bob) and [08](08-bob.md).
+Ideas raised while building and playing the prototypes that aren't built yet, so they aren't lost. Gameplay first. Where an idea came from a playtest of the Bob playground, it says so; the rest come from the design docs. What *is* built is in [Game overview](game-overview.md#bob) and [Bob](bob.md).
 
 ## Pieces and splitting
 
@@ -49,7 +49,7 @@ Built: the course scores the % of Bob that reaches the finish; lost bits wait wh
 - **Hidden bits**: bits of Bob tucked in narrow pits and corners, so collecting him is a route choice. The course's pit (pour in while runny) is the first.
 - **Optional areas** like the climbing gym: more of Bob for the player who goes looking.
 - **Water as an escapable trap**, not instant death; **lava as a jump challenge**.
-- **Should loose droplets count** towards the finish, or only pieces? (Open question in [08](08-bob.md#open-questions).)
+- **Should loose droplets count** towards the finish, or only pieces? (Open question in [Bob](bob.md#open-questions).)
 - **Size gates**: slots that normal Bob can't fit but runny Bob can; too small to push something, too big to fit.
 
 ## From the design, not built yet
@@ -58,7 +58,7 @@ Built: the course scores the % of Bob that reaches the finish; lost bits wait wh
 - **Oily**: slides fast and burns.
 - **Electricity** through water and metal; **blasts** that splash him.
 - **Pushing liquids aside** as he moves through them (today he only feels buoyancy and drag).
-- **Tar and honey traps**, quicksand, slime he merges with to grow (more in [08](08-bob.md#backlog-materials-through-bobs-eyes) and [07](07-materials.md#backlog)).
+- **Tar and honey traps**, quicksand, slime he merges with to grow (more in [Bob](bob.md#backlog-materials-through-bobs-eyes) and [Materials](materials.md#backlog)).
 - **Salt shrinks him; acid dissolves him.**
 - **Pour sand into a pit** to make a bridge; dig a channel to drain a pool onto lava for stone.
 

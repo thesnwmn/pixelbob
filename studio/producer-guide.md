@@ -1,8 +1,8 @@
-# 13 Producer guide
+# Producer guide
 
-How you work with the studio: what you type, what comes back, and where to look. [12 The studio](12-studio.md) is how it works inside.
+How you work with the studio: what you type, what comes back, and where to look. [The studio](README.md) is how it works inside.
 
-**Status:** planned, built by the first units in [12](12-studio.md#building-the-studio).
+**Status:** planned, built by the first units in [the studio](README.md#building-the-studio).
 
 ## Your two jobs
 
@@ -113,7 +113,7 @@ Gated PRs (direction, milestones, Bob's character, the colour language, the stud
 
 ## One-time setup
 
-A few GitHub settings only you can change. The studio will ask for them when it builds its commands (unit 3 in [12](12-studio.md#building-the-studio)), with exact steps:
+A few GitHub settings only you can change. The studio will ask for them when it builds its commands (unit 3 in [the studio](README.md#building-the-studio)), with exact steps:
 
 - **A ruleset on `main`**: require a PR, require the `CI` and `gate` checks to pass, allow squash merge only.
 - That's all. Labels, the bug form and the gate check go in through the studio's own PRs.

@@ -47,9 +47,9 @@ What the whole game is, before building it: the run of worlds ([11](11-worlds.md
 
 ## Phase 2¾: the studio (agent harness)
 
-A team of agent roles that builds the game in session-sized units, with a human as producer and play tester: a Director as the one point of contact, state as files in `studio/`, a draft PR per unit, preview builds that drop the tester into a scenario with a handoff card and a feedback button that attaches a replay, and bots that play the deterministic sim. Design in [12 The studio](12-studio.md), the producer's side in [13 Producer guide](13-producer-guide.md).
+A team of agent roles that builds the game in session-sized units, with a human as producer and play tester: a Director as the one point of contact, state as files in `studio/`, a draft PR per unit, preview builds that drop the tester into a scenario with a handoff card and a feedback button that attaches a replay, and bots that play the deterministic sim. Design in [the studio](../studio/README.md), the producer's side in the [producer guide](../studio/producer-guide.md).
 
-**Status:** planned. Built in the order in [12](12-studio.md#building-the-studio), then the Director takes phase 3.
+**Status:** planned. Built in the order in [the studio](../studio/README.md#building-the-studio), then the Director takes phase 3. From then on, what's next is planned in `studio/` (direction, milestones, the board); this doc keeps the history of the phases.
 
 ## Phase 3: first level slice
 

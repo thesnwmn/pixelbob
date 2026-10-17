@@ -24,9 +24,11 @@ Target: web browser first, on phones and laptops.
 - **Look:** crisp unfiltered pixels, a lit and simulated play layer over a dim back wall, emissive materials feeding soft lights and bloom. Default camera about **320×180 world pixels**, with Bob about 20 px wide and rose pink. See [02 Art direction](02-art-direction.md) and the shots below.
 - **Stack:** TypeScript, Vite, pnpm workspace, WebGL2, Vitest, Playwright. Static site on GitHub Pages with a preview per PR. See [04 Tech and toolchain](04-tech-and-toolchain.md).
 - **Worlds:** seven, each teaching one new thing, from the meadows on the surface down to the core. See [11 Worlds](11-worlds.md).
-- **Plan:** stills → material sandbox → Bob playground → concept → agent harness → first slice. The harness is [12 The studio](12-studio.md). See [05 Roadmap](05-roadmap.md), and the [concept doc](https://thesnwmn.github.io/pixelbob/concept/) for the whole picture.
+- **Plan:** stills → material sandbox → Bob playground → concept → agent harness → first slice. How the game gets built from here is [the studio](../studio/README.md). See [05 Roadmap](05-roadmap.md), and the [concept doc](https://thesnwmn.github.io/pixelbob/concept/) for the whole picture.
 
 ## Documents
+
+These describe the game. How it's made (the agent harness, the board, the producer's guide) is in [`studio/`](../studio/README.md).
 
 | Doc | What's in it |
 |---|---|
@@ -41,8 +43,6 @@ Target: web browser first, on phones and laptops.
 | [09 Bob models](09-bob-models.md) | Why Bob is goo: the three models that were built and compared, and what was learned |
 | [10 Ideas](10-ideas.md) | Gameplay and other ideas raised along the way that aren't built yet |
 | [11 Worlds](11-worlds.md) | The run of worlds: what each teaches, its materials, heat and light, and its shot |
-| [12 The studio](12-studio.md) | The agent harness (planned): roles, how they're invoked and isolated, where state lives, the health check every session starts and ends with, builds, playtesting and bots |
-| [13 Producer guide](13-producer-guide.md) | How the producer and play tester works with the studio: commands, asks, playtest links, feedback |
 
 ## The shots
 

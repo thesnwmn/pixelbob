@@ -1,6 +1,6 @@
 # Pixelbob
 
-A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer. Read `docs/README.md` for the design; `docs/03-simulation.md` is the core architecture. How agents build the game (roles, `studio/`, units of work) is planned in `docs/12-studio.md`.
+A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer. Read `docs/README.md` for the design; `docs/03-simulation.md` is the core architecture. `docs/` is the game; `studio/` is how it gets made: the agent harness (planned in `studio/README.md`, with the repo map).
 
 ## Commands
 

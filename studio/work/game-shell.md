@@ -3,7 +3,7 @@ title: Game shell and scenarios
 kind: build
 role: engineer
 size: M
-status: ready
+status: doing
 milestone: m1-green-alpha
 needs: [first-milestone]
 ---

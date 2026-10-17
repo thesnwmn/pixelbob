@@ -9,7 +9,7 @@ How you work with the studio: what you type, what comes back, and where to look.
 - **Producer.** Direction and priorities: what the game should be, what matters now, what's off the table, when a milestone is done. You make the calls marked *gated*; the studio makes the rest and tells you.
 - **Play tester.** Play what you're sent, say what works, what doesn't, how hard it is and whether it's fun.
 
-You don't need to plan, size, review code or merge (unless you want to: see [Trust](#trust)).
+You don't need to plan, size, review code or merge, except PRs that need your call (see [Trust](#trust)).
 
 ## Where you do it
 
@@ -96,9 +96,11 @@ Most asks expire: if you don't answer after a few sessions, the default stands a
 
 How much the studio does without you is a setting in `studio/producer.md`, which you can change with `/director`:
 
-1. **Ask** (the start): you merge every PR.
-2. **Trusted**: it merges its own PRs when CI is green and its reviewer is happy; you see gated PRs and playtest requests.
-3. **Autopilot**: as 2, and it may run `/go` on a schedule within a budget you set, with a digest each time.
+- **Studio merges** (the default): every session ends with its work merged to main, so the next session has everything. Unfinished work lands switched off, and a failed attempt lands as a handoff note. It merges only when CI and the health check are green and its reviewer is happy. You see gated PRs (your calls) and playtest requests.
+- **Review first**: you merge every PR. Work that builds on an unmerged PR waits for you, so `/go` will often have nothing to do until you've merged.
+- **Autopilot**: as the default, and it may run `/go` on a schedule within a budget you set, with a digest each time.
+
+Gated PRs (direction, milestones, Bob's character, the colour language, the studio's own rules, alpha and beta builds) always wait for you. They're the only PRs left open between sessions.
 
 ## Tools you'll get
 
@@ -106,7 +108,7 @@ Tweak panels for every number (settings travel in the link), scenario links you 
 
 ## A first week, for example
 
-- **Day 1.** `/go`. The studio builds its own folder and board, and opens a PR for you to merge. Its report asks you to confirm the first milestone: an alpha of The Green.
+- **Day 1.** `/go`. The studio builds its health check, and merges it. Its report asks you to confirm the first milestone: an alpha of The Green.
 - **Day 2.** `/director` to confirm, adding "and I want the split in it". The Designer asks two questions about splitting. Then `/go`: a spike on split controls, with a kill criterion.
 - **Day 3.** You play the spike's preview on your phone for five minutes and press feedback. `/go` triages it: keep the swipe, drop the button. The spike is closed with its verdict and the build unit is shaped.
 - **Day 4.** `/go` twice: the split action, then its HUD. Two preview links, one playtest card.

@@ -23,7 +23,8 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 - **"go" is enough.** `/go` makes the Director pick the most valuable next unit from the board, do it, ship it as a PR and tell you what it needs from you, if anything.
 - **A unit fits in a session.** Every unit is sized S (half a session) or M (one session) before it starts. Anything bigger is split first, and anything that starts to spiral is stopped, handed off and split.
 - **All state is in the repo.** `studio/` holds the board as one file per unit, the producer's settings, the asks waiting on you, milestones and playtest reports. Decisions go in `docs/decisions/`. A session's memory is the repo, so nothing depends on a conversation surviving.
-- **Visible.** Every unit opens a draft PR as soon as it starts, so work in flight shows on GitHub. A generated **studio page** on Pages shows in flight, needs you, next, milestone progress, recent work, decisions and builds.
+- **Main is the truth.** Every session ends with its work merged to main, finished or not: unfinished code lands switched off, and a failed attempt lands as a handoff note. The next session starts from main and nothing else. The only PRs left open between sessions are the ones waiting for your call.
+- **Visible.** Every unit opens a draft PR as soon as it starts, so the work in progress shows on GitHub while the session runs. A generated **studio page** on Pages shows in flight, needs you, next, milestone progress, recent work, decisions and builds.
 - **Playable.** Every PR that changes play gets a preview link that drops you straight into a **scenario** (a level, a place, Bob's state) with a card saying what changed and what to look for, and a feedback button that sends your notes with an exact **replay** of what you did.
 - **Healthy in, healthy out.** Every session starts by running `pnpm health`, which checks the tools, dependencies, code and studio files. If it's red, that session's only job is to make it green. Every session ends by running it again, as proof it left the repo in a good state. CI runs the same script. It grows with the repo.
 - **Bots play too.** The sim is deterministic and runs in Node, so the Tester proves levels can be finished, measures how forgiving they are, replays your runs as regression tests and renders filmstrips the agents (and you) can look at.
@@ -94,6 +95,25 @@ docs/
 
 Why files and not GitHub issues or a project board: they're versioned and reviewed in the same PR as the work, any session reads them without an API, they can't drift from the code, and observers see them in the repo. GitHub is used where it's better: **PRs** are the record of every unit and the in-flight signal, and **issues** are only an inbox for feedback sent from a build. The Director moves an issue into the files and closes it.
 
+### Main is the truth
+
+The next session reads main and nothing else, so **no session ends with state that exists only on a branch**. A session's PR is a working space and a record: it opens as a draft so the work shows while the session runs, and it's merged before the session ends. Sessions don't continue each other's branches; a session picks up from what's on main.
+
+How every session ends:
+
+| Outcome | What lands on main |
+|---|---|
+| **Done** | The work, with the unit set to `done` (or `playtest`). |
+| **Partly done** (a stop sign, or out of budget) | The finished, green part. Code that isn't ready to play lands **switched off**: behind a flag (`?flags=split`) or not yet wired into the game, so main stays playable and a preview can still turn it on. The rest becomes new units, and the handoff goes in the unit's log. |
+| **Stuck** (can't be made green) | The broken code is taken out of the PR, back to the last green commit (or all of it). What lands is the handoff: what was tried, what was learned, and a link to the last commit of the attempt, which stays on GitHub so the next try can start from it. The unit goes back to `ready` with the handoff, or to `dropped` if the attempt showed it isn't worth doing. |
+| **Waiting for you** (a gated PR) | Nothing yet. This is the only kind of PR left open between sessions. It's labelled `gated`, the board shows it under *Needs you*, and no unit builds on it until it's merged. Ungated work in the same session goes in a separate PR so it isn't held up. |
+
+Merging means CI is green on the PR's latest commit, the end-of-session health check is green, and the Critic has no blocking findings. Then the session squash-merges, as `CLAUDE.md` requires. If main has moved on, the session merges main into its branch and runs the checks again first. The session waits for CI by watching its PR, not by polling.
+
+Merging at the end of every session is what makes this work. You still see everything: the PR, the preview, and the report. Each unit is small, and the next session starts with the health check, so a bad merge is caught early and is cheap to revert. If you'd rather review before merge, see [Autonomy levels](#autonomy-levels) for what that costs.
+
+### One file per unit
+
 Why one file per unit and per ask, never a shared list: parallel sessions on separate branches would conflict over a shared file on every merge. The board that lists them all is generated, never edited.
 
 ### A unit of work
@@ -140,9 +160,9 @@ idea ─► shaped ─► ready ─► doing ─► review ─► (playtest) ─
 - **idea**: a line of why. Anyone can add one. Ideas that aren't units yet stay in [10 Ideas](10-ideas.md).
 - **shaped**: has *Done when* and *Not this*, a size, and a role.
 - **ready**: nothing in `needs` is open.
-- **doing**: a session has it; there's a draft PR.
-- **review**: PR is out of draft; checks and the Critic are running or done.
-- **playtest**: merged or previewed, waiting for a producer playtest when the unit is about feel. Only some units need this.
+- **doing**: a session has it; there's a draft PR. Only seen on the board while a session runs: by the end it has moved on.
+- **review**: the PR is out of draft; checks and the Critic are running. Also only while a session runs.
+- **playtest**: merged, waiting for a producer playtest when the unit is about feel. Only some units need this.
 - **done** or **dropped**, always with a last log line saying why.
 
 Kinds, so the board can balance them: **think** (ideas, a design conversation), **shape** (turn an idea into specs and units), **spike** (a throwaway prototype answering one question), **build**, **fix**, **test** (bots, regression runs), **tool** (for you or for us), **tidy** (docs, dead code, harness upkeep), **release** (an alpha or beta).
@@ -214,9 +234,10 @@ What every session does on `/go`:
 4. **Work** in the role's hat. Spikes state the question and kill criterion first; fixes reproduce first.
 5. **Check.** `pnpm health --quick` as often as useful while working, and the Tester for anything that changes play.
 6. **Review.** The Critic as a subagent. Its blocking findings are fixed before the PR leaves draft; the rest are answered on the PR.
-7. **Ship.** PR description per the template: the unit, what changed, decisions, how to test (the preview link to the scenario, what to look for), follow-ups. Update the unit's log and status, any docs, the concept doc if it's affected. Merge per the autonomy level.
-8. **Health check again.** `pnpm health` on the final commit, with everything pushed. Its summary goes in the PR description as proof. If it can't be made green, the PR stays draft, labelled `red`, and the unit's handoff names the failing check.
-9. **Report** to you in five lines or so: what was done, the link, the health result, what's waiting on you.
+7. **Ship.** PR description per the template: the unit, what changed, decisions, how to test (the preview link to the scenario, what to look for), follow-ups. Update the unit's log and status, any docs, the concept doc if it's affected.
+8. **Health check again.** `pnpm health` on the final commit, with everything pushed. Its summary goes in the PR description as proof.
+9. **Merge**, unless the PR is gated: CI green, then squash-merge (see [Main is the truth](#main-is-the-truth)). If it can't be made green, the broken part comes out and the handoff lands instead.
+10. **Report** to you in five lines or so: what was done, the link, the health result, what's waiting on you.
 
 If there's budget left after an S unit, the session may take a second S unit, from a clean point.
 
@@ -280,7 +301,7 @@ You can override with `/go anyway`. The session then works with the failure name
 
 ### When it's red at the end
 
-A session never leaves main worse than it found it. CI runs the same check, and a red PR can't merge. If the unit's branch can't be made green, the PR stays draft, labelled `red`, and the handoff in the unit's log says which check fails and what's been tried.
+A session never leaves main worse than it found it, and never leaves its work stranded on a branch. CI runs the same check, so a red PR can't merge. If the unit's code can't be made green, it comes out of the PR (back to the last green commit), and what merges is the handoff: which check fails, what was tried, and a link to the attempt. See [Main is the truth](#main-is-the-truth).
 
 ### Keeping it up to date
 
@@ -293,15 +314,15 @@ The health check is only useful if it grows with the repo, so these rules apply:
 
 ### Autonomy levels
 
-Set in `producer.md`; you turn it up as trust grows.
+Set in `producer.md`.
 
 | Level | Merges | You see |
 |---|---|---|
-| **1. Ask** (start here) | You merge every PR. | Every PR. |
-| **2. Trusted** | The studio squash-merges its own PR once CI is green and the Critic has no blocking findings, unless it's gated. | Gated PRs and playtest requests; the rest on the studio page. |
-| **3. Autopilot** | As 2, and `/go` may run as a cloud scheduled task (say nightly) within a budget you set. | A digest per run. |
+| **Review first** | You merge every PR. Units that build on an unmerged PR are blocked, so `/go` will often find nothing ready until you've merged. | Every PR. |
+| **Studio merges** (the default) | The studio squash-merges its own PR at the end of the session, as in [Main is the truth](#main-is-the-truth), unless it's gated. | Gated PRs and playtest requests. Everything else is merged, and visible on the studio page and in the reports. |
+| **Autopilot** | As above, and `/go` may run as a cloud scheduled task (say nightly) within a budget you set. | A digest per run. |
 
-**Gated**, at any level: changes to direction, milestones, the colour language or Bob's character, the harness's own rules, cutting an alpha or beta, and anything an ask marked gated. Gated PRs are labelled `gated` and wait for you.
+**Gated**, at any level: changes to direction, milestones, the colour language or Bob's character, the harness's own rules, cutting an alpha or beta, and anything an ask marked gated. Gated PRs are labelled `gated` and wait for you. Each one is self-contained, so nothing else waits behind it.
 
 ## Builds and playtesting
 
@@ -352,7 +373,7 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 
 ## Transparency
 
-- **GitHub**: every unit is a PR, draft from the first push. Labels by kind and role, plus `gated` and `playtest`.
+- **GitHub**: every unit is a PR: draft from the first push, merged by the end of the session. Labels by kind and role, plus `gated` and `playtest`.
 - **The studio page** on Pages (`…/pixelbob/studio/`), regenerated on every merge and whenever a PR opens or closes: in flight, needs you (asks and playtest requests), next up, milestone progress, recently done and dropped, decisions, builds, and your fun and difficulty ratings over time. Linked from the site index above the prototypes.
 - **`/status`** prints the same in a session.
 
@@ -361,7 +382,7 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 The order it gets built in, each a unit of its own. The first three make the harness usable; the rest come in as they're needed, so phase 3 starts as soon as possible.
 
 1. **Health check (S).** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, and a test for each check. It comes first because every unit after it starts and ends with the check.
-2. **Folder and board (S).** `studio/` with its formats, `producer.md` at level 1, `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record, and the studio tier of the health check.
+2. **Folder and board (S).** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record, and the studio tier of the health check.
 3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `director`, `feedback` and `status` skills, the PR template, labels, the `CLAUDE.md` pointer.
 4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
 5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button.
@@ -374,6 +395,6 @@ Then the Director takes phase 3: the first milestone, an alpha of The Green.
 
 ## Open questions
 
-- **Merging.** The plan starts at level 1 (you merge everything). When should it move to level 2?
+- **Merging.** The plan has the studio merge its own green PRs at the end of each session, so main always holds everything. Gated PRs wait for you. Is that right, or do you want to review first, at the cost of `/go` often being blocked until you merge?
 - **Where feedback lands.** A prefilled GitHub issue needs you signed in on the device; copy-and-paste into `/feedback` works everywhere. Both are planned; which do you expect to use from a phone?
 - **Schedule.** Should autopilot exist at all, or is `/go` always by hand?

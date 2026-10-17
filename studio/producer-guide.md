@@ -151,7 +151,7 @@ A few GitHub settings only you can change; the studio asks for them in [an ask](
    - **Target branches**: *Add target → Include default branch*.
    - Tick **Restrict deletions** and **Block force pushes**.
    - Tick **Require a pull request before merging**, with **Required approvals** at 0 (the PRs are opened under your account, and GitHub won't let you approve your own), and **Allowed merge methods** *Squash*.
-   - Tick **Require status checks to pass**, and add `check` (CI's `pnpm health`), `pr-title` and `gate`. A check only shows in the picker once it has run on a PR, so if `gate` isn't there yet, add it after the next PR and save again.
+   - Tick **Require status checks to pass**, and add `check` (CI's `pnpm health`), `pr-title`, `gate` and `in-step`. A check only shows in the picker once it has run on a PR, so if one isn't there yet, add it after the next PR and save again.
    - **Create**.
 3. Tell the studio it's done (`/needs-me` or `/director`), so it closes the ask.
 

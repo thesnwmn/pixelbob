@@ -1,0 +1,15 @@
+{
+  "$comment": "Which docs describe which code, for the docs/in-step check (studio/README.md#keeping-docs-and-the-studio-in-step). A PR that changes a file under `paths` changes one of `docs`, or says `Docs: none needed, because …`. A changed file belongs to the first entry it matches, so the specific entries come first. `*` is any name, `**` any path; a doc ending in / is a folder, and a #heading is where to look (any change to the file counts). A PR that adds a package, a prototype or a format adds its entries.",
+  "map": [
+    { "paths": ["packages/sim/src/materials.ts"], "docs": ["docs/materials.md"] },
+    { "paths": ["packages/sim/src/**"], "docs": ["docs/simulation.md"] },
+    { "paths": ["packages/bob/src/**"], "docs": ["docs/bob.md"] },
+    { "paths": ["packages/render/src/**"], "docs": ["docs/tech-and-toolchain.md#rendering-pipeline-webgl2"] },
+    { "paths": ["prototypes/00-stills/src/kit/**"], "docs": ["docs/art-direction.md", "concept/"] },
+    { "paths": ["scripts/health/**"], "docs": ["studio/README.md#health"] },
+    { "paths": ["scripts/build-site.mjs", ".github/workflows/deploy-pages.yml", ".github/workflows/pr-preview.yml"], "docs": ["docs/tech-and-toolchain.md#hosting-and-previews"] },
+    { "paths": ["studio/board.ts"], "docs": ["studio/README.md#the-studios-state"] },
+    { "paths": [".claude/**"], "docs": ["studio/README.md#the-roles", "studio/producer-guide.md"] },
+    { "paths": [".github/**"], "docs": ["studio/README.md#github"] }
+  ]
+}

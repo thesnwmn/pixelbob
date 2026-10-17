@@ -3,7 +3,7 @@ title: Will you turn on the ruleset on main?
 from: release
 status: open
 blocks: [release-builds]
-default: None. Until it's on, the CI, pr-title and gate checks are advice that sessions follow, not rules GitHub enforces.
+default: None. Until it's on, the CI, pr-title, gate and in-step checks are advice that sessions follow, not rules GitHub enforces.
 gated: true                 # GitHub settings only the producer can change
 ---
 

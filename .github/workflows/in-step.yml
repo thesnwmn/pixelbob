@@ -1,0 +1,27 @@
+name: In step
+
+# What a PR changes brings its docs (studio/doc-map.json), its unit and its session log with it,
+# or its description says why not. It reads the description, so it runs again when that's edited,
+# which CI's `pnpm health` doesn't. Why: studio/README.md#keeping-docs-and-the-studio-in-step.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  in-step:
+    runs-on: ubuntu-latest
+    steps:
+      # The PR merged into its base, and the base before it (HEAD^1): the diff between them is the PR.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      # Only node: imports, so no install. The description goes in through the environment, never the shell.
+      - env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/health/src/instep.ts HEAD^1 HEAD

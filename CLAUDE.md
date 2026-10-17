@@ -1,12 +1,13 @@
 # Pixelbob
 
-A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer. Read `docs/README.md` for the design; `docs/simulation.md` is the core architecture. `docs/` is the game; `studio/` is how it gets made: the agent harness (planned in `studio/README.md`, with the repo map).
+A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer. Read `docs/README.md` for the design; `docs/simulation.md` is the core architecture. `docs/` is the game; `studio/` is how it gets made: the agent harness (described in `studio/README.md`, with the repo map, and being built). What's next is on the board: `pnpm board`.
 
 ## Commands
 
 - `pnpm install`, `pnpm typecheck`, `pnpm test`, `pnpm build:site`
 - `pnpm health` is the health check (tools, install, repo, typecheck, tests, site build, conventions): sessions start on it, sessions that change anything end on `pnpm health --end` (which also checks the branch has its PR), and CI runs it. `--quick` skips the build, for use while working. See `studio/README.md#health`.
 - Run `pnpm health --quick` before committing.
+- `pnpm board` prints the studio's board from the files in `studio/` (`--github` adds open PRs and bugs). Its formats are in `studio/README.md#the-studios-state`.
 - Whatever a change adds (a tool, a dependency, a format, a convention), it adds a check for in `scripts/health/`, with a test that feeds it a broken fixture.
 - `node prototypes/00-stills/scripts/render.ts <outDir> [scale] [t] [bob] [ids] [view]` renders stills to PNG without a browser (Node strips the types).
 

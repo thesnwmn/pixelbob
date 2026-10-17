@@ -3,7 +3,7 @@ title: Folder and board
 kind: tool
 role: toolsmith
 size: S
-status: doing
+status: done
 milestone: m0-studio
 pr: 10
 ---
@@ -20,3 +20,4 @@ The studio keeps its state in files, so every session reads the same backlog fro
 The studio page (own unit), the doc map and the PR-description checks (docs-in-step), the commands (roles-and-commands).
 
 ## Log
+- 2026-10-17 done, #10: [session](../sessions/2026-10-17-folder-and-board.md). Unit 3 of the plan went on the board as three units (roles-and-commands, docs-in-step, github-gate), and the later studio units moved into m1-green-alpha, which waits on the producer's confirmation.

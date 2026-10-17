@@ -16,9 +16,9 @@ You don't need to plan, size, review code or merge, except PRs that need your ca
 | Place | For |
 |---|---|
 | **A Claude Code session** on this repo (claude.ai/code, web or app) | Commands, conversations with the Director, answering questions |
-| **GitHub** | PRs to look at or comment on, merging (at first), feedback issues |
+| **GitHub** | The history: short PRs (merged by the studio) and an issue for each piece of feedback. Comment on either and the next session picks it up |
 | **The studio page** (`thesnwmn.github.io/pixelbob/studio/`) | What's going on, without starting a session |
-| **Builds** (preview links, `…/game/`, `…/builds/alpha-1/`) | Playing, and the feedback button |
+| **Builds** (preview links, `…/game/`, `…/builds/alpha-1/`) | Playing, and the feedback button (copies your notes and a replay for `/feedback`) |
 
 ## The commands
 
@@ -34,7 +34,6 @@ Four, typed into a session. Anything you type without a command goes to the Dire
 /go fix the jump          steer it
 /go anyway                carry on even though the health check is red (it'll say what's broken)
 /go think                 ideas or shaping, not code
-/go 3                     (later) three independent units in parallel sessions
 ```
 
 Every session starts with the health check (tools, dependencies, code, the studio's files). If it's red, the session says so and fixes that instead of what you asked, then stops. Every session also ends with the health check, and the result is in the report and the PR.
@@ -64,7 +63,16 @@ The Director's first job is to understand you. If it's clear, it says what it'll
 
 ### `/feedback <notes>`
 
-After playing. Paste what the build's feedback button copied, or just write. The Director files it as a playtest report, turns problems into fix units (with your replay, if attached), updates taste notes, and replies with what it understood and what will happen. If something is ambiguous, the Designer asks.
+After playing. Paste what the build's feedback button copied, or just write.
+
+The session then grills you, a few questions at a time with options to pick from, until the report is complete:
+
+- what you tried and what you expected;
+- ratings you left out;
+- what a vague word like "off" meant;
+- the questions on the handoff card.
+
+Then it raises a GitHub issue with the full report and the replay, files the triage on main (playtest report, fix units, taste notes), and tells you what will happen. The issue closes when that work is done.
 
 ```
 /feedback split gate: splitting is great but I kept losing track of which piece was me. fun 4, difficulty right.
@@ -80,7 +88,7 @@ Every request to play comes with:
 
 - **A link that drops you in the right place**: the build, the level, Bob's state, the camera. No playing through to get there.
 - **A handoff card** on screen: what changed, what to try, what to look for, what's known broken. A few minutes, not a session.
-- **A feedback button**: fun, difficulty, frustration, free text, prefilled with the card's questions. It attaches a **replay** of what you did, so anything odd you saw can be reproduced exactly. It sends as a GitHub issue, or copies for `/feedback`.
+- **A feedback button**: fun, difficulty, frustration, free text, prefilled with the card's questions. It attaches a **replay** of what you did, so anything odd you saw can be reproduced exactly. It copies everything for `/feedback`.
 
 Milestone builds (alpha, beta) come with release notes and a short playtest script covering the whole milestone.
 
@@ -96,9 +104,10 @@ Most asks expire: if you don't answer after a few sessions, the default stands a
 
 How much the studio does without you is a setting in `studio/producer.md`, which you can change with `/director`:
 
-- **Studio merges** (the default): every session ends with its work merged to main, so the next session has everything. Unfinished work lands switched off, and a failed attempt lands as a handoff note. It merges only when CI and the health check are green and its reviewer is happy. You see gated PRs (your calls) and playtest requests.
+- **Studio merges** (chosen): every session ends with its work merged to main, so the next session has everything. Unfinished work lands switched off, and a failed attempt lands as a handoff note. It merges only when CI and the health check are green and its reviewer is happy. You see gated PRs (your calls) and playtest requests.
 - **Review first**: you merge every PR. Work that builds on an unmerged PR waits for you, so `/go` will often have nothing to do until you've merged.
-- **Autopilot**: as the default, and it may run `/go` on a schedule within a budget you set, with a digest each time.
+
+Running `/go` on a schedule (autopilot) isn't planned for now.
 
 Gated PRs (direction, milestones, Bob's character, the colour language, the studio's own rules, alpha and beta builds) always wait for you. They're the only PRs left open between sessions.
 

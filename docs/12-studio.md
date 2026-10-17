@@ -25,7 +25,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 - **All state is in the repo.** `studio/` holds the board as one file per unit, the producer's settings, the asks waiting on you, milestones and playtest reports. Decisions go in `docs/decisions/`. A session's memory is the repo, so nothing depends on a conversation surviving.
 - **Main is the truth.** Every session ends with its work merged to main, finished or not: unfinished code lands switched off, and a failed attempt lands as a handoff note. The next session starts from main and nothing else. The only PRs left open between sessions are the ones waiting for your call.
 - **Visible.** Every unit opens a draft PR as soon as it starts, so the work in progress shows on GitHub while the session runs. A generated **studio page** on Pages shows in flight, needs you, next, milestone progress, recent work, decisions and builds.
-- **Playable.** Every PR that changes play gets a preview link that drops you straight into a **scenario** (a level, a place, Bob's state) with a card saying what changed and what to look for, and a feedback button that sends your notes with an exact **replay** of what you did.
+- **Playable.** Every PR that changes play gets a preview link that drops you straight into a **scenario** (a level, a place, Bob's state) with a card saying what changed and what to look for, and a feedback button that copies your notes, with an exact **replay** of what you did, to paste into `/feedback`.
 - **Healthy in, healthy out.** Every session starts by running `pnpm health`, which checks the tools, dependencies, code and studio files. If it's red, that session's only job is to make it green. Every session ends by running it again, as proof it left the repo in a good state. CI runs the same script. It grows with the repo.
 - **Bots play too.** The sim is deterministic and runs in Node, so the Tester proves levels can be finished, measures how forgiving they are, replays your runs as regression tests and renders filmstrips the agents (and you) can look at.
 
@@ -37,7 +37,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 - **The repo is the only memory.** A new session knows what `CLAUDE.md`, `studio/` and the docs tell it, plus what it reads from GitHub (open PRs, reviews, issues, CI). So every session ends by writing down where it got to.
 - **The branch comes with the session.** Cloud sessions are given their branch name, so the studio never relies on branch names; a unit records its PR number instead.
 - **GitHub is the shared surface.** PRs, reviews, CI and the preview builds are where you and the studio meet outside a session. A session can watch its own PR's CI and review comments while it's open; once it ends, the next `/go` picks up whatever happened.
-- **The cloud gives a few extras for later:** starting parallel sessions (fan-out) and scheduled tasks (autopilot). Both are optional steps below, not foundations.
+- **The cloud gives a few extras for later:** starting parallel sessions (fan-out) and scheduled tasks (autopilot). Neither is planned now; both would fit without changing anything else.
 
 Nothing here assumes a session lives longer than one unit, so moving to a long-running agent later would change the invocation, not the formats: it would read and write the same `studio/` files and PRs.
 
@@ -93,7 +93,7 @@ docs/
   pull_request_template.md
 ```
 
-Why files and not GitHub issues or a project board: they're versioned and reviewed in the same PR as the work, any session reads them without an API, they can't drift from the code, and observers see them in the repo. GitHub is used where it's better: **PRs** are the record of every unit and the in-flight signal, and **issues** are only an inbox for feedback sent from a build. The Director moves an issue into the files and closes it.
+Why files and not GitHub issues or a project board: they're versioned and reviewed in the same PR as the work, any session reads them without an API, they can't drift from the code, and observers see them in the repo. GitHub is used where it's better: **PRs** are the record of every unit and show work in progress, and **issues** are the record of your playtest feedback. `/feedback` raises one for each report, and it's closed when the work it caused is done.
 
 ### Main is the truth
 
@@ -107,6 +107,19 @@ How every session ends:
 | **Partly done** (a stop sign, or out of budget) | The finished, green part. Code that isn't ready to play lands **switched off**: behind a flag (`?flags=split`) or not yet wired into the game, so main stays playable and a preview can still turn it on. The rest becomes new units, and the handoff goes in the unit's log. |
 | **Stuck** (can't be made green) | The broken code is taken out of the PR, back to the last green commit (or all of it). What lands is the handoff: what was tried, what was learned, and a link to the last commit of the attempt, which stays on GitHub so the next try can start from it. The unit goes back to `ready` with the handoff, or to `dropped` if the attempt showed it isn't worth doing. |
 | **Waiting for you** (a gated PR) | Nothing yet. This is the only kind of PR left open between sessions. It's labelled `gated`, the board shows it under *Needs you*, and no unit builds on it until it's merged. Ungated work in the same session goes in a separate PR so it isn't held up. |
+
+### PRs
+
+A PR's title becomes the squash commit on main, so the titles are the project's history. Titles and descriptions are short: enough for you and the next session to understand what happened, and no more. `.github/pull_request_template.md` sets the shape:
+
+- **Title**: what changed, in plain words, under about 70 characters. No prefixes or ticket numbers: `Split action: E / X or a swipe cuts the piece you steer`.
+- **Why**: one or two lines.
+- **What**: up to five bullets, one line each.
+- **Play** (if it changes play): the scenario link and what to look for.
+- **Health**: the one-line result of the end-of-session check.
+- **Next**: follow-ups, if any.
+
+Details belong in the unit's file, the docs, or a decision record, with a link from the PR. The Critic flags a PR that's grown wordy.
 
 Merging means CI is green on the PR's latest commit, the end-of-session health check is green, and the Critic has no blocking findings. Then the session squash-merges, as `CLAUDE.md` requires. If main has moved on, the session merges main into its branch and runs the checks again first. The session waits for CI by watching its PR, not by polling.
 
@@ -223,7 +236,7 @@ There are three ways a role runs, picked by what the work needs.
 
 1. **Wear the hat (in-thread).** The session reads the role's brief and does the work itself. Used for the main work of a unit: building, shaping, a design conversation with you. The context is kept, which is what a long piece of work needs, and nothing is spent starting a fresh agent.
 2. **Subagent (isolated).** The session starts the role as a subagent, with only a brief: the unit, the diff, pointers to files. It comes back with a report. Used when **independence** matters (the Critic must not inherit the author's assumptions; the Muse shouldn't be anchored by the plan), or when the output is bulky and only the conclusion matters (the Tester's runs, a search across the code). The subagent definition limits its tools: the Critic and Muse can't edit, the Tester can run commands but only writes reports.
-3. **Parallel sessions (fan-out).** For `/go 3` and independent ready units, the Director starts separate cloud sessions, one per unit, each on its own branch with its own PR. Used only when units don't touch the same files. This is a later step (see [Building the studio](#building-the-studio)); one unit at a time comes first.
+3. **Parallel sessions (fan-out).** For independent ready units, when you ask for several at once, the Director starts separate cloud sessions, one per unit, each on its own branch with its own PR. Used only when units don't touch the same files. This is a later step (see [Building the studio](#building-the-studio)); one unit at a time comes first.
 
 What every session does on `/go`:
 
@@ -318,9 +331,10 @@ Set in `producer.md`.
 
 | Level | Merges | You see |
 |---|---|---|
+| **Studio merges** (chosen) | The studio squash-merges its own PR at the end of the session, as in [Main is the truth](#main-is-the-truth), unless it's gated. | Gated PRs and playtest requests. Everything else is merged, and visible on the studio page and in the reports. |
 | **Review first** | You merge every PR. Units that build on an unmerged PR are blocked, so `/go` will often find nothing ready until you've merged. | Every PR. |
-| **Studio merges** (the default) | The studio squash-merges its own PR at the end of the session, as in [Main is the truth](#main-is-the-truth), unless it's gated. | Gated PRs and playtest requests. Everything else is merged, and visible on the studio page and in the reports. |
-| **Autopilot** | As above, and `/go` may run as a cloud scheduled task (say nightly) within a budget you set. | A digest per run. |
+
+**Autopilot** (`/go` run as a scheduled task within a budget) isn't planned for now. It could be added later without changing anything else.
 
 **Gated**, at any level: changes to direction, milestones, the colour language or Bob's character, the harness's own rules, cutting an alpha or beta, and anything an ask marked gated. Gated PRs are labelled `gated` and wait for you. Each one is self-contained, so nothing else waits behind it.
 
@@ -346,7 +360,24 @@ A **scenario** is a small data file in `game/scenarios/`: a level, where Bob sta
 
 The build has a feedback button (and a key). It opens a short form: fun, difficulty (too easy / right / too hard), frustration, and free text, prefilled with the build, the scenario and the questions from the handoff card. It also attaches a **replay**: the inputs you pressed, frame by frame. The sim and Bob are deterministic, so the replay plus the build reproduces exactly what you saw, which makes "it did something weird on the second jump" a test case rather than a mystery.
 
-Sending it opens a prefilled GitHub issue (no server needed), or copies the text to paste into a session with `/feedback`. The Director triages it into a playtest report, the unit, new `fix` units with the replay attached, and taste notes.
+The button copies the report (with the replay, compressed) to paste into a session with `/feedback`, which works on any device and needs no server or sign-in. Notes can also be typed straight into `/feedback` without the button.
+
+Then the session **grills you** until the report is complete, a few questions at a time, each with options:
+
+- **What happened:** what you tried and what you expected; where it happened, if there's no replay.
+- **Ratings:** fun, difficulty and frustration, if you left them out.
+- **Clarification:** anything vague ("felt off": too slow, too floaty, or unclear what to do?).
+- **The card's questions** that weren't answered.
+
+It stops when it has enough to act on, not when every field is full.
+
+Then it does the rest itself:
+
+- **Raises a GitHub issue**, labelled `feedback`: your words, the answers, the ratings, the build and scenario, and the replay.
+- **Files the triage on main**, each linking the issue: a playtest report in `studio/playtests/`, a log line on the unit, new `fix` units with the replay, and taste notes.
+- **Tells you** what it understood and what will happen.
+
+The issue is closed when the units it caused are done.
 
 ### Automated playtesting
 
@@ -383,18 +414,21 @@ The order it gets built in, each a unit of its own. The first three make the har
 
 1. **Health check (S).** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, and a test for each check. It comes first because every unit after it starts and ends with the check.
 2. **Folder and board (S).** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record, and the studio tier of the health check.
-3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `director`, `feedback` and `status` skills, the PR template, labels, the `CLAUDE.md` pointer.
+3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `director`, `feedback` and `status` skills, labels, the `CLAUDE.md` pointer. (The PR template is already in, with this plan.)
 4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
-5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button.
+5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button (copy to clipboard).
 6. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.
 7. **Bots and forgiveness (M, spike first).** The search bot and the slack measure.
 8. **Release (S).** Tag-cut alpha and beta builds under `/builds/`, release notes.
-9. **Fan-out (S, later).** Parallel sessions for independent units.
+9. **Fan-out (S, later).** Parallel sessions for independent units, when the producer wants it.
 
 Then the Director takes phase 3: the first milestone, an alpha of The Green.
 
-## Open questions
+## Settled with the producer
 
-- **Merging.** The plan has the studio merge its own green PRs at the end of each session, so main always holds everything. Gated PRs wait for you. Is that right, or do you want to review first, at the cost of `/go` often being blocked until you merge?
-- **Where feedback lands.** A prefilled GitHub issue needs you signed in on the device; copy-and-paste into `/feedback` works everywhere. Both are planned; which do you expect to use from a phone?
-- **Schedule.** Should autopilot exist at all, or is `/go` always by hand?
+2026-10-17, on the questions this plan first raised:
+
+- **Merging:** the studio merges its own PRs. PR titles and descriptions are short, following the template in [PRs](#prs).
+- **Feedback:** through `/feedback`. The session grills the producer to complete the report, then raises the issue itself.
+- **Autopilot:** not now; maybe later.
+- **Roles:** the eleven above are the starting set.

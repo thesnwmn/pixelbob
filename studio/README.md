@@ -26,7 +26,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 - **A unit fits in a session.** Every unit is sized S (half a session) or M (one session) before it starts. Anything bigger is split first, and anything that starts to spiral is stopped, handed off and split.
 - **All state is in the repo.** `studio/` holds the board as one file per unit, the producer's settings, the asks waiting on you, milestones and playtest reports. Decisions go in `docs/decisions/`. A session's memory is the repo, so nothing depends on a conversation surviving.
 - **Main is the truth.** Every session ends with its work merged to main, finished or not: unfinished code lands switched off, and a failed attempt lands as a handoff note. The next session starts from main and nothing else. The only PRs left open between sessions are the ones waiting for your call.
-- **Visible.** Every unit opens a draft PR as soon as it starts, so the work in progress shows on GitHub while the session runs. A generated **studio page** on Pages shows in flight, needs you, next, milestone progress, recent work, decisions and builds.
+- **Visible.** Every unit opens a draft PR as soon as it starts, so the work in progress shows on GitHub while the session runs. A generated **studio page** on Pages shows the board (in flight, needs you, next, milestone progress, done) and the sessions; decisions and builds are planned.
 - **Playable.** Every PR that changes play gets a preview link that drops you straight into a **scenario** (a level, a place, Bob's state) with a card saying what changed and what to look for, and a feedback button that copies your notes, with an exact **replay** of what you did, to paste into `/feedback`.
 - **Healthy in, healthy out.** Every session starts by running `pnpm health`, which checks the tools, dependencies, code and studio files. If it's red, that session's only job is to make it green. Every session that changes anything ends by running it again, as proof it left the repo in a good state. CI runs the same script. It grows with the repo.
 - **Bots play too.** The sim is deterministic and runs in Node, so the Tester proves levels can be finished, measures how forgiving they are, replays your runs as regression tests and renders filmstrips the agents (and you) can look at.
@@ -451,7 +451,7 @@ Checks are grouped in tiers and run in order. A tier that fails stops the run, b
 | **6. Budgets** (later) | The sim step and render stay within their time budgets on the benchmark scene | A change that quietly costs 3 ms a frame |
 
 - **Quick and full.** `pnpm health` runs everything; it should take a couple of minutes at most (about 80 s today, most of it the tests). `pnpm health --quick` skips the slow checks (build, replays, budgets) for use while working. Sessions start on the full run and end on `pnpm health --end`, which adds the end-of-session checks; CI runs the full run.
-- **Where.** `scripts/health/`: one file per tier (`tools.ts`, `deps.ts`, `repo.ts`, `code.ts`, `studio.ts`, and `github.ts` and `instep.ts` beside it in tier 5), the runner (`run.ts`), and `health.mjs`, which says plainly when Node is too old to run the rest. Each check is a function of its context (the root, Node's version, a shell), so a test hands it a broken fixture.
+- **Where.** `scripts/health/`: one file per tier (`tools.ts`, `deps.ts`, `repo.ts`, `code.ts`, `studio.ts`, and `github.ts` and `instep.ts` beside it in tier 5), the helpers they share (`check.ts`), the gate workflow's logic (`gate.ts`), the runner (`run.ts`), and `health.mjs`, which says plainly when Node is too old to run the rest. Each check is a function of its context (the root, Node's version, a shell), so a test hands it a broken fixture.
 - **Output.** One line per check (pass or fail, and its time), then for each failure the command that reproduces it and a hint at the usual cause. `--json` prints the same as data, for the board and the PR description.
 - **Installing is a check.** `deps/install` runs `pnpm install --frozen-lockfile`: quick when nothing changed, and it fixes a fresh container, which has no `node_modules`.
 - **Automatic.** A session start hook in `.claude/settings.json` runs `pnpm health --quick` (which installs), so every session (even one that isn't `/go`) sees the repo's state first thing. The hook never fails the session start: a red result is there for the session to read. The skills then require the full run before any work.
@@ -498,7 +498,7 @@ Updating the docs and the studio's files is part of the loop, not a step a sessi
   If a PR changes a mapped path and none of its docs, the check fails (`docs/in-step`). A changed file belongs to the first entry it matches, so specific entries come first; any one of an entry's docs counts, and a `#heading` in it says where to look, not which lines must change. The way past is a line in the PR description, `Docs: none needed, because …`, with a real reason, so skipping is a decision that's written down, never an oversight. `docs/map` keeps the map honest: every path in it matches a file, and every doc and heading exists.
 - **The unit** (`studio/unit`). A PR that changes anything outside `studio/` must change a unit file, its status and its log, or say `Unit: none, because …` (a dependency bump, say).
 - **The session log** (`studio/session-log`). Every PR from a session adds one file to `studio/sessions/`, with valid front matter, or says `Session log: none, because …`.
-- **Studio invariants.** On main, no unit is `doing` or `review` (those only exist while a session runs), every `done` unit names its PR, every open ask names what it blocks, and every closed bug issue's fix names it.
+- **Studio invariants.** On main, no unit is `doing` or `review` (those only exist while a session runs), every `done` unit names its PR, every open ask names what it blocks (`studio/files`, `studio/in-flight`). Planned: every closed bug issue's fix names it.
 - **Indexes and the map.** Every doc is listed in `docs/README.md`; every top-level folder is in the [repo map](#repo-structure); every role in `.claude/agents/` is in [the roles table](#the-roles); every command in `.claude/skills/` is in the producer guide.
 - **Generated, not written.** The board and the studio page are generated from the files and never committed, so they can't disagree with them.
 
@@ -528,7 +528,7 @@ Set in `producer.md`.
 | Build | Where | When |
 |---|---|---|
 | **Preview** | `…/preview/pr-N/` (exists today) | Every PR. |
-| **Latest** | `…/pixelbob/game/` | Every merge to main. |
+| **Latest** | `…/pixelbob/game/` (with the game shell) | Every merge to main. |
 | **Alpha / beta** | `…/pixelbob/builds/alpha-1/`, kept forever, and a GitHub Release | When you approve a milestone build; a tag cuts it. |
 
 - **Alpha**: the milestone's mechanics are all playable end to end; content can be rough and placeholder.
@@ -604,7 +604,7 @@ The order it gets built in, each a unit of its own. The first three make the har
 8. **Release (S).** Tag-cut alpha and beta builds under `/builds/`, GitHub Releases with notes from PR titles.
 9. **Fan-out (S, later).** Parallel sessions for independent units, when the producer wants it.
 
-Then the Director takes phase 3: the first milestone, an alpha of The Green.
+Items 1 to 4 were milestone m0-studio. Items 5 to 8 are now units on the board, in milestone m1-green-alpha (phase 3, an alpha of The Green), and fan-out is an idea.
 
 ## Settled with the producer
 

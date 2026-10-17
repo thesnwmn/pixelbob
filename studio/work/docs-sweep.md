@@ -3,8 +3,9 @@ title: Docs sweep after m0
 kind: tidy
 role: director
 size: S
-status: doing
+status: done
 milestone: m1-green-alpha
+pr: 22
 ---
 
 ## Why
@@ -17,3 +18,6 @@ The m0-studio retro's sweep ([Keeping docs and the studio in step](../README.md#
 
 ## Not this
 Changing what the docs decide (design, direction, the colour language): that's a call for the producer, raised as an ask.
+
+## Log
+- 2026-10-17 done, #22: twelve stale lines fixed across nine docs, three doc-map entries added. What was stale: [the session log](../sessions/2026-10-17-2110-docs-sweep.md).

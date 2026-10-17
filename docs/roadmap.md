@@ -49,11 +49,13 @@ What the whole game is, before building it: the run of worlds ([Worlds](worlds.m
 
 A team of agent roles that builds the game in session-sized units, with a human as producer and play tester: a Director as the one point of contact, state as files in `studio/`, a draft PR per unit, preview builds that drop the tester into a scenario with a handoff card and a feedback button that attaches a replay, and bots that play the deterministic sim. Design in [the studio](../studio/README.md), the producer's side in the [producer guide](../studio/producer-guide.md).
 
-**Status:** being built: the health check, the studio's files and board (`pnpm board`), and the roles and commands (`/go` and the rest). Built in the order in [the studio](../studio/README.md#building-the-studio), then the Director takes phase 3. From then on, what's next is planned in `studio/` (direction, milestones, the board); this doc keeps the history of the phases.
+**Status:** done, as milestone m0-studio ([retro](../studio/sessions/2026-10-17-2031-m0-retro.md)): the health check, the studio's files and board (`pnpm board`), the roles and commands (`/go` and the rest), the docs-in-step checks, the gate and the studio page. The rest of [building the studio](../studio/README.md#building-the-studio) comes in with phase 3, as it needs it. From then on, what's next is planned in `studio/` (direction, milestones, the board); this doc keeps the history of the phases.
 
 ## Phase 3: first level slice
 
 The Green ([Worlds](worlds.md#1-the-green)): three or four levels built from the seeds in [Game overview](game-overview.md#puzzle-seeds), checkpoints, a level file format, the title screen, map and saves from the concept doc. Audio prototype.
+
+**Status:** current, as milestone [m1-green-alpha](../studio/milestones/m1-green-alpha.md). Its units are on the board (`pnpm board`).
 
 ## Later
 
@@ -63,4 +65,4 @@ Industrial machines (pistons, conveyors, switches, wiring), creatures, rigid deb
 
 1. **Init**: workspace, tsconfig, workflows, site builder, a placeholder prototype. Merge this first so Pages and PR previews start working.
 2. **Stills and docs**: `prototypes/00-stills` and `docs/` (this content), reviewed through its preview link.
-3. Then one PR per phase step above.
+3. Then one PR per phase step above, and since the studio, one PR per unit ([PRs](../studio/README.md#prs)).

@@ -20,6 +20,6 @@ The list is [`.github/gated.json`](../../.github/gated.json): a path and a why f
 - **Glob patterns.** Prefixes and exact paths cover every entry so far, and need no matcher library in the workflow.
 
 ## What it means for later
-- The check only binds once the producer's ruleset requires it ([the one-time setup](../../studio/producer-guide.md#one-time-setup)). Until then it labels and reports.
+- The check only binds once the producer's ruleset requires it ([the one-time setup](../../studio/producer-guide.md#one-time-setup)). Until then it labels and reports. (The ruleset has been on since 2026-10-17.)
 - The studio uses the producer's account, so it could add `producer-ok` itself. The gate stops an accident, not a decision; sessions never add that label, not even for a call the producer made in that session. That was settled on 2026-10-17 in `/needs-me` ("Only me, always"), after #16, where a session added it following the `/needs-me` skill, which then said otherwise. The skills now say the same as this record.
 - A new kind of gated thing (say, a file of Bob's character knobs) adds its path here, in a gated PR.

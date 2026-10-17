@@ -8,7 +8,7 @@
 | Build / dev server | **Vite** | Instant reloads, workers, WASM, static output |
 | Monorepo | **pnpm workspace** (`packages/*`, `prototypes/*`) | Shared sim and render code, one prototype per experiment; same layout as familiar-ground |
 | Rendering | **WebGL2** (raw, or a thin helper like twgl) | Available on every target browser, including iOS Safari. Cell grid → texture each frame; lighting in shaders |
-| Tests | **Vitest** for the sim (headless, deterministic); **Playwright** screenshots for rendering | The sim must run in Node without a DOM |
+| Tests | **Vitest** for the sim (headless, deterministic); **Playwright** screenshots for rendering (not yet added) | The sim must run in Node without a DOM |
 | Hosting | **GitHub Pages**, with a preview per PR | Free and static; the workflows are copied from familiar-ground |
 | Audio (later) | Web Audio, procedural where possible | Sizzles, splats and drips driven by sim events |
 
@@ -21,7 +21,9 @@ packages/
   sim/        grid CA, materials, temperature, reactions. No DOM.
   bob/        Bob: goo (a viscoelastic particle fluid), his body (collisions, heat, controller, pieces), the test course, his painter. No DOM.
   render/     WebGL2 renderer and the CPU pass that turns cells into its textures (shared by the sandbox and the playground).
+  play/       (planned) input, recording and replaying, the headless runner, bots. No DOM.
   levels/     (planned) level format, loading/saving, generation helpers.
+game/         (planned) the game itself, built to …/pixelbob/game/ (the game-shell unit)
 prototypes/
   00-stills/      art direction: one shot per world and Bob's states (CPU renderer, real goo Bob)
   01-sandbox/     world sandbox: dig, paint materials, heat, light
@@ -64,8 +66,8 @@ The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at
 ## Testing
 
 - **Sim unit tests** (Vitest): sand piles at the right angle, water levels out, oil floats, lava + water → stone + steam, heat spreads. Bob has behaviour tests too: he conserves particles, settles still, picks up a bit without a jolt, dangles and drips, keeps steering the piece you had, climbs tacky walls only when you push in, and runs the course. Deterministic seeds make them exact.
-- **Golden images** (Playwright): render fixed scenes at fixed times and compare. `prototypes/00-stills/scripts/render.ts` already renders stills headlessly in Node, which is enough for cheap image diffs.
-- **Perf checks**: a benchmark scene in CI that fails if a step gets much slower.
+- **Golden images** (planned, Playwright): render fixed scenes at fixed times and compare. `prototypes/00-stills/scripts/render.ts` already renders stills headlessly in Node, which is enough for cheap image diffs.
+- **Perf checks** (planned): a benchmark scene in CI that fails if a step gets much slower.
 
 ## Level format
 
@@ -86,6 +88,8 @@ pnpm dev:stills       # art stills at http://localhost:5180
 pnpm dev:sandbox      # world sandbox at http://localhost:5181
 pnpm dev:bob          # Bob playground at http://localhost:5182
 pnpm dev:concept      # concept doc at http://localhost:5183
+pnpm health          # the health check (--quick skips the build, --end at the end of a session)
+pnpm board           # the studio's board (--github adds open PRs and bugs)
 pnpm typecheck
 pnpm test
 pnpm build:site       # _site/ as deployed to Pages

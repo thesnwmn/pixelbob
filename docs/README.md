@@ -22,7 +22,7 @@ Target: web browser first, on phones and laptops.
 - **Two simulations, tightly coupled.** A falling-sand style grid for the world, and particles for Bob. Bob is about 280 particles, one per pixel, behaving as goo: a viscoelastic fluid with pressure, surface tension and springs that stretch, flow and snap. See [Simulation](simulation.md) and [Bob](bob.md).
 - **One idea drives Bob's states.** Temperature turns his knobs continuously, never swaps a shape. Hot: his springs flow and he's sticky, so he puddles, pours, dangles and drips. Cold: stiff, and frozen he's rigid and cracks if dropped. Splitting is springs snapping; merging is springs forming on contact.
 - **Look:** crisp unfiltered pixels, a lit and simulated play layer over a dim back wall, emissive materials feeding soft lights and bloom. Default camera about **320×180 world pixels**, with Bob about 20 px wide and rose pink. See [Art direction](art-direction.md) and the shots below.
-- **Stack:** TypeScript, Vite, pnpm workspace, WebGL2, Vitest, Playwright. Static site on GitHub Pages with a preview per PR. See [Tech and toolchain](tech-and-toolchain.md).
+- **Stack:** TypeScript, Vite, pnpm workspace, WebGL2, Vitest (Playwright later). Static site on GitHub Pages with a preview per PR. See [Tech and toolchain](tech-and-toolchain.md).
 - **Worlds:** seven, each teaching one new thing, from the meadows on the surface down to the core. See [Worlds](worlds.md).
 - **Plan:** stills → material sandbox → Bob playground → concept → agent harness → first slice. How the game gets built from here is [the studio](../studio/README.md). See [Roadmap](roadmap.md), and the [concept doc](https://thesnwmn.github.io/pixelbob/concept/) for the whole picture.
 

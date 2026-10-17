@@ -1,0 +1,53 @@
+name: PR title
+
+# The PR title becomes the squash commit on main, so it's checked like code.
+# The format is in studio/README.md#prs; the why is in docs/decisions/2026-10-17-pr-titles.md.
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      # Reads the title only; never checks out the PR's code, so pull_request_target is safe.
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            spike
+            docs
+            test
+            refactor
+            perf
+            chore
+            ci
+            release
+          # Optional; one of the repo's areas. A PR that adds an area adds its scope.
+          scopes: |
+            sim
+            bob
+            render
+            play
+            levels
+            game
+            stills
+            sandbox
+            playground
+            concept
+            studio
+            health
+            tools
+            docs
+          requireScope: false
+          # Plain words starting with a capital (or a `code` name), no full stop.
+          subjectPattern: ^(?![a-z]).+[^.]$
+          subjectPatternError: |
+            The summary "{subject}" should start with a capital letter and not end with a full stop,
+            e.g. "feat(bob): Split action, E / X or a swipe cuts the piece you steer". See studio/README.md#prs.

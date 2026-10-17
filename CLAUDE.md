@@ -13,7 +13,7 @@ A pnpm TypeScript monorepo of browser prototypes for a pixel-physics platformer.
 ## Workflow
 
 - Never push to `main`. Every change goes on a branch and lands through a pull request, merged with **squash merge**.
-- PR titles become the squash commit message: make them descriptive.
+- PR titles become the squash commit message, so they follow `type(scope)!: Summary` (conventional commits, summary starting with a capital), checked by the `pr-title` workflow. Types, scopes and examples are in `studio/README.md#prs`.
 
 ## Conventions
 

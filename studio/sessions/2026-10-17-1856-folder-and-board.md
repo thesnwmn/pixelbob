@@ -13,7 +13,7 @@ size: S planned; a small share of the context, no compaction
 Built unit 2 of [Building the studio](../README.md#building-the-studio): the studio's files and the board. `studio/` now holds the producer's settings, direction, two milestones, a unit for everything left to build and the first ask. `pnpm board` generates the board from them, and a fifth tier of the health check fails on a file that breaks its format, on a broken link, and on a doc missing from the index.
 
 ## The producer said
-- `/go`. The command isn't installed yet (it comes with roles-and-commands), so, like the [health check session](2026-10-17-health-check.md), this session built the next unit in the plan.
+- `/go`. The command isn't installed yet (it comes with roles-and-commands), so, like the [health check session](2026-10-17-1811-health-check.md), this session built the next unit in the plan.
 
 ## Done
 - `studio/producer.md` (studio merges, the standing rules settled so far), `studio/direction.md`, `milestones/m0-studio.md` (current) and `milestones/m1-green-alpha.md` (proposed).

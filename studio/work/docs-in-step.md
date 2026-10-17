@@ -20,4 +20,4 @@ Docs that drift from the code mislead every later session. The health check shou
 Whether the docs are right: that's the Critic's.
 
 ## Log
-- 2026-10-17 done, #14: [session](../sessions/2026-10-17-docs-in-step.md). `studio/doc-map.json`, the checks `docs/map`, `docs/in-step`, `studio/unit`, `studio/session-log` and `github/in-step`, and the `in-step` workflow that fails a PR on them.
+- 2026-10-17 done, #14: [session](../sessions/2026-10-17-2006-docs-in-step.md). `studio/doc-map.json`, the checks `docs/map`, `docs/in-step`, `studio/unit`, `studio/session-log` and `github/in-step`, and the `in-step` workflow that fails a PR on them.

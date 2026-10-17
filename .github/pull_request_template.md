@@ -7,7 +7,7 @@ Delete sections that don't apply.
 
 **Why:** <!-- one or two lines; link the unit or issue -->
 
-**Session:** <!-- link to studio/sessions/<date>-<slug>.md, or "Session log: none, because …" (a /feedback session, a one-line fix) -->
+**Session:** <!-- link to studio/sessions/<date>-<HHMM>-<slug>.md, or "Session log: none, because …" (a /feedback session, a one-line fix) -->
 
 **What:**
 -

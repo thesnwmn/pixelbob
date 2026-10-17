@@ -19,4 +19,4 @@ Every session starts and ends on the same question: is this repo ready to develo
 The studio tier (with the board), budgets (later).
 
 ## Log
-- 2026-10-17 done, #6: [session](../sessions/2026-10-17-health-check.md). The end-of-session PR check followed in #7 ([session](../sessions/2026-10-17-pr-check.md)).
+- 2026-10-17 done, #6: [session](../sessions/2026-10-17-1811-health-check.md). The end-of-session PR check followed in #7 ([session](../sessions/2026-10-17-1822-pr-check.md)).

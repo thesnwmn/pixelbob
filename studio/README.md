@@ -2,7 +2,7 @@
 
 How a team of agents builds Pixelbob from here, with one human as producer and play tester. This is the plan for the harness ("the studio"): what it's made of, where it keeps its state, who's in it, how each role is invoked and kept apart, and how builds reach the play tester. The [producer guide](producer-guide.md) is the same thing from the producer's side: what you type, what you get back.
 
-**Status:** the first milestone's harness is built (m0-studio, [retro](sessions/2026-10-17-m0-retro.md)): the [health check](#health), the [studio's files and the board](#the-studios-state) (`pnpm board`), [the roles](#the-roles) and the commands (`/go` and the rest, in `.claude/`), the [docs-in-step checks](#keeping-docs-and-the-studio-in-step), the [gate](#github) and the [studio page](#transparency). The rest of [Building the studio](#building-the-studio) comes in with the game's milestones, as they need it.
+**Status:** the first milestone's harness is built (m0-studio, [retro](sessions/2026-10-17-2031-m0-retro.md)): the [health check](#health), the [studio's files and the board](#the-studios-state) (`pnpm board`), [the roles](#the-roles) and the commands (`/go` and the rest, in `.claude/`), the [docs-in-step checks](#keeping-docs-and-the-studio-in-step), the [gate](#github) and the [studio page](#transparency). The rest of [Building the studio](#building-the-studio) comes in with the game's milestones, as they need it.
 
 ## TL;DR
 
@@ -289,11 +289,11 @@ Asks are answered in a session (`/needs-me` walks through them; the Director als
 
 ### Session logs
 
-`studio/sessions/<date>-<slug>.md`: one file per session that changes anything, written at the *Ship* step and merged in the session's own PR. The PR says *what* changed, in a few lines. The session log keeps what happened along the way, which would otherwise be lost when the container goes:
+`studio/sessions/<date>-<HHMM>-<slug>.md`, with the UTC time the log is written, so a day's logs list in the order they happened (`board.ts` checks the name): one file per session that changes anything, written at the *Ship* step and merged in the session's own PR. The PR says *what* changed, in a few lines. The session log keeps what happened along the way, which would otherwise be lost when the container goes:
 
 ```markdown
 ---
-date: 2026-10-21
+date: 2026-10-21            # and the file is 2026-10-21-1430-split-action.md
 command: /go
 units: [split-action]
 pr: 41
@@ -330,7 +330,7 @@ The handoff: where things stand, what's next, what to watch out for.
 - **One file per session**, so parallel sessions never conflict. The unit's log gets a single line linking to it.
 - **Enforced** like the docs: the health check fails a PR from a session that changes anything without adding a session log or saying why not.
 
-The first one is this plan's own: [2026-10-17 studio plan](sessions/2026-10-17-studio-plan.md).
+The first one is this plan's own: [2026-10-17 studio plan](sessions/2026-10-17-1758-studio-plan.md).
 
 ## GitHub
 

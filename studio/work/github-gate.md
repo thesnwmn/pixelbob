@@ -20,4 +20,4 @@ Gated changes (direction, milestones, the colour language, the harness's own rul
 Releases (release-builds).
 
 ## Log
-- 2026-10-17 done, #12: [session](../sessions/2026-10-17-github-gate.md). The gate check from `.github/gated.json`, labels as a file with a sync workflow, the bug form, two health checks, and the one-time setup as an ask.
+- 2026-10-17 done, #12: [session](../sessions/2026-10-17-1936-github-gate.md). The gate check from `.github/gated.json`, labels as a file with a sync workflow, the bug form, two health checks, and the one-time setup as an ask.

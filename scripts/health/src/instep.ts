@@ -153,7 +153,7 @@ export const sessionLog: Check = {
   id: "studio/session-log",
   tier: 5,
   repro: "git diff --name-status $(git merge-base origin/main HEAD) -- studio/sessions",
-  hint: "Every PR from a session adds its log, studio/sessions/<date>-<slug>.md (studio/README.md#session-logs), or says `Session log: none, because …` in the PR description.",
+  hint: "Every PR from a session adds its log, studio/sessions/<date>-<HHMM>-<slug>.md (studio/README.md#session-logs), or says `Session log: none, because …` in the PR description.",
   run(ctx) {
     const pr = prOf(ctx);
     if (!isPr(pr)) return pr;

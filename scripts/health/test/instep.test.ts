@@ -64,7 +64,7 @@ describe("the session log", () => {
     expect(sessionLogProblem(pr(["studio/sessions/old.md"]))).toBe("no new log in studio/sessions/");
   });
   it("passes with one, or a reason", () => {
-    expect(sessionLogProblem({ changes: [{ status: "A", path: "studio/sessions/2026-10-17-x.md" }], body: "" })).toBeUndefined();
+    expect(sessionLogProblem({ changes: [{ status: "A", path: "studio/sessions/2026-10-17-0900-x.md" }], body: "" })).toBeUndefined();
     expect(sessionLogProblem(pr(["a.ts"], "**Session log:** none, because a /feedback session"))).toBeUndefined();
   });
 });

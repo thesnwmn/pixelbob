@@ -3,7 +3,7 @@ title: Replays and the Tester's kit
 kind: test
 role: engineer
 size: M
-status: shaped
+status: doing
 milestone: m1-green-alpha
 needs: [game-shell]
 ---

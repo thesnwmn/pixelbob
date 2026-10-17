@@ -3,7 +3,7 @@ title: Alpha and beta builds
 kind: release
 role: release
 size: S
-status: shaped
+status: ready
 milestone: m1-green-alpha
 needs: [game-shell, one-time-setup]
 ---

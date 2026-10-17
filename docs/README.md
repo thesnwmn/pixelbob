@@ -43,7 +43,7 @@ These describe the game, in reading order. How it's made (the agent harness, the
 | [Bob models](bob-models.md) | Why Bob is goo: the three models that were built and compared, and what was learned |
 | [Ideas](ideas.md) | Gameplay and other ideas raised along the way that aren't built yet |
 | [Worlds](worlds.md) | The run of worlds: what each teaches, its materials, heat and light, and its shot |
-| [Decisions](decisions/) | One record per decision, with the why and what else was considered: [PR titles](decisions/2026-10-17-pr-titles.md), [Backlog in files](decisions/2026-10-17-backlog-in-files.md) |
+| [Decisions](decisions/) | One record per decision, with the why and what else was considered: [PR titles](decisions/2026-10-17-pr-titles.md), [Backlog in files](decisions/2026-10-17-backlog-in-files.md), [Gated files](decisions/2026-10-17-gated-files.md) |
 
 ## The shots
 

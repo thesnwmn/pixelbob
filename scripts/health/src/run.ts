@@ -3,11 +3,12 @@
 import { type Check, type Ctx, type Result, type Status, realShell } from "./check.ts";
 import { CODE } from "./code.ts";
 import { DEPS } from "./deps.ts";
+import { GITHUB } from "./github.ts";
 import { REPO } from "./repo.ts";
 import { STUDIO } from "./studio.ts";
 import { TOOLS } from "./tools.ts";
 
-export const CHECKS: Check[] = [...TOOLS, ...DEPS, ...REPO, ...CODE, ...STUDIO];
+export const CHECKS: Check[] = [...TOOLS, ...DEPS, ...REPO, ...CODE, ...STUDIO, ...GITHUB];
 
 export interface Options {
   /** Skip the slow checks (the site build), for use while working. */

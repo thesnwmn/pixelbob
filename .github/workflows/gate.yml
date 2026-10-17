@@ -1,0 +1,43 @@
+name: Gate
+
+# A PR that touches a gated file (.github/gated.json), or is labelled `gated` by hand, waits for the
+# producer: this labels it `gated` and stays red until it also has `producer-ok`, which only the producer adds.
+# Why: studio/README.md#github and docs/decisions/2026-10-17-gated-files.md.
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      # The base branch, never the PR's code: pull_request_target runs with write access, and
+      # the gate a PR is judged by must be main's, so a PR can't loosen its own gate.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Gated files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          # A rename counts by its old path too, so moving a gated file is gated.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)' > "$RUNNER_TEMP/changed.txt"
+          v=$(node scripts/health/src/gate.ts "$RUNNER_TEMP/changed.txt" "$LABELS")
+          echo "$v" | jq -r '.hits[] | "  " + .'
+          if [ "$(echo "$v" | jq .label)" = true ]; then
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/labels" -f "labels[]=gated" > /dev/null
+          fi
+          if [ "$(echo "$v" | jq .pass)" != true ]; then
+            echo "::error::This PR is gated, so it waits for the producer: they add the label producer-ok to let it through."
+            exit 1
+          fi
+          echo "Not gated, or let through with producer-ok."

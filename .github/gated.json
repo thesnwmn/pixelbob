@@ -1,0 +1,17 @@
+{
+  "$comment": "Files whose changes wait for the producer: the gate workflow labels a PR that touches one `gated` and stays red until it also has `producer-ok`. A path ending in / is a folder. Why each is here: docs/decisions/2026-10-17-gated-files.md. Changing this list is itself gated.",
+  "gated": [
+    { "path": "studio/producer.md", "why": "the producer's settings, standing rules and taste notes" },
+    { "path": "studio/direction.md", "why": "direction" },
+    { "path": "studio/milestones/", "why": "milestones" },
+    { "path": "docs/art-direction.md", "why": "the colour language, Bob's look and colour" },
+    { "path": "prototypes/00-stills/src/kit/materials.ts", "why": "the kit's palette" },
+    { "path": ".claude/", "why": "the harness: roles, commands, the session start hook" },
+    { "path": "scripts/health/health.mjs", "why": "the health check's rules: how it runs" },
+    { "path": "scripts/health/src/run.ts", "why": "the health check's rules: which checks run, what stops a run" },
+    { "path": ".github/gated.json", "why": "the gate itself" },
+    { "path": ".github/workflows/gate.yml", "why": "the gate itself" },
+    { "path": "scripts/health/src/gate.ts", "why": "the gate itself: the logic the workflow runs" },
+    { "path": ".github/workflows/ci.yml", "why": "the health check's rules: where and when it runs" }
+  ]
+}

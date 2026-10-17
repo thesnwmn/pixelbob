@@ -3,7 +3,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { deflateSync } from "node:zlib";
-import { PALETTES } from "../src/kit/bob.ts";
+import { PALETTES } from "../src/kit/goo.ts";
 import { Renderer, type View } from "../src/kit/render.ts";
 import { SCENES } from "../src/scenes/index.ts";
 

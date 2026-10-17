@@ -1,4 +1,4 @@
-import { PALETTES } from "./kit/bob.ts";
+import { PALETTES } from "./kit/goo.ts";
 import { Renderer, type View } from "./kit/render.ts";
 import type { SceneDef } from "./scene.ts";
 import { SCENES } from "./scenes/index.ts";

@@ -30,6 +30,13 @@ importers:
   packages/sim: {}
 
   prototypes/00-stills:
+    dependencies:
+      '@pixelbob/bob':
+        specifier: workspace:*
+        version: link:../../packages/bob
+      '@pixelbob/sim':
+        specifier: workspace:*
+        version: link:../../packages/sim
     devDependencies:
       '@types/node':
         specifier: ^22.10.0

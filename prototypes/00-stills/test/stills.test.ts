@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PALETTES } from "../src/kit/bob.ts";
+import { PALETTES } from "../src/kit/goo.ts";
 import { Renderer } from "../src/kit/render.ts";
 import { SCENES } from "../src/scenes/index.ts";
 
@@ -25,10 +25,10 @@ describe("stills", () => {
   });
 
   it("is deterministic for a seed and time", () => {
-    expect(frame("cavern", 3, 1.25)).toEqual(frame("cavern", 3, 1.25));
+    expect(frame("caverns", 3, 1.25)).toEqual(frame("caverns", 3, 1.25));
   });
 
   it("animates over time", () => {
-    expect(frame("meadow", 7, 1)).not.toEqual(frame("meadow", 7, 2));
+    expect(frame("green", 7, 1)).not.toEqual(frame("green", 7, 2));
   });
 });

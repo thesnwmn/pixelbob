@@ -1,4 +1,4 @@
-import type { BobPalette } from "./kit/bob.ts";
+import type { BobPalette } from "./kit/goo.ts";
 import type { Setup } from "./kit/render.ts";
 
 export interface SceneCtx {

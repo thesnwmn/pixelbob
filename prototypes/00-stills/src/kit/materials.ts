@@ -43,6 +43,11 @@ export const MAT = {
   toxic: m("toxic gas", ["#6fe85a", "#8bff73"], Kind.Fluid, 0.02, { emit: hex("#4cff40"), alpha: 0.25 }),
   steam: m("steam", ["#cfdbe4", "#e3ecf2"], Kind.Fluid, 0.05, { alpha: 0.3 }),
   smoke: m("smoke", ["#2c2a2e", "#3a373c", "#48444a"], Kind.Fluid, 0.08, { alpha: 0.45 }),
+  // Tacky surfaces Bob can climb (packages/sim materials, same colours): grip goes moss < resin < gum.
+  moss: m("moss", ["#3d5a24", "#4a6b2b", "#587d33", "#6a913d"], Kind.Solid, 0.4),
+  resin: m("resin", ["#8a4a12", "#a85c18", "#c27420", "#d98e2e"], Kind.Solid, 0.5, { emit: hex("#3a1400") }),
+  gum: m("gum", ["#4a2a72", "#5a3488", "#6c42a0", "#8054b8"], Kind.Solid, 0.5),
+  spikes: m("spikes", ["#8a929e", "#a3abb6", "#c4ccd6"], Kind.Solid, 0.6),
   crystal: m("crystal", ["#6a3fc0", "#8a5ae0", "#b48cff", "#e0cfff"], Kind.Solid, 0.3, { emit: hex("#7a48ff") }),
 } satisfies Record<string, Material>;
 

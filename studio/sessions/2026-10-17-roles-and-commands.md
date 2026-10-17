@@ -14,6 +14,7 @@ Built roles-and-commands, the top ready unit in m0-studio. The eleven roles are 
 
 ## The producer said
 - `/go` again. The command still didn't exist in this session, so this session followed the plan: the board's top ready unit was this one.
+- Asked whether to merge this PR, since it changes gated files (and #10 did too, merged without asking): "Merge".
 
 ## Done
 - `.claude/agents/`: a brief per role in [the roles table](../README.md#the-roles): what it reads first, its job, what it may change, what it never does. The Muse and the Critic can't edit, and the Tester writes only reports.
@@ -23,7 +24,7 @@ Built roles-and-commands, the top ready unit in m0-studio. The eleven roles are 
 - `CLAUDE.md` points sessions at the commands and roles. The Toolsmith's *May change* now includes `scripts/` and `.claude/`, which it has been changing all along.
 
 ## Tried and dropped
-- **Gating this PR by hand.** `.claude/` is gated, but the gate check is the github-gate unit, and this PR builds a unit of the plan the producer approved. So it waited for the producer's call on merging instead (see the report).
+- **Gating this PR by hand.** `.claude/` is gated, but the gate check is the github-gate unit, and this PR builds a unit of the plan the producer approved. So the session asked the producer instead.
 
 ## Learned
 - Subagents and skills are read when a session starts, so the Critic couldn't review its own PR: this session reviewed its diff itself, again. The next session has the `critic` subagent.

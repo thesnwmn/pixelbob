@@ -19,7 +19,7 @@ Not now: game engines (Phaser, Pixi, Godot web). The sim *is* the engine, and we
 ```
 packages/
   sim/        grid CA, materials, temperature, reactions. No DOM.
-  bob/        Bob: particles, XPBD bonds, shape matching, controller, temperature states, the test course, his painter. No DOM.
+  bob/        Bob: goo (a viscoelastic particle fluid), his body (collisions, heat, controller, pieces), the test course, his painter. No DOM.
   render/     WebGL2 renderer and the CPU pass that turns cells into its textures (shared by the sandbox and the playground).
   levels/     (planned) level format, loading/saving, generation helpers.
 prototypes/
@@ -61,7 +61,7 @@ The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at
 
 ## Testing
 
-- **Sim unit tests** (Vitest): sand piles at the right angle, water levels out, oil floats, lava + water → stone + steam, heat spreads, Bob conserves particles, bonds break at the set strain. Deterministic seeds make them exact.
+- **Sim unit tests** (Vitest): sand piles at the right angle, water levels out, oil floats, lava + water → stone + steam, heat spreads. Bob has behaviour tests too: he conserves particles, settles still, picks up a bit without a jolt, dangles and drips, keeps steering the piece you had, climbs tacky walls only when you push in, and runs the course. Deterministic seeds make them exact.
 - **Golden images** (Playwright): render fixed scenes at fixed times and compare. `prototypes/00-stills/scripts/render.ts` already renders stills headlessly in Node, which is enough for cheap image diffs.
 - **Perf checks**: a benchmark scene in CI that fails if a step gets much slower.
 

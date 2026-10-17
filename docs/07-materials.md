@@ -21,6 +21,9 @@ Anything denser falls through anything lighter, with drag through liquids and po
 | sand | powder | Piles. Turns to glass above ~900 °C. |
 | glass | static | Made from sand; lets most light through. Slippery and slightly sharp to Bob. |
 | spikes | static | Doesn't react with anything; it exists to cut Bob (`sharp` 1). |
+| moss | static | Green, tacky (`tack` 0.35): grippy rolling ground, enough to roll up a 60° slope, not to hang from. |
+| resin | static | Amber, tacky (`tack` 0.65): Bob can hold on and climb a steep (70°) face if he pushes in. |
+| gum | static | Violet, the stickiest (`tack` 1): he can climb a sheer wall, pushing in and up. |
 | water | liquid | Freezes below 0 °C, boils above 100 °C. Puts out fire. Soaks dirt into mud. Plants and vines drink it. Rusts steel. Dissolves salt into brine. |
 | ice | static | Melts above ~2 °C; insulates, so it melts slowly. Salt melts it. |
 | snow | powder | Melts above ~1 °C; light, so it drifts up through water slowly. |
@@ -90,7 +93,7 @@ Ideas not built yet, grouped by what they'd add. Effort is relative to the curre
 ### Living
 | Idea | Behaviour | Effort |
 |---|---|---|
-| Moss | Slowly spreads over damp rock and glows faintly. Gives caves the stills' coloured surfaces. | cheap |
+| Living moss | Slowly spreads over damp rock and glows faintly (the built moss is only a tacky solid). Gives caves the stills' coloured surfaces. | cheap |
 | Seeds → trees | A seed grows a trunk, then a leaf canopy. | medium |
 | Leaf litter | Leaves fall from canopies, pile up, rot into dirt and burn. | cheap |
 | Fireflies / bugs | Tiny wandering lights that flee fire. Creatures, not cells. | later |

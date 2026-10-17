@@ -191,4 +191,6 @@ The whole range, built or not. **Built** means it works in the playground today.
 - **Should he steer in the air?** Physically he can't. A small amount helps on touch screens.
 - **Should loose droplets count?** Today only particles in the finish box count, whichever piece they're in.
 - **Slot sizes.** Normal Bob only squeezes through gaps a bit smaller than him, so "too big to fit" puzzles work. Is that the right line?
-- **Performance:** about 1.5 ms a frame for 280 particles in Node (10 substeps). Fine on desktop; to be measured on phones before adding more bodies.
+- **Performance:** about 2.4 ms a frame for 280 particles in Node (6 substeps). Fine on desktop; to be measured on phones before adding more bodies.
+
+Gameplay ideas that came up while building and playing him, and aren't built, are in [10 Ideas](10-ideas.md).

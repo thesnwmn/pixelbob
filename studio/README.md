@@ -28,7 +28,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 - **Main is the truth.** Every session ends with its work merged to main, finished or not: unfinished code lands switched off, and a failed attempt lands as a handoff note. The next session starts from main and nothing else. The only PRs left open between sessions are the ones waiting for your call.
 - **Visible.** Every unit opens a draft PR as soon as it starts, so the work in progress shows on GitHub while the session runs. A generated **studio page** on Pages shows in flight, needs you, next, milestone progress, recent work, decisions and builds.
 - **Playable.** Every PR that changes play gets a preview link that drops you straight into a **scenario** (a level, a place, Bob's state) with a card saying what changed and what to look for, and a feedback button that copies your notes, with an exact **replay** of what you did, to paste into `/feedback`.
-- **Healthy in, healthy out.** Every session starts by running `pnpm health`, which checks the tools, dependencies, code and studio files. If it's red, that session's only job is to make it green. Every session ends by running it again, as proof it left the repo in a good state. CI runs the same script. It grows with the repo.
+- **Healthy in, healthy out.** Every session starts by running `pnpm health`, which checks the tools, dependencies, code and studio files. If it's red, that session's only job is to make it green. Every session that changes anything ends by running it again, as proof it left the repo in a good state. CI runs the same script. It grows with the repo.
 - **Bots play too.** The sim is deterministic and runs in Node, so the Tester proves levels can be finished, measures how forgiving they are, replays your runs as regression tests and renders filmstrips the agents (and you) can look at.
 
 ## Where it runs
@@ -36,7 +36,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 **Claude Code cloud sessions with GitHub access**, like the one that wrote this doc. There's no long-running agent, server or CLI. That shapes the whole design:
 
 - **A session is the unit of execution.** You open one on the repo (claude.ai/code, on the web or the app), type a command, and it works until the unit is done. The container is thrown away afterwards, so anything worth keeping is pushed.
-- **The repo is the only memory.** A new session knows what `CLAUDE.md`, `studio/` and the docs tell it, plus what it reads from GitHub (open PRs, reviews, issues, CI). So every session ends by writing down where it got to, in its [session log](#session-logs).
+- **The repo is the only memory.** A new session knows what `CLAUDE.md`, `studio/` and the docs tell it, plus what it reads from GitHub (open PRs, reviews, issues, CI). So every session that changes anything ends by writing down where it got to, in its [session log](#session-logs).
 - **The branch comes with the session.** Cloud sessions are given their branch name, so the studio never relies on branch names; a unit records its PR number instead.
 - **GitHub is the shared surface.** PRs, reviews, CI and the preview builds are where you and the studio meet outside a session. A session can watch its own PR's CI and review comments while it's open; once it ends, the next `/go` picks up whatever happened.
 - **The cloud gives a few extras for later:** starting parallel sessions (fan-out) and scheduled tasks (autopilot). Neither is planned now; both would fit without changing anything else.
@@ -138,7 +138,7 @@ The planned files in `studio/` are the backlog and everything around it. Why fil
 
 ### Main is the truth
 
-The next session reads main and nothing else, so **no session ends with state that exists only on a branch**. A session's PR is a working space and a record: it opens as a draft so the work shows while the session runs, and it's merged before the session ends. Sessions don't continue each other's branches; a session picks up from what's on main.
+The next session reads main and nothing else, so **no session ends with state that exists only on a branch** (or only in the container). What a session does on GitHub itself, an issue raised or a comment on a PR, is already landed: it isn't in the container. A session that changes nothing in the repo (`/next`, `/status`, a question answered) has nothing to land: no PR, no log, no end check. A session's PR is a working space and a record: it opens as a draft so the work shows while the session runs, and it's merged before the session ends. Sessions don't continue each other's branches; a session picks up from what's on main.
 
 How every session ends:
 
@@ -291,8 +291,9 @@ The handoff: where things stand, what's next, what to watch out for.
 - **Sizing gets better.** The `size` line records how much of the session the unit really took. The Planner compares it with the estimate when sizing the next units.
 - **Short.** A page at most. A long one means the session should have been split.
 - **Every session that changes something writes one**, including a `/needs-me` or a `/director` conversation. Read-only commands (`/next`, `/status`) don't.
+- **Unless the PR says why not.** `Session log: none, because …` in the PR description, like the `Docs:` and `Unit:` lines, for a PR whose story is already told: a `/feedback` session, whose playtest report is the record, or a one-line fix whose title says it all. Skipping is a written decision, never an oversight.
 - **One file per session**, so parallel sessions never conflict. The unit's log gets a single line linking to it.
-- **Enforced** like the docs: the health check fails a PR from a session that changes anything without adding a session log.
+- **Enforced** like the docs: the health check fails a PR from a session that changes anything without adding a session log or saying why not.
 
 The first one is this plan's own: [2026-10-17 studio plan](sessions/2026-10-17-studio-plan.md).
 
@@ -409,7 +410,7 @@ Checks are grouped in tiers and run in order. A tier that fails stops the run, b
 |---|---|---|
 | **1. Tools** | Node is the version the repo pins; pnpm matches `packageManager`; git. Later: Chromium is where Playwright looks (once browser tests exist) | A fresh container with the wrong Node, or a missing tool |
 | **2. Dependencies** | Install from the lockfile (`--frozen-lockfile`); `node_modules` matches the lockfile; every workspace package resolves | "tsc not found" because nothing was installed, as happened when this plan was written |
-| **3. Repo** | On a session branch, not `main`; no conflict markers; every top-level folder is in the [repo map](#repo-structure); how far behind `main` the branch is; at the end (`--end`), also: tree clean, everything pushed. That a PR is open is the session's to check: the container has no GitHub API | Work that wasn't pushed before the container was thrown away |
+| **3. Repo** | On a session branch, not `main`; no conflict markers; every top-level folder is in the [repo map](#repo-structure); how far behind `main` the branch is; at the end (`--end`), also: tree clean, everything pushed, and a PR for the branch's commits: open, or merged at this very commit (asked of GitHub with `gh api`; nothing to land passes) | Work that wasn't pushed before the container was thrown away |
 | **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim`, `packages/bob` or the stills, no DOM in the sim or Bob | Main red, or a convention quietly broken |
 | **5. Studio and docs** (next, with the board) | Every unit, ask and milestone file parses, with valid fields and statuses; every `needs` exists; the board generates; no unit on main is `doing` or `review`; links between docs resolve; every doc is in the docs index; and on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step). Scenarios load; golden replays still give their recorded outcome | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
 | **6. Budgets** (later) | The sim step and render stay within their time budgets on the benchmark scene | A change that quietly costs 3 ms a frame |
@@ -461,7 +462,7 @@ Updating the docs and the studio's files is part of the loop, not a step a sessi
 
   If a PR changes a mapped path and none of its docs, the check fails. The way past is a line in the PR description, `Docs: none needed, because …`, so skipping is a decision that's written down, never an oversight.
 - **The unit.** A PR that changes anything outside `studio/` must change a unit file, its status and its log, or say `Unit: none, because …` (a dependency bump, say).
-- **The session log.** Every PR from a session adds one file to `studio/sessions/`, with valid front matter.
+- **The session log.** Every PR from a session adds one file to `studio/sessions/`, with valid front matter, or says `Session log: none, because …`.
 - **Studio invariants.** On main, no unit is `doing` or `review` (those only exist while a session runs), every `done` unit names its PR, every open ask names what it blocks, and every closed bug issue's fix names it.
 - **Indexes and the map.** Every doc is listed in `docs/README.md`; every top-level folder is in the [repo map](#repo-structure); every role in `.claude/agents/` is in [the roles table](#the-roles); every command in `.claude/skills/` is in the producer guide.
 - **Generated, not written.** The board and the studio page are generated from the files and never committed, so they can't disagree with them.

@@ -95,4 +95,36 @@ export const pushed: Check = {
   },
 };
 
-export const REPO = [branch, conflicts, repoMap, behind, clean, pushed];
+/** `owner/repo` from a GitHub remote URL (https or ssh, with or without credentials or `.git`). */
+export function githubRepo(url: string): string | undefined {
+  return url.trim().match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?\/?$/)?.[1];
+}
+
+export const pr: Check = {
+  id: "repo/pr",
+  tier: 3,
+  end: true,
+  repro: "gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=all'",
+  hint: "Work lands through a PR (CLAUDE.md): open one for the branch. If its PR is already merged, the new commits need a new PR: restart the branch from origin/main and carry them over.",
+  run({ sh }) {
+    const name = sh("git", ["branch", "--show-current"]).out.trim();
+    if (!name) return skip("detached HEAD");
+    if (sh("git", ["rev-parse", "--verify", "-q", "origin/main"]).code !== 0) return skip("no origin/main fetched");
+    // A session that changed nothing has nothing to land, so needs no PR.
+    if (Number(sh("git", ["rev-list", "--count", "origin/main..HEAD"]).out.trim()) === 0) return pass("nothing to land");
+    const repo = githubRepo(sh("git", ["remote", "get-url", "origin"]).out);
+    if (!repo) return skip("origin isn't on GitHub");
+    const r = sh("gh", ["api", `repos/${repo}/pulls?head=${repo.split("/")[0]}:${name}&state=all&per_page=20`]);
+    if (r.code === 127) return skip("gh not installed");
+    if (r.code !== 0) return warn(`couldn't ask GitHub: ${r.out.trim().split("\n")[0]}`);
+    const prs: { number: number; state: string; draft: boolean; merged_at: string | null; head: { sha: string } }[] = JSON.parse(r.out);
+    const open = prs.find((p) => p.state === "open");
+    if (open) return pass(`#${open.number} open${open.draft ? " (draft)" : ""}`);
+    const merged = prs.find((p) => p.merged_at);
+    if (!merged) return fail(`no PR for ${name}`);
+    const head = sh("git", ["rev-parse", "HEAD"]).out.trim();
+    return head === merged.head.sha ? pass(`#${merged.number} merged`) : fail(`#${merged.number} is already merged, and the branch has commits since`);
+  },
+};
+
+export const REPO = [branch, conflicts, repoMap, behind, clean, pushed, pr];

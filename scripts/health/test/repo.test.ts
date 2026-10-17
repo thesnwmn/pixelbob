@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { realShell } from "../src/check.ts";
-import { behind, branch, clean, conflicts, mappedFolders, pushed, repoMap } from "../src/repo.ts";
+import { behind, branch, clean, conflicts, githubRepo, mappedFolders, pr, pushed, repoMap } from "../src/repo.ts";
 import { ctx, fakeShell, marker, tmpDir, tmpRepo } from "./fixture.ts";
 
 describe("repo/branch", () => {
@@ -74,4 +74,34 @@ describe("repo/pushed", () => {
     expect(pushed.run(ctx(root))).toEqual({ status: "fail", detail: "1 commit not pushed" });
   });
   it("fails with no upstream", () => expect(pushed.run(ctx(tmpRepo({ "a.ts": "" }))).detail).toBe("no upstream branch"));
+});
+
+describe("repo/pr", () => {
+  const api = "gh api repos/o/r/pulls?head=o:work&state=all&per_page=20";
+  const sh = (ahead: string, prs?: object[] | { code: number; out: string }, head = "abc") =>
+    fakeShell({
+      "git branch --show-current": { out: "work\n" },
+      "git rev-parse --verify -q origin/main": {},
+      "git rev-list --count origin/main..HEAD": { out: `${ahead}\n` },
+      "git remote get-url origin": { out: "https://github.com/o/r.git\n" },
+      "git rev-parse HEAD": { out: `${head}\n` },
+      ...(prs && { [api]: Array.isArray(prs) ? { out: JSON.stringify(prs) } : prs }),
+    });
+  const run = (s: ReturnType<typeof sh>) => pr.run(ctx(tmpDir(), { sh: s }));
+  const merged = { number: 6, state: "closed", draft: false, merged_at: "2026-10-17", head: { sha: "abc" } };
+
+  it("reads owner/repo from a remote", () => {
+    expect(githubRepo("https://github.com/thesnwmn/pixelbob")).toBe("thesnwmn/pixelbob");
+    expect(githubRepo("git@github.com:o/r.git\n")).toBe("o/r");
+    expect(githubRepo("https://gitlab.com/o/r")).toBeUndefined();
+  });
+  it("passes with nothing to land, without asking GitHub", () => expect(run(sh("0"))).toEqual({ status: "pass", detail: "nothing to land" }));
+  it("passes on an open PR", () => expect(run(sh("2", [{ number: 7, state: "open", draft: false, merged_at: null, head: { sha: "x" } }])).detail).toBe("#7 open"));
+  it("passes on the merged PR of this very head", () => expect(run(sh("2", [merged])).detail).toBe("#6 merged"));
+  it("fails with no PR", () => expect(run(sh("2", []))).toEqual({ status: "fail", detail: "no PR for work" }));
+  it("fails on commits stacked on a merged PR", () => expect(run(sh("2", [merged], "def")).status).toBe("fail"));
+  it("skips without gh, and only warns when GitHub can't be asked", () => {
+    expect(run(sh("2")).status).toBe("skip");
+    expect(run(sh("2", { code: 1, out: "HTTP 403" })).status).toBe("warn");
+  });
 });

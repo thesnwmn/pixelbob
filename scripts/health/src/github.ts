@@ -66,4 +66,24 @@ export const labels: Check = {
   },
 };
 
-export const GITHUB = [gate, labels];
+export const IN_STEP_WORKFLOW = ".github/workflows/in-step.yml";
+
+export const inStep: Check = {
+  id: "github/in-step",
+  tier: 5,
+  repro: `cat ${IN_STEP_WORKFLOW}`,
+  hint: "The in-step workflow is what fails a PR that leaves its docs, unit or session log behind (studio/README.md#keeping-docs-and-the-studio-in-step): it runs scripts/health/src/instep.ts, and again when the PR description is edited.",
+  run({ root }) {
+    const path = join(root, IN_STEP_WORKFLOW);
+    if (!existsSync(path)) return fail(`no ${IN_STEP_WORKFLOW}`);
+    const yml = readFileSync(path, "utf8");
+    const problems = [
+      !yml.includes("node scripts/health/src/instep.ts") && "doesn't run scripts/health/src/instep.ts",
+      !/types:\s*\[[^\]]*\bedited\b/.test(yml) && "doesn't run when the PR description is edited",
+      !yml.includes("PR_BODY:") && "doesn't pass the description in PR_BODY",
+    ].filter((p): p is string => !!p);
+    return problems.length ? fail(problems.join("; ")) : pass();
+  },
+};
+
+export const GITHUB = [gate, labels, inStep];

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { type DocMapEntry, type Pr, docsInStep, docsProblems, excuse, globRe, sessionLog, sessionLogProblem, unit, unitProblem } from "../src/instep.ts";
+import { type DocMapEntry, type Pr, docsInStep, prProblems, docsProblems, excuse, globRe, sessionLog, sessionLogProblem, unit, unitProblem } from "../src/instep.ts";
 import { docMap, docMapProblems } from "../src/studio.ts";
 import { ctx, fakeShell, tmpDir, tmpRepo } from "./fixture.ts";
 
@@ -91,13 +91,26 @@ describe("the checks on a branch", () => {
     const c = ctx(root, { sh: sh("M\tpackages/sim/src/world.ts\n", body) });
     expect([docsInStep, unit, sessionLog].map((k) => k.run(c).status)).toEqual(["pass", "pass", "pass"]);
   });
-  it("leave CI to the in-step workflow", () => expect(docsInStep.run(ctx(root, { env: { CI: "true" } })).status).toBe("skip"));
+  it("leave CI to the in-step workflow", () =>
+    expect([docsInStep, unit, sessionLog].map((k) => k.run(ctx(root, { env: { CI: "true" } })).status)).toEqual(["skip", "skip", "skip"]));
+});
+
+describe("the in-step workflow's verdict", () => {
+  it("lists every problem with a PR", () =>
+    expect(prProblems(map, pr(["packages/sim/src/world.ts"], "**Docs:** none needed, because …"))).toEqual([
+      "packages/sim/src/world.ts changed, but not docs/simulation.md",
+      "packages/sim/src/world.ts changed, but no unit in studio/work/",
+      "no new log in studio/sessions/",
+    ]));
+  it("passes a PR in step", () =>
+    expect(prProblems(map, { changes: [{ status: "M", path: "packages/sim/src/world.ts" }, { status: "M", path: "docs/simulation.md" }, { status: "M", path: "studio/work/x.md" }, { status: "A", path: "studio/sessions/s.md" }], body: "" })).toEqual([]));
 });
 
 describe("docs/map", () => {
   it("fails on a glob that matches nothing, and a doc or heading that doesn't exist", () => {
     const root = tmpDir({ "docs/a.md": "# A\n\n## Real\n" });
     const broken = [{ paths: ["gone/**"], docs: ["docs/a.md#real", "docs/a.md#fake", "docs/b.md", "concept/"] }];
+    expect(docMapProblems(root, [null as never, { paths: "src/**" } as never], [])).toEqual(["an entry that isn't { paths: [...], docs: [...] }: null", 'an entry that isn\'t { paths: [...], docs: [...] }: {"paths":"src/**"}']);
     expect(docMapProblems(root, broken, ["docs/a.md"])).toEqual(["gone/**: matches no file", "docs/a.md#fake: no such heading", "docs/b.md: no such file", "concept/: no such folder"]);
   });
   it("fails without a map, and passes on a good one", () => {

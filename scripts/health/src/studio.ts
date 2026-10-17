@@ -195,10 +195,15 @@ export const links: Check = {
 /** What's wrong with the doc map: a glob that matches no file, a doc or heading that doesn't exist. */
 export function docMapProblems(root: string, map: DocMapEntry[], files: string[]): string[] {
   const problems: string[] = [];
-  for (const { paths, docs } of map) {
-    if (!paths?.length || !docs?.length) problems.push(`an entry without paths or docs: ${JSON.stringify({ paths, docs })}`);
-    for (const glob of paths ?? []) if (!files.some((f) => globRe(glob).test(f))) problems.push(`${glob}: matches no file`);
-    for (const doc of docs ?? []) {
+  for (const entry of map) {
+    const ok = (x: unknown) => Array.isArray(x) && x.length > 0 && x.every((s) => typeof s === "string");
+    if (!entry || !ok(entry.paths) || !ok(entry.docs)) {
+      problems.push(`an entry that isn't { paths: [...], docs: [...] }: ${JSON.stringify(entry)}`);
+      continue;
+    }
+    const { paths, docs } = entry;
+    for (const glob of paths) if (!files.some((f) => globRe(glob).test(f))) problems.push(`${glob}: matches no file`);
+    for (const doc of docs) {
       const [path, anchor] = doc.split("#");
       if (!existsSync(join(root, path))) problems.push(`${doc}: no such ${path.endsWith("/") ? "folder" : "file"}`);
       else if (anchor && !anchors(readFileSync(join(root, path), "utf8")).has(anchor)) problems.push(`${doc}: no such heading`);

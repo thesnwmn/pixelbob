@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { KINDS } from "../../../studio/board.ts";
 import { gatedHits, verdict } from "../src/gate.ts";
-import { GATE_FILES, gate, LABELS, labels } from "../src/github.ts";
+import { GATE_FILES, gate, IN_STEP_WORKFLOW, inStep, LABELS, labels } from "../src/github.ts";
 import { ctx, tmpDir } from "./fixture.ts";
 
 const rules = [
@@ -72,4 +72,12 @@ describe("github/labels", () => {
   it("fails without the bug form", () =>
     expect(labels.run(ctx(tmpDir({ ".github/labels.json": JSON.stringify({ labels: allLabels }) }))).out).toBe("no .github/ISSUE_TEMPLATE/bug.yml"));
   it("the bug form files with the bug label", () => expect(readFileSync("../../.github/ISSUE_TEMPLATE/bug.yml", "utf8")).toMatch(/^labels: \[bug\]$/m));
+});
+
+describe("github/in-step", () => {
+  const yml = readFileSync("../../.github/workflows/in-step.yml", "utf8");
+  it("passes on the repo's own workflow", () => expect(inStep.run(ctx(process.cwd() + "/../..")).status).toBe("pass"));
+  it("fails on a workflow that doesn't run again on an edit", () =>
+    expect(inStep.run(ctx(tmpDir({ [IN_STEP_WORKFLOW]: yml.replace("edited, ", "") }))).detail).toBe("doesn't run when the PR description is edited"));
+  it("fails without the workflow", () => expect(inStep.run(ctx(tmpDir())).status).toBe("fail"));
 });

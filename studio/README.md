@@ -2,7 +2,7 @@
 
 How a team of agents builds Pixelbob from here, with one human as producer and play tester. This is the plan for the harness ("the studio"): what it's made of, where it keeps its state, who's in it, how each role is invoked and kept apart, and how builds reach the play tester. The [producer guide](producer-guide.md) is the same thing from the producer's side: what you type, what you get back.
 
-**Status:** being built, in the order of [Building the studio](#building-the-studio), one session-sized unit at a time. Built so far: the [health check](#health).
+**Status:** being built, in the order of [Building the studio](#building-the-studio), one session-sized unit at a time. Built so far: the [health check](#health), and the [studio's files and the board](#the-studios-state) (`pnpm board`).
 
 ## TL;DR
 
@@ -82,14 +82,14 @@ pixelbob/
   studio/                   HOW IT'S MADE: the harness and its state
     README.md               this doc: how the studio works
     producer-guide.md       the producer's side
-    producer.md             (planned) the producer's settings, standing rules, taste notes
-    direction.md            (planned) current milestone, priorities, what's off the table
-    milestones/             (planned) one file per milestone: scope, exit criteria
-    work/                   (planned) one file per unit of work
-    asks/                   (planned) one file per question waiting on the producer
+    producer.md             the producer's settings, standing rules, taste notes
+    direction.md            current milestone, priorities, what's off the table
+    milestones/             one file per milestone: scope, exit criteria
+    work/                   one file per unit of work
+    asks/                   one file per question waiting on the producer
     playtests/              (planned) the producer's reports, and the Tester's
     sessions/               one log per session: what it did, what was said, tried and learned
-    board.ts                (planned) generates the board and the studio page
+    board.ts                reads the files above and generates the board (`pnpm board`); the studio page later
     doc-map.json            (planned) which docs describe which code, for the docs-in-step check
 
   packages/                 shared libraries the game is built from
@@ -134,7 +134,13 @@ What goes where:
 
 ### The studio's state
 
-The planned files in `studio/` are the backlog and everything around it. Why files and not GitHub issues or a project board for the backlog: they're versioned and reviewed in the same PR as the work, any session reads them without an API, they can't drift from the code, and observers see them in the repo. GitHub is used where it's better (see [GitHub](#github)): **PRs** are the record of every unit, and **issues** are for things that are wrong.
+The files in `studio/` are the backlog and everything around it. Why files and not GitHub issues or a project board for the backlog: they're versioned and reviewed in the same PR as the work, any session reads them without an API, they can't drift from the code, and observers see them in the repo ([Backlog in files](../docs/decisions/2026-10-17-backlog-in-files.md)). GitHub is used where it's better (see [GitHub](#github)): **PRs** are the record of every unit, and **issues** are for things that are wrong.
+
+Each file starts with front matter: `key: value` lines between `---`, where a value is text, a number, `true` or `false`, or a list `[a, b]`, and `#` starts a comment. Fields and statuses are checked by `studio/board.ts`, which the health check runs, so a file that doesn't follow its format, or names a unit, ask or milestone that doesn't exist, turns the check red.
+
+### The board
+
+`pnpm board` prints the board, generated from the files and never committed: the milestones and how far along each is, what needs you (open asks, gated PRs, playtests), what's in flight, then the units that are ready, shaped and ideas, and what's done and dropped. `pnpm board --github` adds open PRs and bugs from GitHub, and `--json` prints the same as data. It's what `/go`, `/next` and `/status` read.
 
 ### Main is the truth
 
@@ -247,7 +253,8 @@ Kinds, so the board can balance them: **think** (ideas, a design conversation), 
 ---
 title: Which way does a swipe split Bob?
 from: designer
-blocks: [split-action]
+status: open                   # open | answered (with an ## Answer section) | expired
+blocks: [split-action]         # each of these lists the ask in its needs
 default: Across the swipe, halves by area.
 expires: after 3 sessions      # then the default stands, and the unit says so
 gated: false                   # true: nothing proceeds without you
@@ -257,13 +264,21 @@ Context in five lines, a picture or a preview link, and the options with a recom
 
 Asks are answered in a session (`/needs-me` walks through them; the Director also mentions how many are open at the start of any session) or on GitHub, as a comment on the PR that raised them. Gated asks (taste, direction, milestones, the harness's own rules) never expire.
 
+### A milestone
+
+`studio/milestones/<slug>.md`, like `m1-green-alpha`: `title` and `status` (`proposed`, `current`, `done` or `dropped`; one is current at a time) in the front matter, then *Why*, *Scope* and *Exit criteria*. A unit belongs to one with its `milestone` field, and the board counts how many of each milestone's units are done. New milestones and changes to them are gated.
+
+### Direction
+
+`studio/direction.md` names the current milestone in its front matter (`milestone: m0-studio`), then says in a few lines what's now, what's next, the priorities, and what's off the table. It's gated, like the milestones.
+
 ### Decisions
 
 `docs/decisions/<date>-<slug>.md`, a few short sections: the question, what we chose, what else was considered, what it means for later, and its status (`accepted`, or `superseded by …`). Written whenever a choice would be expensive to reverse or likely to be asked about later: "why is Bob goo" is the model. The design docs stay as the description of what *is*; decisions keep the *why* and the history.
 
 ### The producer file
 
-`studio/producer.md` is yours and the Director's:
+`studio/producer.md` is yours and the Director's. Its front matter holds the autonomy level (`autonomy: studio-merges` or `review-first`), and the rest is:
 
 - **Autonomy level** (below).
 - **Standing rules** you've given ("never change Bob's colour without asking", "prefer forgiving over precise").
@@ -429,11 +444,11 @@ Checks are grouped in tiers and run in order. A tier that fails stops the run, b
 | **2. Dependencies** | Install from the lockfile (`--frozen-lockfile`); `node_modules` matches the lockfile; every workspace package resolves | "tsc not found" because nothing was installed, as happened when this plan was written |
 | **3. Repo** | On a session branch, not `main`; no conflict markers; every top-level folder is in the [repo map](#repo-structure); how far behind `main` the branch is; at the end (`--end`), also: tree clean, everything pushed, and a PR for the branch's commits: open, or merged at this very commit (asked of GitHub with `gh api`; nothing to land passes) | Work that wasn't pushed before the container was thrown away |
 | **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim`, `packages/bob` or the stills, no DOM in the sim or Bob | Main red, or a convention quietly broken |
-| **5. Studio and docs** (next, with the board) | Every unit, ask and milestone file parses, with valid fields and statuses; every `needs` exists; the board generates; no unit on main is `doing` or `review`; links between docs resolve; every doc is in the docs index; and on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step). Scenarios load; golden replays still give their recorded outcome | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
+| **5. Studio and docs** | Every studio file follows its format, and every name in one points at a file (`studio/files`); no unit on main is `doing` or `review` (`studio/in-flight`), and at the end no unit is still `doing` (`studio/landed`); every doc and decision is in the docs index (`docs/index`); every relative link in the Markdown resolves, headings included (`docs/links`). Next: on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step); later, scenarios load and golden replays still give their recorded outcome | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
 | **6. Budgets** (later) | The sim step and render stay within their time budgets on the benchmark scene | A change that quietly costs 3 ms a frame |
 
 - **Quick and full.** `pnpm health` runs everything; it should take a couple of minutes at most (about 80 s today, most of it the tests). `pnpm health --quick` skips the slow checks (build, replays, budgets) for use while working. Sessions start on the full run and end on `pnpm health --end`, which adds the end-of-session checks; CI runs the full run.
-- **Where.** `scripts/health/`: one file per tier (`tools.ts`, `deps.ts`, `repo.ts`, `code.ts`), the runner (`run.ts`), and `health.mjs`, which says plainly when Node is too old to run the rest. Each check is a function of its context (the root, Node's version, a shell), so a test hands it a broken fixture.
+- **Where.** `scripts/health/`: one file per tier (`tools.ts`, `deps.ts`, `repo.ts`, `code.ts`, `studio.ts`), the runner (`run.ts`), and `health.mjs`, which says plainly when Node is too old to run the rest. Each check is a function of its context (the root, Node's version, a shell), so a test hands it a broken fixture.
 - **Output.** One line per check (pass or fail, and its time), then for each failure the command that reproduces it and a hint at the usual cause. `--json` prints the same as data, for the board and the PR description.
 - **Installing is a check.** `deps/install` runs `pnpm install --frozen-lockfile`: quick when nothing changed, and it fixes a fresh container, which has no `node_modules`.
 - **Automatic.** A session start hook in `.claude/settings.json` runs `pnpm health --quick` (which installs), so every session (even one that isn't `/go`) sees the repo's state first thing. The hook never fails the session start: a red result is there for the session to read. The skills then require the full run before any work.
@@ -577,8 +592,8 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 The order it gets built in, each a unit of its own. The first three make the harness usable; the rest come in as they're needed, so phase 3 starts as soon as possible.
 
 1. **Health check (S), done.** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, the nightly run on main, and a test for each check. It comes first because every unit after it starts and ends with the check.
-2. **Folder and board (S).** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, the first decision record, and the studio tier of the health check.
-3. **Roles and commands (M).** `.claude/agents/` briefs, the `go`, `next`, `needs-me`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
+2. **Folder and board (S), done.** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, a decision record ([Backlog in files](../docs/decisions/2026-10-17-backlog-in-files.md)), and the studio tier of the health check. From here the units are on the board (`pnpm board`), and this list is their outline.
+3. **Roles and commands (M; on the board as three units: roles-and-commands, docs-in-step, github-gate).** `.claude/agents/` briefs, the `go`, `next`, `needs-me`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
 4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
 5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button (copy to clipboard).
 6. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.

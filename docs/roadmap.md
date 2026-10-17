@@ -7,7 +7,7 @@ Each phase is a prototype with a preview link, and is "done" when it answers its
 - Repo, toolchain, CI and Pages previews.
 - Procedural stills (since replaced by one shot per world, below).
 - Docs: overview, art direction, simulation plan, toolchain.
-- **Questions:** camera size, Bob's look and colour, how dark, how much bloom. See [Art direction](art-direction.md#what-we-want-to-settle).
+- **Questions:** camera size, Bob's look and colour, how dark, how much bloom. See [Art direction](art-direction.md#still-to-settle).
 
 ## Phase 1: world sandbox (`prototypes/01-sandbox`)
 
@@ -49,7 +49,7 @@ What the whole game is, before building it: the run of worlds ([Worlds](worlds.m
 
 A team of agent roles that builds the game in session-sized units, with a human as producer and play tester: a Director as the one point of contact, state as files in `studio/`, a draft PR per unit, preview builds that drop the tester into a scenario with a handoff card and a feedback button that attaches a replay, and bots that play the deterministic sim. Design in [the studio](../studio/README.md), the producer's side in the [producer guide](../studio/producer-guide.md).
 
-**Status:** planned. Built in the order in [the studio](../studio/README.md#building-the-studio), then the Director takes phase 3. From then on, what's next is planned in `studio/` (direction, milestones, the board); this doc keeps the history of the phases.
+**Status:** being built: the health check, and the studio's files and board (`pnpm board`). Built in the order in [the studio](../studio/README.md#building-the-studio), then the Director takes phase 3. From then on, what's next is planned in `studio/` (direction, milestones, the board); this doc keeps the history of the phases.
 
 ## Phase 3: first level slice
 

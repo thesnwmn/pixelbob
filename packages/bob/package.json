@@ -1,0 +1,16 @@
+{
+  "name": "@pixelbob/bob",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Bob as particles: bonds, shape matching, a controller that moves him by deforming, temperature states. No DOM.",
+  "main": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@pixelbob/sim": "workspace:*"
+  }
+}

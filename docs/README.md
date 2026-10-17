@@ -9,21 +9,21 @@ Target: web browser first, on phones and laptops.
 ```
  ┌───────────────────────── one fixed 60 Hz step ─────────────────────────┐
  │                                                                         │
- │  World grid (cellular automaton)        Bodies (particles + bonds)      │
- │  one material per cell: rock, sand,  ◄─► Bob, debris, ropes, canopies   │
- │  water, gas, fire… + temperature        XPBD constraints, shape memory  │
- │  chunked, only "awake" chunks update    bond stiffness from temperature │
+ │  World grid (cellular automaton)        Bodies (particles)              │
+ │  one material per cell: rock, sand,  ◄─► Bob: goo, a viscoelastic fluid │
+ │  water, gas, fire… + temperature        pressure, tension, springs      │
+ │  chunked, only "awake" chunks update    that flow; heat turns the knobs │
  │                                                                         │
  └──────────────────────────────┬──────────────────────────────────────────┘
                                 ▼
    Renderer (WebGL2): cells → texture, emissive → lights + bloom, back wall, parallax
 ```
 
-- **Two simulations, tightly coupled.** A falling-sand style grid for the world, and a particle system with breakable bonds for things that must hold a shape (Bob above all). Bob is a few hundred particles, one per pixel. See [03 Simulation](03-simulation.md).
-- **One idea drives Bob's states.** Temperature changes his bond settings. Hot: weak bonds, little shape memory, so he puddles and drips. Cold: stiff bonds that break at small stretch, so he shatters. Splitting is bonds breaking; merging is bonds re-forming on contact.
-- **Look:** crisp unfiltered pixels, a lit and simulated play layer over a dim back wall, emissive materials feeding soft lights and bloom. Default camera about **320×180 world pixels**, with Bob about 30 px wide. See [02 Art direction](02-art-direction.md) and the stills.
+- **Two simulations, tightly coupled.** A falling-sand style grid for the world, and particles for Bob. Bob is about 280 particles, one per pixel, behaving as goo: a viscoelastic fluid with pressure, surface tension and springs that stretch, flow and snap. See [03 Simulation](03-simulation.md) and [08 Bob](08-bob.md).
+- **One idea drives Bob's states.** Temperature turns his knobs continuously, never swaps a shape. Hot: his springs flow and he's sticky, so he puddles, pours, dangles and drips. Cold: stiff, and frozen he's rigid and cracks if dropped. Splitting is springs snapping; merging is springs forming on contact.
+- **Look:** crisp unfiltered pixels, a lit and simulated play layer over a dim back wall, emissive materials feeding soft lights and bloom. Default camera about **320×180 world pixels**, with Bob about 20 px wide. See [02 Art direction](02-art-direction.md) and the stills.
 - **Stack:** TypeScript, Vite, pnpm workspace, WebGL2, Vitest, Playwright. Static site on GitHub Pages with a preview per PR. See [04 Tech and toolchain](04-tech-and-toolchain.md).
-- **Plan:** stills (this PR) → material sandbox → Bob playground → first level. See [05 Roadmap](05-roadmap.md).
+- **Plan:** stills → material sandbox → Bob playground → first level. See [05 Roadmap](05-roadmap.md).
 
 ## Documents
 
@@ -36,6 +36,9 @@ Target: web browser first, on phones and laptops.
 | [05 Roadmap](05-roadmap.md) | Phases, what each prototype must prove, PR plan |
 | [06 Prior art](06-prior-art.md) | Games and toys to learn from |
 | [07 Materials](07-materials.md) | Every material in the sim and what it reacts with, plus a backlog of ideas |
+| [08 Bob](08-bob.md) | How Bob is built and moves (every action is him deforming), temperature states, tearing and rejoining, and what every material does to him |
+| [09 Bob models](09-bob-models.md) | Why Bob is goo: the three models that were built and compared, and what was learned |
+| [10 Ideas](10-ideas.md) | Gameplay and other ideas raised along the way that aren't built yet |
 
 ## The stills
 

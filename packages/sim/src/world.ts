@@ -746,7 +746,9 @@ export class World {
             let t = temp[i];
             t += CONDUCT[m] * ((tl + tr + tu + td) * 0.25 - t);
             const b = base[i];
-            if (m === M.air) t += (b - t) * 0.02;
+            // Air always relaxes to the cell's ambient; other cells only where a climate or heat
+            // source was set (a cold cave, a lava pit that never crusts over).
+            if (m === M.air || b !== AMBIENT) t += (b - t) * 0.02;
             temp[i] = t;
             if (t > b + 3 || t < b - 3) busy = true;
             // Phase changes.

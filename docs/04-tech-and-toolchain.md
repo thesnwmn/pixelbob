@@ -14,13 +14,14 @@
 
 Not now: game engines (Phaser, Pixi, Godot web). The sim *is* the engine, and we'd fight their scene graphs and physics. WebGPU only once Safari support is solid enough for phones; the renderer should keep WebGL2 as a baseline.
 
-## Packages (planned)
+## Packages
 
 ```
 packages/
-  sim/        grid CA, materials, temperature, reactions (built); particles/XPBD and Bob controller (phase 2). No DOM.
-  render/     WebGL2 renderer: lives in prototypes/01-sandbox/src/gl.ts for now; moves here when Bob's playground needs it too.
-  levels/     level format, loading/saving, generation helpers.
+  sim/        grid CA, materials, temperature, reactions. No DOM.
+  bob/        Bob: goo (a viscoelastic particle fluid), his body (collisions, heat, controller, pieces), the test course, his painter. No DOM.
+  render/     WebGL2 renderer and the CPU pass that turns cells into its textures (shared by the sandbox and the playground).
+  levels/     (planned) level format, loading/saving, generation helpers.
 prototypes/
   00-stills/      art direction stills (CPU renderer, this PR)
   01-sandbox/     world sandbox: dig, paint materials, heat, light
@@ -60,7 +61,7 @@ The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at
 
 ## Testing
 
-- **Sim unit tests** (Vitest): sand piles at the right angle, water levels out, oil floats, lava + water → stone + steam, heat spreads, Bob conserves particles, bonds break at the set strain. Deterministic seeds make them exact.
+- **Sim unit tests** (Vitest): sand piles at the right angle, water levels out, oil floats, lava + water → stone + steam, heat spreads. Bob has behaviour tests too: he conserves particles, settles still, picks up a bit without a jolt, dangles and drips, keeps steering the piece you had, climbs tacky walls only when you push in, and runs the course. Deterministic seeds make them exact.
 - **Golden images** (Playwright): render fixed scenes at fixed times and compare. `prototypes/00-stills/scripts/render.ts` already renders stills headlessly in Node, which is enough for cheap image diffs.
 - **Perf checks**: a benchmark scene in CI that fails if a step gets much slower.
 

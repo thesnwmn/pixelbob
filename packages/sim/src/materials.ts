@@ -46,11 +46,18 @@ export interface MatDef {
   alpha: number;
   /** Shown in the sandbox palette. */
   palette: boolean;
+  /** Grip for Bob's particles sliding over it, 0 (ice) .. 1 (sticky). */
+  friction: number;
+  /** How readily it cuts Bob's bonds on impact, 0 .. 1 (spikes). */
+  sharp: number;
+  /** How sticky it is for Bob at any temperature, 0 .. 1: what lets him cling to it and pull himself up it. */
+  tack: number;
 }
 
 const defaults: Omit<MatDef, "id" | "name" | "cat" | "colors"> = {
   density: 1000, flow: 0, mobility: 1, conduct: 0.08, flammable: 0, ignite: Infinity, burnTime: 30,
   spawnTemp: 20, dissolve: 0, occ: 0.55, emit: [0, 0, 0], alpha: 1, palette: true,
+  friction: 0.5, sharp: 0, tack: 0,
 };
 
 const list: MatDef[] = [];
@@ -65,15 +72,15 @@ export const M = {
   air: def("air", Cat.Empty, [0], { density: 1, conduct: 0.04, occ: 0, palette: false }),
   rock: def("rock", Cat.Static, [0x3b342f, 0x463e37, 0x52483f, 0x5e5348]),
   dirt: def("dirt", Cat.Static, [0x3f281d, 0x4d3122, 0x5c3b28, 0x6a4530], { dissolve: 0.3 }),
-  sand: def("sand", Cat.Powder, [0xb8945c, 0xc9a66b, 0xd8b97c, 0xe6cb92], { density: 20, dissolve: 0.2, occ: 0.5 }),
+  sand: def("sand", Cat.Powder, [0xb8945c, 0xc9a66b, 0xd8b97c, 0xe6cb92], { friction: 0.65, density: 20, dissolve: 0.2, occ: 0.5 }),
   water: def("water", Cat.Liquid, [0x1d4c86, 0x225797, 0x2a64a8], { density: 10, flow: 5, conduct: 0.15, occ: 0.12, alpha: 0.78 }),
   oil: def("oil", Cat.Liquid, [0x1f1928, 0x2a2236, 0x342a42], { density: 8, flow: 3, mobility: 0.8, flammable: 0.5, ignite: 220, burnTime: 40, occ: 0.4, alpha: 0.92 }),
   lava: def("lava", Cat.Liquid, [0xc2260f, 0xe24a14, 0xff7a1c, 0xffb340], { density: 30, flow: 1, mobility: 0.25, conduct: 0.01, spawnTemp: 1200, occ: 0.3, emit: [1, 0.35, 0.08] }),
-  ice: def("ice", Cat.Static, [0x7fb9da, 0x9fd3ee, 0xbfe6f7, 0xe2f6ff], { conduct: 0.006, spawnTemp: -20, dissolve: 0.3, occ: 0.22 }),
-  snow: def("snow", Cat.Powder, [0xc9d8e6, 0xdbe6f0, 0xecf3f9], { density: 6, mobility: 0.6, conduct: 0.01, spawnTemp: -10, dissolve: 0.5, occ: 0.45 }),
+  ice: def("ice", Cat.Static, [0x7fb9da, 0x9fd3ee, 0xbfe6f7, 0xe2f6ff], { friction: 0.02, conduct: 0.006, spawnTemp: -20, dissolve: 0.3, occ: 0.22 }),
+  snow: def("snow", Cat.Powder, [0xc9d8e6, 0xdbe6f0, 0xecf3f9], { friction: 0.3, density: 6, mobility: 0.6, conduct: 0.01, spawnTemp: -10, dissolve: 0.5, occ: 0.45 }),
   wood: def("wood", Cat.Static, [0x4f331f, 0x5f3e25, 0x714b2c, 0x855a33], { flammable: 0.08, ignite: 300, burnTime: 120, conduct: 0.03, dissolve: 0.15, occ: 0.6 }),
-  steel: def("steel", Cat.Static, [0x59616c, 0x6a7380, 0x7d8794, 0x929cab], { conduct: 0.45, dissolve: 0.01, occ: 0.7 }),
-  plant: def("plant", Cat.Static, [0x2f6e2a, 0x3f8a30, 0x57a838, 0x7cc94a], { flammable: 0.15, ignite: 150, burnTime: 25, conduct: 0.05, dissolve: 0.5, occ: 0.3 }),
+  steel: def("steel", Cat.Static, [0x59616c, 0x6a7380, 0x7d8794, 0x929cab], { friction: 0.3, conduct: 0.45, dissolve: 0.01, occ: 0.7 }),
+  plant: def("plant", Cat.Static, [0x2f6e2a, 0x3f8a30, 0x57a838, 0x7cc94a], { friction: 0.6, flammable: 0.15, ignite: 150, burnTime: 25, conduct: 0.05, dissolve: 0.5, occ: 0.3 }),
   steam: def("steam", Cat.Gas, [0xc3ccd4, 0xd5dde4, 0xe3e9ee], { density: 0.4, mobility: 0.8, spawnTemp: 110, occ: 0.05, alpha: 0.4 }),
   smoke: def("smoke", Cat.Gas, [0x2c2a2e, 0x3a373c, 0x48444a], { density: 0.7, mobility: 0.7, occ: 0.1, alpha: 0.5 }),
   fire: def("fire", Cat.Fire, [0xff7a1c, 0xffb53a, 0xffe58a], { density: 0.3, spawnTemp: 700, conduct: 0.3, occ: 0, emit: [1, 0.55, 0.15] }),
@@ -81,20 +88,26 @@ export const M = {
   toxic: def("toxic gas", Cat.Gas, [0x5fd84a, 0x6fe85a, 0x8bff73], { density: 1.6, mobility: 0.5, flammable: 1, ignite: 400, burnTime: 6, occ: 0.02, emit: [0.15, 0.6, 0.1], alpha: 0.35 }),
   acid: def("acid", Cat.Liquid, [0x9ad820, 0xb0ec30, 0xc8ff50], { density: 11, flow: 3, occ: 0.12, emit: [0.15, 0.3, 0], alpha: 0.8 }),
   ash: def("ash", Cat.Powder, [0x4a4644, 0x5a5552, 0x6a6460], { density: 11, mobility: 0.7, dissolve: 0.5, occ: 0.5 }),
-  stone: def("stone", Cat.Static, [0x272a31, 0x30343d, 0x3a3f4a], { conduct: 0.1, palette: false }),
+  stone: def("stone", Cat.Static, [0x272a31, 0x30343d, 0x3a3f4a], { friction: 0.45, conduct: 0.1, palette: false }),
   spore: def("spores", Cat.Powder, [0x7fe8d8, 0xa8fff0, 0xd0fff8], { density: 1.3, mobility: 0.3, flammable: 0.5, ignite: 120, burnTime: 4, dissolve: 1, occ: 0.02, emit: [0.05, 0.35, 0.3] }),
   stem: def("stem", Cat.Static, [0x8aa8a0, 0xa8c4bc, 0xc0d8d0], { flammable: 0.12, ignite: 180, burnTime: 30, conduct: 0.04, dissolve: 0.6, occ: 0.25, emit: [0.03, 0.12, 0.1], palette: false }),
   cap: def("cap", Cat.Static, [0x1fb7a0, 0x3ff0d8, 0x7ffff0, 0xc8fff8], { flammable: 0.1, ignite: 180, burnTime: 30, conduct: 0.04, dissolve: 0.6, occ: 0.2, emit: [0.06, 0.45, 0.4], palette: false }),
   gunpowder: def("gunpowder", Cat.Powder, [0x55555c, 0x64646b, 0x74747a, 0x9a8a5a], { density: 18, flammable: 1, ignite: 180, dissolve: 0.5, occ: 0.5 }),
   methane: def("methane", Cat.Gas, [0x9a8ab8, 0xb0a0d0], { density: 0.6, mobility: 0.6, flammable: 1, ignite: 250, burnTime: 3, occ: 0.01, alpha: 0.22 }),
   mud: def("mud", Cat.Liquid, [0x3a2a1e, 0x45321f, 0x503a24], { density: 14, flow: 1, mobility: 0.15, conduct: 0.1, dissolve: 0.3, occ: 0.6 }),
-  salt: def("salt", Cat.Powder, [0xd8d8d0, 0xe8e8e0, 0xf4f4ee], { density: 21, occ: 0.45 }),
+  salt: def("salt", Cat.Powder, [0xd8d8d0, 0xe8e8e0, 0xf4f4ee], { friction: 0.6, density: 21, occ: 0.45 }),
   brine: def("brine", Cat.Liquid, [0x2a6a8a, 0x307898, 0x3a86a6], { density: 11, flow: 4, conduct: 0.15, occ: 0.12, alpha: 0.78 }),
   vine: def("vine", Cat.Static, [0x1d4f45, 0x26685a, 0x2f8270], { flammable: 0.15, ignite: 150, burnTime: 25, conduct: 0.05, dissolve: 0.5, occ: 0.3 }),
-  rust: def("rust", Cat.Static, [0x6f3d26, 0x83492b, 0x965632], { conduct: 0.2, dissolve: 0.4, occ: 0.7 }),
+  rust: def("rust", Cat.Static, [0x6f3d26, 0x83492b, 0x965632], { friction: 0.6, conduct: 0.2, dissolve: 0.4, occ: 0.7 }),
   flakes: def("rust flakes", Cat.Powder, [0x7a4428, 0x8e5230, 0xa0603a], { density: 15, dissolve: 0.6, occ: 0.5, palette: false }),
-  rubble: def("rubble", Cat.Powder, [0x4a423b, 0x5a5048, 0x6a5e54], { density: 22, occ: 0.55, palette: false }),
-  glass: def("glass", Cat.Static, [0x9fc4c8, 0xb8dadc, 0xd0eef0], { conduct: 0.1, occ: 0.08, palette: false }),
+  rubble: def("rubble", Cat.Powder, [0x4a423b, 0x5a5048, 0x6a5e54], { friction: 0.7, sharp: 0.15, density: 22, occ: 0.55, palette: false }),
+  glass: def("glass", Cat.Static, [0x9fc4c8, 0xb8dadc, 0xd0eef0], { friction: 0.15, sharp: 0.3, conduct: 0.1, occ: 0.08, palette: false }),
+  spike: def("spikes", Cat.Static, [0x8a929e, 0xa3abb6, 0xc4ccd6], { conduct: 0.45, dissolve: 0.01, occ: 0.6, friction: 0.4, sharp: 1 }),
+  // Climbing surfaces, in rising grip: Bob can cling to them and pull himself up slopes too
+  // steep to roll up (moss), very steep ones (resin), and walls (gum).
+  moss: def("moss", Cat.Static, [0x3d5a24, 0x4a6b2b, 0x587d33, 0x6a913d], { friction: 1, tack: 0.35, flammable: 0.1, ignite: 160, burnTime: 20, conduct: 0.05, dissolve: 0.5, occ: 0.4 }),
+  resin: def("resin", Cat.Static, [0x8a4a12, 0xa85c18, 0xc27420, 0xd98e2e], { friction: 1, tack: 0.65, flammable: 0.3, ignite: 250, burnTime: 60, conduct: 0.04, dissolve: 0.2, occ: 0.5, emit: [0.04, 0.015, 0] }),
+  gum: def("gum", Cat.Static, [0x4a2a72, 0x5a3488, 0x6c42a0, 0x8054b8], { friction: 1, tack: 1, conduct: 0.04, dissolve: 0.3, occ: 0.5 }),
 } as const;
 export type MatId = (typeof M)[keyof typeof M];
 
@@ -109,5 +122,8 @@ export const CONDUCT = Float32Array.from(list, (m) => m.conduct);
 export const FLAMMABLE = Float32Array.from(list, (m) => m.flammable);
 export const IGNITE = Float32Array.from(list, (m) => m.ignite);
 export const DISSOLVE = Float32Array.from(list, (m) => m.dissolve);
+export const FRICTION = Float32Array.from(list, (m) => m.friction);
+export const SHARP = Float32Array.from(list, (m) => m.sharp);
+export const TACK = Float32Array.from(list, (m) => m.tack);
 
 export const AMBIENT = 20;

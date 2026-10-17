@@ -6,6 +6,7 @@
   "scripts": {
     "dev:stills": "pnpm --filter @pixelbob/00-stills dev",
     "dev:sandbox": "pnpm --filter @pixelbob/01-sandbox dev",
+    "dev:bob": "pnpm --filter @pixelbob/02-bob dev",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "build": "pnpm -r build",

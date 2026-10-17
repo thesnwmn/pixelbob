@@ -10,6 +10,8 @@ A 2D side-on platformer for the browser (phones and laptops) where everything is
 ```
 pnpm install
 pnpm dev:stills     # art direction stills, http://localhost:5180
+pnpm dev:sandbox    # world sandbox, http://localhost:5181
+pnpm dev:bob        # Bob playground, http://localhost:5182
 pnpm typecheck && pnpm test
 pnpm build:site     # static site in _site/, as deployed to GitHub Pages
 ```

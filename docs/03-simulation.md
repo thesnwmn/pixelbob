@@ -5,10 +5,10 @@ The brief: everything, Bob included, is pixels with physics, joined by forces wh
 | What | Model | Why |
 |---|---|---|
 | Terrain, powders, liquids, gases, fire | **Cellular automaton grid** (falling-sand) | Millions of cell updates a second in JS; fluids and powders "just work"; digging and placing is a write to the grid |
-| Bob, loose debris, ropes, vines, canopy | **Particles with bonds** (position-based dynamics) | Things that must keep a shape, stretch, tear and re-join |
+| Bob, loose debris, ropes, vines, canopy | **Particles** (position-based dynamics): Bob as a viscoelastic fluid, other things with springs | Things that must keep a shape, stretch, tear and re-join |
 | Big broken-off chunks (later) | Rigid bodies built from cell clusters | Falling slabs, collapsing bridges |
 
-In both cases **material properties drive behaviour**: the "bond strength" idea survives as cohesion and viscosity on the grid, and as stiffness and break strain on the particles.
+In both cases **material properties drive behaviour**: the "bond strength" idea survives as cohesion and viscosity on the grid, and as stiffness, flow, surface tension and tear strength in Bob.
 
 ## World grid
 
@@ -33,7 +33,7 @@ The first cut implements this section: `World` stores `mat`, `shade`, `temp`, `l
 - **Surge and inertia.** Liquid arriving on a rising surface carries upward momentum (scaled by how runny the liquid is), remembers which far-side surface fed it, and keeps drawing from there past level, so a filling side overshoots and the two sides rock a few times before settling (lava and mud don't surge). A surface still rising resists being drained, which is what lets it overshoot. Sideways, a liquid cell remembers which way it was flowing and keeps going, so pours run across a basin as a surge. But it only flows sideways towards somewhere lower (a drop within reach, or a lighter liquid to displace); a surface cell also looks further along the top of its own pool (up to 96 cells) for where the layer below ends, so stacked water slumps out into an even film. With nowhere lower to go it rests, so pools go still and their chunks sleep; a stacked cell with room beside it keeps its chunk awake, since the layer below may still be spreading elsewhere. Bigger, wave-like sloshing would need per-cell velocity: on the backlog.
 - **Drag.** Pushing through a liquid or powder only succeeds some of the time: things sink through water at about half speed, liquids separate gradually, and a light powder under water drifts up slowly rather than swapping straight to the top.
 - **Solids burn in place.** A burning log stays wood, throws short-lived fire cells into open neighbours and runs down its `life` before turning to ash. It needs air next to it to catch or keep burning, so fire eats in from exposed surfaces and buried or flooded wood smothers. Fluids that burn (oil, toxic gas) turn straight into fire.
-- **Ambient temperature per cell (`base`).** Air relaxes towards it, so a cave can be a cold biome where ice lasts, without fighting the heat model.
+- **Ambient temperature per cell (`base`).** Air relaxes towards it, so a cave can be a cold biome where ice lasts, without fighting the heat model. Where a cell's ambient is set away from the default, every material relaxes towards it, not just air: that is how a cold cave's rock stays cold, and how a level's lava pit stays molten instead of crusting over.
 - **Plants grow on water**: a plant cell next to water drinks it and passes growth energy up to a new tip.
 - **Mushrooms grow from spores**: a spore resting on dirt, wood or plants underground (rock wall behind it) sprouts a stem, far more readily near water. The stem climbs on stored energy and opens a domed, glowing cap; caps now and then drop new spores, so colonies spread. Spores that find nowhere to grow dry up.
 
@@ -70,25 +70,29 @@ Each step, a cheap diffusion between neighbours, weighted by conductivity. Air c
 
 ## Bob as particles
 
-Bob is about 300–500 particles at rest, one per pixel of his body. Two mechanisms hold him together:
+Built in `packages/bob`. [08 Bob](08-bob.md) has the detail and [09 Bob models](09-bob-models.md) the story: the first plan below (bonds plus shape matching) was built, as were a pressure-ring blob, and both lost to a fluid.
 
-1. **Bonds** between neighbours (distance constraints, made with XPBD so stiffness doesn't depend on the step rate). Each has a rest length, stiffness, damping and a **break strain**. Bonds form between particles closer than a radius and break when overstretched.
-2. **Shape matching** (Müller et al. 2005, "meshless deformations based on shape matching") over overlapping clusters: each cluster pulls its particles towards a best-fit transform of its rest shape. That's what makes him spring back into a dome instead of draining away like water. The pull is set by a `memory` value.
+The plan was bonds between neighbours plus shape matching to a rest shape. Built, that's a great jelly but a poor liquid: every liquid thing (pouring, dripping, picking up bits, setting after melting) had to swap his remembered shape for a new one, and every swap was a jolt. So Bob is a **viscoelastic fluid**, about 280 particles, one per pixel:
 
-Temperature maps to those parameters:
+1. **Pressure and surface tension** (double density relaxation, Clavet et al. 2005): each particle pushes on neighbours within 3 px when crowded and pulls when sparse. That keeps his volume, rounds drops off and pinches threads.
+2. **Springs that flow** between near neighbours: they form at the length they are, give way (plastically) under held stretch, and break when they've flowed too far. Normally a jelly that forgets dents; runny, honey.
+3. **A will to be round**: his outline is steered towards a circle of his area (squashed in the world frame for a dome on the ground and a jump's wind-up). It never moves or spins him.
+4. **Frozen** pieces hold the shape they froze in, the only shape he ever remembers.
 
-| | stiffness | break strain | memory | friction | effect |
+Temperature turns these continuously; nothing about him switches:
+
+| | springs | flow | will to be round | viscosity | effect |
 |---|---|---|---|---|---|
-| Hot | low | high (taffy) | ~0 | low | puddles, drips, flows through gaps |
-| Normal | medium | medium | medium | medium | bouncy jelly |
-| Cold | very high | very low | high | low on ice | rigid; shatters on a hard hit |
+| Hot | weak (firm when he holds still) | fast | none | thick (`stringy`) | puddles, oozes, drips, dangles on threads, pours through gaps |
+| Normal | springy | slow (forgets dents) | yes | none (wobble damped towards rigid motion) | bouncy jelly that settles |
+| Cold | stiff | none | (held to the frozen shape) | n/a | rigid; slides; cracks on a hard hit |
 
-- **Squeezing** is free: he has no rigid collider, so particles go wherever there's space.
-- **Splitting** is breaking every bond that crosses a cut line. Connected components become separate "pieces" (union-find each step or when bonds change). The piece holding the eyes is the one you control.
-- **Merging**: when particles from two pieces stay within bonding radius for a few frames, new bonds form.
-- **Getting caught**: snag points (spikes, hooks, sticky moss) hold particles by friction or temporary bonds; if Bob pulls away, the bonds in between stretch and eventually break.
-- **Momentum**: the controller applies forces, not positions. Moving pushes his base particles; jumping is an impulse after a squash. Inertia and the bonds' lag give the stretch and wobble for free.
-- **Rendering**: particles are splatted into the grid each frame as "Bob" cells for drawing and for collision with fluids, and shaded with a smoothed density field (as in the stills). Edge particles jitter visibly, which is the "made of particles" look.
+- **Squeezing** is free: he has no rigid collider, so particles go wherever there's space, and runny he flows.
+- **Splitting**: springs break (stretch, impacts, cuts along a line through him from spikes and cracks). Connected components become pieces (union-find when links change). The piece you steer stays the one with most of what you were steering.
+- **Merging**: separate pieces draw together (surface tension, scaled by cohesion) and link up a few springs a frame, at the length they are, so a bit joins without a jolt.
+- **Getting caught**: runny Bob is sticky on floors and ceilings; tacky materials (moss, resin, gum) hold him at any temperature, which is what climbing is built on.
+- **Momentum**: the controller applies velocities, not positions: rolling is a torque, jumping an impulse after a squash; oozing and climbing move only the part of him touching the surface (a slug's or gecko's foot).
+- **Rendering**: particles are splatted into a smoothed density field each frame and shaded as in the stills (`draw.ts`). They aren't written into the grid yet, so he doesn't push liquids aside.
 
 ## Coupling the two
 
@@ -106,7 +110,7 @@ Grass blades, leaves, vines and canopies are **particles on springs anchored to 
 | | Budget per frame |
 |---|---|
 | Grid step (about 250k cells in the active area, most of them asleep) | 3 ms / 6 ms |
-| Bob (500 particles × 8 iterations) + other bodies | 1 ms / 2 ms |
+| Bob (about 280 particles × 6 substeps; measured about 2.5 ms on desktop) + other bodies | 3 ms / 6 ms |
 | Lighting + render (GPU) | 2 ms / 5 ms |
 | Total at 60 Hz | well under 16 ms |
 
@@ -118,4 +122,4 @@ Grass blades, leaves, vines and canopies are **particles on springs anchored to 
 
 - Per-cell velocity for liquids (better splashes, more cost) or free particles only?
 - How far do we take rigid bodies? (They're expensive to build well; Noita uses Box2D for them.)
-- Does Bob conserve particle count exactly? (That simplifies "mass is health".)
+- Does Bob conserve particle count exactly? (That simplifies "mass is health".) So far yes: he only loses particles to named causes (boiled, dissolved, crushed, fell).

@@ -1,6 +1,5 @@
 import { CAT, Cat, M, MATS, World, generate, type Preset } from "@pixelbob/sim";
-import { GLRenderer, LOOKS, type LampDef, type View } from "./gl.ts";
-import { Shade } from "./shade.ts";
+import { GLRenderer, LOOKS, Shade, type LampDef, type View } from "@pixelbob/render";
 
 const W = 480, H = 270, STEP = 1 / 60;
 const params = new URLSearchParams(location.search);

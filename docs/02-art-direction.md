@@ -6,7 +6,7 @@ Everything below can be seen and toggled in `prototypes/00-stills`.
 
 ## Camera and pixel scale
 
-- **Default camera: about 320×180 world pixels** (the stills render 480×270 and crop in; the zoom control compares 480, 320 and 240 wide). Bob is about 30 px wide at this camera, roughly a tenth of the screen width: close enough to see him deform, far enough to see what's coming.
+- **Default camera: about 320×180 world pixels** (the stills render 480×270 and crop in; the zoom control compares 480, 320 and 240 wide). Bob is about 30 px wide at this camera in the stills (the playground's goo Bob is about 20 px), roughly a tenth of the screen width: close enough to see him deform, far enough to see what's coming.
 - **One world pixel = one simulated cell.** No sub-cell art. Detail comes from more cells, not from finer sprites.
 - **Integer scaling on device pixels.** Choose the scale that makes the camera closest to 320 wide, then let the camera size flex a little to fill the screen rather than letterboxing or blurring. On a 1920×1080 laptop that's 6×. On a phone in landscape (about 2532×1170 device pixels) it's 7×, giving a 361×167 camera.
 - **Camera zoom as a game tool**: pull out in big caverns or when Bob is split, push in for tight squeezes. Only ever by whole-pixel steps.

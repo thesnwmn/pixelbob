@@ -16,7 +16,7 @@ const studio = (files: Record<string, string | null> = {}): Record<string, strin
     "studio/work/jump.md": unit("title: Jump\nkind: build\nrole: engineer\nsize: S\nstatus: ready\nmilestone: m1"),
     "studio/work/split.md": unit("title: Split\nkind: build\nrole: engineer\nsize: M\nstatus: shaped\nmilestone: m1\nneeds: [jump, split-direction]"),
     "studio/asks/split-direction.md": "---\ntitle: Which way?\nfrom: designer\nstatus: open\nblocks: [split]\ndefault: Across.\nexpires: after 3 sessions\ngated: false\n---\nContext.\n",
-    "studio/sessions/2026-10-17-start.md": "---\ndate: 2026-10-17\ncommand: /go\nunits: [jump]\npr: 8, 9\n---\n",
+    "studio/sessions/2026-10-17-0900-start.md": "---\ndate: 2026-10-17\ncommand: /go\nunits: [jump]\npr: 8, 9\n---\n",
     ...files,
   };
   return Object.fromEntries(Object.entries(all).filter((e): e is [string, string] => e[1] !== null));
@@ -68,7 +68,11 @@ describe("studio/files", () => {
   it("fails on a direction whose milestone isn't current", () =>
     expect(problems({ "studio/milestones/m1.md": "---\ntitle: One\nstatus: done\n---\n\n## Why\nW.\n\n## Scope\nS.\n\n## Exit criteria\nE.\n" })).toEqual(['studio/direction.md: milestone "m1" is done, not current']));
   it("fails on a session log named for another day", () =>
-    expect(problems({ "studio/sessions/2026-10-17-start.md": "---\ndate: 2026-10-18\ncommand: /go\n---\n" })).toEqual(["studio/sessions/2026-10-17-start.md: the file name should start with its date, 2026-10-18"]));
+    expect(problems({ "studio/sessions/2026-10-17-0900-start.md": "---\ndate: 2026-10-18\ncommand: /go\n---\n" })).toEqual(["studio/sessions/2026-10-17-0900-start.md: the file name should start with its date, 2026-10-18"]));
+  it("fails on a session log without its time, or with one that isn't a time", () => {
+    for (const name of ["2026-10-17-start", "2026-10-17-2460-start", "2026-10-17-0900"])
+      expect(problems({ [`studio/sessions/${name}.md`]: "---\ndate: 2026-10-17\ncommand: /go\n---\n" })).toContain(`studio/sessions/${name}.md: the file name should be 2026-10-17-HHMM-<slug>, with the UTC time it was written`);
+  });
   it("reads a playtest report, and fails on a rating out of range", () => {
     const report = (fun: number) => `---\ndate: 2026-10-21\nby: producer\nbuild: preview/pr-41\nunits: [jump]\nfun: ${fun}\ndifficulty: right\nfrustration: 2\n---\n`;
     expect(problems({ "studio/playtests/2026-10-21-jump.md": report(4) })).toEqual([]);

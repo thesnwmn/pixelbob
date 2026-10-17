@@ -19,4 +19,4 @@ The producer and anyone watching should see the board without opening a session.
 Ratings over time (with playtests), builds (release-builds).
 
 ## Log
-- 2026-10-17 done, #15: [session](../sessions/2026-10-17-studio-page.md). `studio/page.ts`, written to `_site/studio/` by the site build and linked from the index; rebuilt on merges and when a PR or issue opens or closes; the `studio/page` check.
+- 2026-10-17 done, #15: [session](../sessions/2026-10-17-2018-studio-page.md). `studio/page.ts`, written to `_site/studio/` by the site build and linked from the index; rebuilt on merges and when a PR or issue opens or closes; the `studio/page` check.

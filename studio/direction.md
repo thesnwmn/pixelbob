@@ -12,7 +12,7 @@ Where the game is going now. The Director keeps it, and changes to it are gated:
 
 ## Done
 
-[m0-studio](milestones/m0-studio.md): the studio, built far enough that `/go` works ([retro](sessions/2026-10-17-m0-retro.md)).
+[m0-studio](milestones/m0-studio.md): the studio, built far enough that `/go` works ([retro](sessions/2026-10-17-2031-m0-retro.md)).
 
 ## Priorities
 

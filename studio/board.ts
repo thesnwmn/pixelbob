@@ -161,6 +161,8 @@ function checkSession(s: Doc, problems: string[]): void {
   const date = String(s.fields.date ?? "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) problems.push(`${s.path}: date should be YYYY-MM-DD`);
   else if (!s.slug.startsWith(`${date}-`)) problems.push(`${s.path}: the file name should start with its date, ${date}`);
+  // The UTC time after the date, so a day's logs list in the order they were written.
+  else if (!/^([01]\d|2[0-3])[0-5]\d-[a-z0-9]/.test(s.slug.slice(date.length + 1))) problems.push(`${s.path}: the file name should be ${date}-HHMM-<slug>, with the UTC time it was written`);
 }
 
 function checkPlaytest(p: Doc, problems: string[]): void {

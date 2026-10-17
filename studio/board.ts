@@ -14,6 +14,7 @@ export const UNIT_STATUSES = ["idea", "shaped", "ready", "doing", "review", "pla
 export const ASK_STATUSES = ["open", "answered", "expired"];
 export const MILESTONE_STATUSES = ["proposed", "current", "done", "dropped"];
 export const AUTONOMY = ["studio-merges", "review-first"];
+export const DIFFICULTY = ["too-easy", "right", "too-hard"];
 
 export type Value = string | number | boolean | string[];
 export type Fields = Record<string, Value>;
@@ -33,6 +34,7 @@ export interface Studio {
   asks: Doc[];
   milestones: Doc[];
   sessions: Doc[];
+  playtests: Doc[];
   producer?: Doc;
   direction?: Doc;
   /** `path: what's wrong`, for every file that doesn't follow its format. */
@@ -161,6 +163,23 @@ function checkSession(s: Doc, problems: string[]): void {
   else if (!s.slug.startsWith(`${date}-`)) problems.push(`${s.path}: the file name should start with its date, ${date}`);
 }
 
+function checkPlaytest(p: Doc, problems: string[]): void {
+  field(p, "date", problems, { required: true });
+  field(p, "by", problems, { required: true });
+  field(p, "build", problems, { required: true });
+  field(p, "scenario", problems, {});
+  field(p, "units", problems, { type: "list" });
+  field(p, "issues", problems, { type: "list" });
+  field(p, "difficulty", problems, { oneOf: DIFFICULTY });
+  for (const k of ["fun", "frustration"]) {
+    field(p, k, problems, { type: "number" });
+    const v = p.fields[k];
+    if (typeof v === "number" && !(Number.isInteger(v) && v >= 1 && v <= 5)) problems.push(`${p.path}: ${k} is ${v}, not 1 to 5`);
+  }
+  if (!String(p.fields.date ?? "").match(/^\d{4}-\d{2}-\d{2}$/)) problems.push(`${p.path}: date should be YYYY-MM-DD`);
+  else if (!p.slug.startsWith(`${p.fields.date}-`)) problems.push(`${p.path}: the file name should start with its date, ${p.fields.date}`);
+}
+
 /** Every file in `studio/`, read and checked against its format and against each other. */
 export function loadStudio(root: string): Studio {
   const problems: string[] = [];
@@ -168,6 +187,7 @@ export function loadStudio(root: string): Studio {
   const asks = readDir(root, "studio/asks", problems);
   const milestones = readDir(root, "studio/milestones", problems);
   const sessions = readDir(root, "studio/sessions", problems);
+  const playtests = readDir(root, "studio/playtests", problems);
   const producer = existsSync(join(root, "studio/producer.md")) ? readDoc(root, "studio/producer.md", problems) : undefined;
   const direction = existsSync(join(root, "studio/direction.md")) ? readDoc(root, "studio/direction.md", problems) : undefined;
 
@@ -175,6 +195,7 @@ export function loadStudio(root: string): Studio {
   asks.forEach((a) => checkAsk(a, problems));
   milestones.forEach((m) => checkMilestone(m, problems));
   sessions.forEach((s) => checkSession(s, problems));
+  playtests.forEach((p) => checkPlaytest(p, problems));
   if (!producer) problems.push("studio/producer.md: missing");
   else field(producer, "autonomy", problems, { required: true, oneOf: AUTONOMY });
   if (!direction) problems.push("studio/direction.md: missing");
@@ -200,7 +221,7 @@ export function loadStudio(root: string): Studio {
       else if (!list(u.fields.needs).includes(a.slug)) problems.push(`${a.path}: blocks "${b}", but ${u.path} doesn't list it in needs`);
     }
   }
-  for (const s of sessions) for (const u of list(s.fields.units)) if (!unitBySlug.has(u)) problems.push(`${s.path}: unit "${u}" has no file in studio/work/`);
+  for (const s of [...sessions, ...playtests]) for (const u of list(s.fields.units)) if (!unitBySlug.has(u)) problems.push(`${s.path}: unit "${u}" has no file in studio/work/`);
   const current = milestones.filter((m) => m.fields.status === "current");
   if (current.length > 1) problems.push(`studio/milestones/: ${current.length} milestones are current (${current.map((m) => m.slug).join(", ")}); one at a time`);
   if (direction?.fields.milestone !== undefined) {
@@ -208,7 +229,7 @@ export function loadStudio(root: string): Studio {
     if (!m) problems.push(`studio/direction.md: milestone "${direction.fields.milestone}" has no file in studio/milestones/`);
     else if (m.fields.status !== "current") problems.push(`studio/direction.md: milestone "${m.slug}" is ${m.fields.status}, not current`);
   }
-  return { units, asks, milestones, sessions, producer, direction, problems };
+  return { units, asks, milestones, sessions, playtests, producer, direction, problems };
 }
 
 /** A unit that's landed (done, or merged and waiting for a playtest) or dropped; an ask that's answered or expired. */

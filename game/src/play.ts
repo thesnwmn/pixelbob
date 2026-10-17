@@ -1,8 +1,10 @@
-// A scenario being played: the level's world and Bob, stepped at 60 Hz. No DOM, so the
-// tests (and later replays and bots) run it in Node; main.ts draws it and feeds it input.
+// A scenario being played: the level's world and Bob, stepped at 60 Hz, recording its
+// input as a replay. No DOM, so the tests, replays and bots run it in Node; main.ts draws
+// it and feeds it input.
 import { type BobModel, DEFAULTS, type Input, type Tweaks, createBob } from "@pixelbob/bob";
 import { CAT, Cat } from "@pixelbob/sim";
 import { type Built, LEVELS } from "./levels.ts";
+import { type Outcome, Recorder, type Replay, type ReplayFile, quantize } from "./replay.ts";
 import type { Scenario } from "./scenario.ts";
 
 export const STEP = 1 / 60;
@@ -16,6 +18,8 @@ export class Play {
   frame = 0;
   /** The frame the main piece reached the finish, or 0. */
   finishedAt = 0;
+  /** Every frame's input since the start (or the last restart). */
+  readonly recorder = new Recorder();
 
   constructor(scenario: Scenario) {
     this.scenario = scenario;
@@ -33,6 +37,7 @@ export class Play {
     this.bob.spawn(this.level.world, at.x, at.y, s.bob.temp ?? 20, this.level.bits);
     this.frame = 0;
     this.finishedAt = 0;
+    this.recorder.clear();
   }
 
   /** Where Bob starts: the level's spawn, or on the ground at `at`. */
@@ -52,9 +57,12 @@ export class Play {
     return { x, y: top - this.tweaks.size - 3 };
   }
 
+  /** One frame. The input is rounded to eighths (`quantize`) and recorded, so the replay is exactly this run. */
   step(input: Input): void {
+    const q = quantize(input);
+    this.recorder.push(q);
     this.level.world.step();
-    this.bob.step(this.level.world, input);
+    this.bob.step(this.level.world, q);
     this.frame++;
     const p = this.bob.main, f = this.level.finish;
     if (!this.finishedAt && p && p.cx >= f.x0 && this.home() > 0) this.finishedAt = this.frame;
@@ -70,4 +78,40 @@ export class Play {
   seconds(): number {
     return (this.finishedAt || this.frame) * STEP;
   }
+
+  /** The run so far as a replay's text. */
+  replay(): string {
+    return this.recorder.text(this.scenario.id);
+  }
+
+  outcome(): Outcome {
+    return {
+      frames: this.frame,
+      finished: this.finishedAt,
+      home: Math.round(this.home() * 100),
+      bob: Math.round((this.bob.count / this.bob.total) * 100),
+    };
+  }
+}
+
+/** Plays a replay from its scenario's start, headless; `each` sees the play after every frame. */
+export function runReplay(scenario: Scenario, replay: Replay, each?: (play: Play) => void): Play {
+  if (replay.scenario !== scenario.id) throw new Error(`the replay is of ${replay.scenario}, not ${scenario.id}`);
+  const play = new Play(scenario);
+  for (const f of replay.frames) {
+    play.step(f);
+    each?.(play);
+  }
+  return play;
+}
+
+/** Plays a kept replay and compares the outcome with what it expects: what differs, if anything. */
+export function checkReplay(file: ReplayFile, scenarios: ReadonlyMap<string, Scenario>): { outcome?: Outcome; problems: string[] } {
+  const scenario = scenarios.get(file.replay.scenario);
+  if (!scenario) return { problems: [`it plays ${file.replay.scenario}, which isn't in game/scenarios/`] };
+  const outcome = runReplay(scenario, file.replay).outcome();
+  const problems = (Object.keys(outcome) as (keyof Outcome)[])
+    .filter((k) => outcome[k] !== file.expect[k])
+    .map((k) => `${k}: expected ${file.expect[k]}, got ${outcome[k]}`);
+  return { outcome, problems };
 }

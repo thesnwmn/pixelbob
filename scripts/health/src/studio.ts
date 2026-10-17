@@ -5,6 +5,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { inFlight, loadStudio, parseFrontMatter, ROLES } from "../../../studio/board.ts";
 import { type Check, fail, inCI, pass } from "./check.ts";
+import { DOC_MAP, type DocMapEntry, globRe, IN_STEP, readDocMap } from "./instep.ts";
 
 export const files: Check = {
   id: "studio/files",
@@ -191,4 +192,44 @@ export const links: Check = {
   },
 };
 
-export const STUDIO = [files, flying, landed, roles, commands, docsIndex, links];
+/** What's wrong with the doc map: a glob that matches no file, a doc or heading that doesn't exist. */
+export function docMapProblems(root: string, map: DocMapEntry[], files: string[]): string[] {
+  const problems: string[] = [];
+  for (const entry of map) {
+    const ok = (x: unknown) => Array.isArray(x) && x.length > 0 && x.every((s) => typeof s === "string");
+    if (!entry || !ok(entry.paths) || !ok(entry.docs)) {
+      problems.push(`an entry that isn't { paths: [...], docs: [...] }: ${JSON.stringify(entry)}`);
+      continue;
+    }
+    const { paths, docs } = entry;
+    for (const glob of paths) if (!files.some((f) => globRe(glob).test(f))) problems.push(`${glob}: matches no file`);
+    for (const doc of docs) {
+      const [path, anchor] = doc.split("#");
+      if (!existsSync(join(root, path))) problems.push(`${doc}: no such ${path.endsWith("/") ? "folder" : "file"}`);
+      else if (anchor && !anchors(readFileSync(join(root, path), "utf8")).has(anchor)) problems.push(`${doc}: no such heading`);
+    }
+  }
+  return problems;
+}
+
+export const docMap: Check = {
+  id: "docs/map",
+  tier: 5,
+  repro: `cat ${DOC_MAP}`,
+  hint: "The doc map (studio/doc-map.json) names a path no file matches, or a doc or heading that has moved: fix the entry, so the docs-in-step check still means something.",
+  run({ root, sh }) {
+    if (!existsSync(join(root, DOC_MAP))) return fail(`no ${DOC_MAP}`);
+    let map: DocMapEntry[];
+    try {
+      map = readDocMap(root);
+      if (!Array.isArray(map)) return fail(`${DOC_MAP} has no "map" list`);
+    } catch (e) {
+      return fail(`${DOC_MAP}: ${(e as Error).message}`);
+    }
+    const tracked = sh("git", ["ls-files", "-co", "--exclude-standard"]).out.trim().split("\n").filter(Boolean);
+    const problems = docMapProblems(root, map, tracked);
+    return problems.length ? fail(`${problems.length} problem${problems.length === 1 ? "" : "s"}`, problems.join("\n")) : pass(`${map.length} entr${map.length === 1 ? "y" : "ies"}`);
+  },
+};
+
+export const STUDIO = [files, flying, landed, roles, commands, docsIndex, links, docMap, ...IN_STEP];

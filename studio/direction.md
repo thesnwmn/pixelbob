@@ -12,7 +12,7 @@ Where the game is going now. The Director keeps it, and changes to it are gated:
 
 ## Next
 
-[m1-green-alpha](milestones/m1-green-alpha.md), proposed: an alpha of The Green. It waits on the producer confirming it ([the ask](asks/first-milestone.md)). The studio's later units (the game shell, replays, bots, releases) belong to it, because the alpha is what needs them.
+[m1-green-alpha](milestones/m1-green-alpha.md): an alpha of The Green, confirmed by the producer on 2026-10-17 ([the ask](asks/first-milestone.md)). It becomes current when m0-studio is done. The studio's later units (the game shell, replays, bots, releases) belong to it, because the alpha is what needs them.
 
 ## Priorities
 

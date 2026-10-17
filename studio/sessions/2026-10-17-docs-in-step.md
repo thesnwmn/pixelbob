@@ -24,7 +24,6 @@ Health was green and nothing was waiting on the producer, so `/go` took the risk
 
 ## Tried and dropped
 - **Failing in `pnpm health`, in CI and at `--end`.** The description is written last, so a session would be red from its claim to its ship step, and `--end` can't be told apart from `--quick` without changing `run.ts`, which is gated. And CI's `pnpm health` doesn't run again when only the description changes. So in a session the checks warn, CI's health run skips them, and the `in-step` workflow, which runs on `edited`, is what fails the PR (like `pr-title`).
-
 - **Making these checks fail at `--end`** (the Critic's suggestion, since the ruleset isn't on yet and the session's own end check is then the only real stop). It needs the runner to tell checks about `--end`, and the runner is gated; until the ruleset is on, a red `in-step` on the PR is what a session reads before merging.
 
 ## Learned

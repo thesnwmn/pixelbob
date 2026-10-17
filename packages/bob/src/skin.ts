@@ -173,6 +173,8 @@ class Rings extends Body {
     if (d < 3 || n - d < 3) return false;
     const before = this.walk(a).reduce((s, i) => s + this.ash[i], 0);
     this.swap(a, b);
+    // A cut that leaves a half turned inside out (the skin crossed itself) is undone.
+    if (this.polyArea(this.walk(a)) <= 0 || this.polyArea(this.walk(b)) <= 0) { this.swap(a, b); return false; }
     // The skin either side of the cut keeps apart for a moment (or it'd just rejoin).
     for (const e of [a, b]) {
       let u = e, v = e;
@@ -624,8 +626,12 @@ class Rings extends Body {
         if (this.parting(i, j) < PART) continue;
         if (this.split(i, j)) { joined.add(piece[i]); changed = true; cool[i] = cool[j] = 0.3; }
       } else if (d < JOIN_R && ji > 0 && ij > 0 && this.rand() < JOIN_CHANCE * this.tweaks.cohesion && fz[i] < 0.5 && fz[j] < 0.5 && !this.frz[i] && !this.frz[j]) {
-        joined.add(piece[i]); joined.add(piece[j]);
+        // Splice them, unless the one ring that makes isn't about the area of the two (the
+        // splice crossed the skin: undo it).
+        const before = Math.abs(this.polyArea(this.walk(i))) + Math.abs(this.polyArea(this.walk(j)));
         this.swap(i, j);
+        if (this.polyArea(this.walk(i)) < before * 0.8) { this.swap(i, j); continue; }
+        joined.add(piece[i]); joined.add(piece[j]);
         this.breaks.merge++;
         changed = true;
       }

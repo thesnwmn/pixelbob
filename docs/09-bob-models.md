@@ -85,7 +85,7 @@ The classic soft-body blob, as a comparison point.
   - A runny ring pinches in two where a neck's sides meet from inside while the halves pull apart.
 - What you see and what counts toward "% of Bob" is the filled inside, one point per pixel.
 
-It's the most robustly round and bouncy, and by far the cheapest. Liquid behaviour is its weak spot: it rolls off ledges, and its bits bounce.
+It's the most robustly round and bouncy, and by far the cheapest. Liquid behaviour is its weak spot: it rolls off ledges, its bits bounce, and on the course runny Skin struggles with the pit and the slot (it's a balloon, not a liquid).
 
 ### Lattice
 

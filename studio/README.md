@@ -36,7 +36,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 **Claude Code cloud sessions with GitHub access**, like the one that wrote this doc. There's no long-running agent, server or CLI. That shapes the whole design:
 
 - **A session is the unit of execution.** You open one on the repo (claude.ai/code, on the web or the app), type a command, and it works until the unit is done. The container is thrown away afterwards, so anything worth keeping is pushed.
-- **The repo is the only memory.** A new session knows what `CLAUDE.md`, `studio/` and the docs tell it, plus what it reads from GitHub (open PRs, reviews, issues, CI). So every session ends by writing down where it got to.
+- **The repo is the only memory.** A new session knows what `CLAUDE.md`, `studio/` and the docs tell it, plus what it reads from GitHub (open PRs, reviews, issues, CI). So every session ends by writing down where it got to, in its [session log](#session-logs).
 - **The branch comes with the session.** Cloud sessions are given their branch name, so the studio never relies on branch names; a unit records its PR number instead.
 - **GitHub is the shared surface.** PRs, reviews, CI and the preview builds are where you and the studio meet outside a session. A session can watch its own PR's CI and review comments while it's open; once it ends, the next `/go` picks up whatever happened.
 - **The cloud gives a few extras for later:** starting parallel sessions (fan-out) and scheduled tasks (autopilot). Neither is planned now; both would fit without changing anything else.
@@ -88,6 +88,7 @@ pixelbob/
     work/                   (planned) one file per unit of work
     asks/                   (planned) one file per question waiting on the producer
     playtests/              (planned) the producer's reports, and the Tester's
+    sessions/               one log per session: what it did, what was said, tried and learned
     board.ts                (planned) generates the board and the studio page
     doc-map.json            (planned) which docs describe which code, for the docs-in-step check
 
@@ -145,7 +146,7 @@ How every session ends:
 |---|---|
 | **Done** | The work, with the unit set to `done` (or `playtest`). |
 | **Partly done** (a stop sign, or out of budget) | The finished, green part. Code that isn't ready to play lands **switched off**: behind a flag (`?flags=split`) or not yet wired into the game, so main stays playable and a preview can still turn it on. The rest becomes new units, and the handoff goes in the unit's log. |
-| **Stuck** (can't be made green) | The broken code is taken out of the PR, back to the last green commit (or all of it). What lands is the handoff: what was tried, what was learned, and a link to the last commit of the attempt, which stays on GitHub so the next try can start from it. The unit goes back to `ready` with the handoff, or to `dropped` if the attempt showed it isn't worth doing. |
+| **Stuck** (can't be made green) | The broken code is taken out of the PR, back to the last green commit (or all of it). What lands is the handoff, in the session log: what was tried, what was learned, and a link to the last commit of the attempt, which stays on GitHub so the next try can start from it. The unit goes back to `ready` with the handoff, or to `dropped` if the attempt showed it isn't worth doing. |
 | **Waiting for you** (a gated PR) | Nothing yet. This is the only kind of PR left open between sessions. It's labelled `gated`, the board shows it under *Needs you*, and no unit builds on it until it's merged. Ungated work in the same session goes in a separate PR so it isn't held up. |
 
 ### PRs
@@ -160,7 +161,7 @@ A PR's title becomes the squash commit on main, so the titles are the project's 
 - **Health**: the one-line result of the end-of-session check.
 - **Next**: follow-ups, if any.
 
-Details belong in the unit's file, the docs, or a decision record, with a link from the PR. The Critic flags a PR that's grown wordy.
+Details belong in the session log, the unit's file, the docs, or a decision record, with a link from the PR. The Critic flags a PR that's grown wordy.
 
 Merging means CI is green on the PR's latest commit, the end-of-session health check is green, and the Critic has no blocking findings. Then the session squash-merges, as `CLAUDE.md` requires. If main has moved on, the session merges main into its branch and runs the checks again first. The session waits for CI by watching its PR, not by polling.
 
@@ -251,6 +252,50 @@ Asks are answered in a session (`/needs-me` walks through them; the Director als
 - **Standing rules** you've given ("never change Bob's colour without asking", "prefer forgiving over precise").
 - **Taste notes**: what the Director has learned from your feedback, each with where it came from ("likes crumbs-as-skill: playtest 2026-10-02"). Designers read this before shaping anything. You can correct it.
 
+### Session logs
+
+`studio/sessions/<date>-<slug>.md`: one file per session that changes anything, written at the *Ship* step and merged in the session's own PR. The PR says *what* changed, in a few lines. The session log keeps what happened along the way, which would otherwise be lost when the container goes:
+
+```markdown
+---
+date: 2026-10-21
+command: /go
+units: [split-action]
+pr: 41
+issues: [12]
+session: https://claude.ai/code/session_…      # the transcript, for the producer
+health: green at start, green at end
+size: M planned; 45% of context, no compaction   # how big it really was
+---
+
+## Summary
+Two or three lines: what the session set out to do and where it ended.
+
+## The producer said
+Your inputs and answers, close to your words, and what they decided.
+
+## Done
+What changed, with links to the PR, docs and decisions.
+
+## Tried and dropped
+Approaches that didn't work, and why, so nobody tries them again blind.
+
+## Learned
+About the code, the game, the tools, or your taste.
+
+## Left for next time
+The handoff: where things stand, what's next, what to watch out for.
+```
+
+- **Who reads them.** The next session, when it picks up a unit (its log links each session that touched it); the Critic, for context the diff can't give; the Director at retros; and you, or anyone, for the story behind a PR.
+- **Sizing gets better.** The `size` line records how much of the session the unit really took. The Planner compares it with the estimate when sizing the next units.
+- **Short.** A page at most. A long one means the session should have been split.
+- **Every session that changes something writes one**, including a `/needs-me` or a `/director` conversation. Read-only commands (`/next`, `/status`) don't.
+- **One file per session**, so parallel sessions never conflict. The unit's log gets a single line linking to it.
+- **Enforced** like the docs: the health check fails a PR from a session that changes anything without adding a session log.
+
+The first one is this plan's own: [2026-10-17 studio plan](sessions/2026-10-17-studio-plan.md).
+
 ## GitHub
 
 The repo holds the plan and the work. GitHub holds the conversation around the work and enforces the rules, so they don't depend on an agent remembering them.
@@ -317,7 +362,7 @@ What every session does on `/go`:
 4. **Work** in the role's hat. Spikes state the question and kill criterion first; fixes reproduce first.
 5. **Check.** `pnpm health --quick` as often as useful while working, and the Tester for anything that changes play.
 6. **Review.** The Critic as a subagent. Its blocking findings are fixed before the PR leaves draft; the rest are answered on the PR.
-7. **Ship.** Bring the docs and the studio in step (see [Keeping docs and the studio in step](#keeping-docs-and-the-studio-in-step)): the unit's status and log, the docs the doc map names for what changed, decisions, the concept doc if it's affected. Then write the PR description per the template.
+7. **Ship.** Bring the docs and the studio in step (see [Keeping docs and the studio in step](#keeping-docs-and-the-studio-in-step)): the unit's status and log, the docs the doc map names for what changed, decisions, the concept doc if it's affected. Write the [session log](#session-logs). Then write the PR description per the template, linking the log.
 8. **Health check again.** `pnpm health` on the final commit, with everything pushed. Its summary goes in the PR description as proof.
 9. **Merge**, unless the PR is gated: CI green, then squash-merge (see [Main is the truth](#main-is-the-truth)). If it can't be made green, the broken part comes out and the handoff lands instead.
 10. **Report** to you in five lines or so: what was done, the link, the health result, what's waiting on you.
@@ -413,6 +458,7 @@ Updating the docs and the studio's files is part of the loop, not a step a sessi
 
   If a PR changes a mapped path and none of its docs, the check fails. The way past is a line in the PR description, `Docs: none needed, because …`, so skipping is a decision that's written down, never an oversight.
 - **The unit.** A PR that changes anything outside `studio/` must change a unit file, its status and its log, or say `Unit: none, because …` (a dependency bump, say).
+- **The session log.** Every PR from a session adds one file to `studio/sessions/`, with valid front matter.
 - **Studio invariants.** On main, no unit is `doing` or `review` (those only exist while a session runs), every `done` unit names its PR, every open ask names what it blocks, and every closed bug issue's fix names it.
 - **Indexes and the map.** Every doc is listed in `docs/README.md`; every top-level folder is in the [repo map](#repo-structure); every role in `.claude/agents/` is in [the roles table](#the-roles); every command in `.claude/skills/` is in the producer guide.
 - **Generated, not written.** The board and the studio page are generated from the files and never committed, so they can't disagree with them.
@@ -501,7 +547,8 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 ## Transparency
 
 - **GitHub**: every unit is a PR: draft from the first push, merged by the end of the session. Labels by kind and role, plus `gated` and `playtest`.
-- **The studio page** on Pages (`…/pixelbob/studio/`), regenerated on every merge and whenever a PR opens or closes: in flight, needs you (asks and playtest requests), next up, milestone progress, recently done and dropped, decisions, builds, and your fun and difficulty ratings over time. Linked from the site index above the prototypes.
+- **Session logs** in `studio/sessions/`: the story of every session, beside the PR that says what changed.
+- **The studio page** on Pages (`…/pixelbob/studio/`), regenerated on every merge and whenever a PR opens or closes: in flight, needs you (asks and playtest requests), next up, milestone progress, recently done and dropped, a timeline of sessions, decisions, builds, and your fun and difficulty ratings over time. Linked from the site index above the prototypes.
 - **`/status`** prints the same in a session, **`/next`** shows what `/go` would do next and why, and **`/needs-me`** goes through everything waiting on you.
 
 ## Building the studio

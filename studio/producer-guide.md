@@ -18,6 +18,7 @@ You don't need to plan, size, review code or merge, except PRs that need your ca
 | **A Claude Code session** on this repo (claude.ai/code, web or app) | Commands, conversations with the Director, answering questions |
 | **GitHub** | The history: short PRs (merged by the studio), issues for bugs, releases for alpha and beta builds. Comment on any of them and the next session picks it up; file a bug with the bug form if you're not in a session |
 | **The studio page** (`thesnwmn.github.io/pixelbob/studio/`) | What's going on, without starting a session |
+| **Session logs** (`studio/sessions/`) | The story behind any PR: what was said, tried, dropped and learned |
 | **Builds** (preview links, `…/game/`, `…/builds/alpha-1/`) | Playing, and the feedback button (copies your notes and a replay for `/feedback`) |
 
 ## The commands

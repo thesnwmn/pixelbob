@@ -2,7 +2,7 @@
 
 How a team of agents builds Pixelbob from here, with one human as producer and play tester. This is the plan for the harness ("the studio"): what it's made of, where it keeps its state, who's in it, how each role is invoked and kept apart, and how builds reach the play tester. The [producer guide](producer-guide.md) is the same thing from the producer's side: what you type, what you get back.
 
-**Status:** being built, in the order of [Building the studio](#building-the-studio), one session-sized unit at a time. Built so far: the [health check](#health), the [studio's files and the board](#the-studios-state) (`pnpm board`), and [the roles](#the-roles) and the commands (`/go` and the rest, in `.claude/`).
+**Status:** the first milestone's harness is built (m0-studio, [retro](sessions/2026-10-17-m0-retro.md)): the [health check](#health), the [studio's files and the board](#the-studios-state) (`pnpm board`), [the roles](#the-roles) and the commands (`/go` and the rest, in `.claude/`), the [docs-in-step checks](#keeping-docs-and-the-studio-in-step), the [gate](#github) and the [studio page](#transparency). The rest of [Building the studio](#building-the-studio) comes in with the game's milestones, as they need it.
 
 ## TL;DR
 
@@ -597,7 +597,7 @@ The order it gets built in, each a unit of its own. The first three make the har
 1. **Health check (S), done.** `scripts/health/` with tiers 1 to 4, the session start hook, CI switched to `pnpm health`, the nightly run on main, and a test for each check. It comes first because every unit after it starts and ends with the check.
 2. **Folder and board (S), done.** `studio/` with its formats, `producer.md` at "studio merges", `direction.md`, the first milestone, units for everything below, `board.ts`, a decision record ([Backlog in files](../docs/decisions/2026-10-17-backlog-in-files.md)), and the studio tier of the health check. From here the units are on the board (`pnpm board`), and this list is their outline.
 3. **Roles and commands (M; on the board as three units: roles-and-commands, done; docs-in-step, done; github-gate, done).** `.claude/agents/` briefs, the `go`, `next`, `needs-me`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
-4. **Studio page (S).** The board on Pages, rebuilt on merges and PR events.
+4. **Studio page (S), done.** The board on Pages, rebuilt on merges and PR events.
 5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button (copy to clipboard).
 6. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.
 7. **Bots and forgiveness (M, spike first).** The search bot and the slack measure.

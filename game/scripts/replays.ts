@@ -13,7 +13,13 @@ const json = (dir: string) => {
   const url = new URL(`${dir}/`, root);
   return existsSync(url) ? readdirSync(url).filter((f) => f.endsWith(".json")).sort().map((f) => ({ id: f.replace(/\.json$/, ""), url: new URL(f, url) })) : [];
 };
-const read = (url: URL): unknown => JSON.parse(readFileSync(url, "utf8"));
+const read = (url: URL): unknown => {
+  try {
+    return JSON.parse(readFileSync(url, "utf8"));
+  } catch (e) {
+    return (e as Error).message;
+  }
+};
 
 const scenarios = new Map<string, Scenario>();
 for (const { id, url } of json("scenarios")) {
@@ -33,10 +39,10 @@ if (flag !== undefined && flag !== "--add" && flag !== "--update") {
 
 if (flag === "--add") {
   const [id, path, ...words] = rest;
-  const text = findReplay(path ? readFileSync(path, "utf8") : "");
+  const text = findReplay(path && existsSync(path) ? readFileSync(path, "utf8") : "");
   const { replay, errors } = decode(text);
   const { outcome, problems } = replay
-    ? checkReplay({ id, note: "", replay, expect: { frames: 0, finished: 0, home: 0, bob: 0 } }, scenarios)
+    ? checkReplay({ id, note: "", replay, expect: { frames: 0, finished: 0, home: 0, bob: 0, state: "" } }, scenarios)
     : { outcome: undefined, problems: errors };
   const kept = { note: words.join(" "), replay: text, expect: outcome };
   const bad = outcome ? parseReplayFile(id ?? "", kept).errors : problems;
@@ -54,7 +60,7 @@ let bad = 0;
 const files = json("replays");
 for (const { id, url } of files) {
   const raw = read(url) as { replay?: string };
-  const { file, errors } = parseReplayFile(id, raw);
+  const { file, errors } = typeof raw === "string" ? { file: undefined, errors: [`not JSON (${raw})`] } : parseReplayFile(id, raw);
   const { outcome, problems } = file ? checkReplay(file, scenarios) : { outcome: undefined, problems: errors };
   if (flag === "--update" && file && outcome) {
     write(url, { ...file, expect: outcome }, raw.replay!);

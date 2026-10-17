@@ -27,6 +27,8 @@ export interface Outcome {
   home: number;
   /** % of Bob still together in pieces at the end (not stranded or lost). */
   bob: number;
+  /** A fingerprint of where every bit of Bob and every cell ended up, so any change to the run shows. */
+  state: string;
 }
 
 export interface Replay {
@@ -35,7 +37,7 @@ export interface Replay {
 }
 
 const EIGHTHS = 8;
-const eighths = (v: number | undefined, lo: number) => Math.max(lo * EIGHTHS, Math.min(EIGHTHS, Math.round((v ?? 0) * EIGHTHS))) / EIGHTHS + 0; // + 0: never -0, which the replay would read back as 0
+const eighths = (v: number | undefined, lo: number) => Math.max(lo * EIGHTHS, Math.min(EIGHTHS, Math.round((Number.isFinite(v) ? v! : 0) * EIGHTHS))) / EIGHTHS + 0; // + 0: never -0, which the replay would read back as 0; NaN is 0
 
 /** Input rounded to eighths: the game steps with this, so what's recorded is exactly what ran. */
 export function quantize(input: { move: number; jump: boolean; down?: number; up?: number }): Frame {
@@ -81,6 +83,9 @@ export function encode(scenario: string, frames: Frame[], width?: number): strin
   return r.text(scenario, width);
 }
 
+/** Two hours at 60 Hz: longer than any run worth keeping, and a bound on what a replay can make us allocate. */
+export const MAX_FRAMES = 2 * 60 * 60 * 60;
+
 const HEAD = /^pixelbob-replay v1 ([a-z0-9]+(?:-[a-z0-9]+)*) (\d+):$/;
 const RUN = /^(-?\d)(j)?(?:d(\d))?(?:u(\d))?(?:\*(\d+))?$/;
 
@@ -89,6 +94,8 @@ export function decode(text: string): { replay?: Replay; errors: string[] } {
   const words = text.trim().split(/\s+/);
   const head = HEAD.exec(words.slice(0, 4).join(" "));
   if (!head) return { errors: ['replay: starts "pixelbob-replay v1 <scenario> <frames>:"'] };
+  const total = Number(head[2]);
+  if (total > MAX_FRAMES) return { errors: [`replay: ${total} frames is more than ${MAX_FRAMES} (two hours)`] };
   const frames: Frame[] = [];
   const axis = (s: string | undefined) => Number(s ?? 0) / EIGHTHS;
   for (const w of words.slice(4)) {
@@ -97,15 +104,16 @@ export function decode(text: string): { replay?: Replay; errors: string[] } {
     if (!m || n < 1 || Math.abs(Number(m[1])) > EIGHTHS || Number(m[3] ?? 0) > EIGHTHS || Number(m[4] ?? 0) > EIGHTHS)
       return { errors: [`replay: "${w}" isn't a run (<move>[j][d<down>][u<up>][*<count>], in eighths)`] };
     const f: Frame = { move: axis(m[1]), jump: m[2] === "j", down: axis(m[3]), up: axis(m[4]) };
+    if (frames.length + n > total) return { errors: [`replay: says ${total} frames but has more`] };
     for (let i = 0; i < n; i++) frames.push(f);
   }
-  if (frames.length !== Number(head[2])) return { errors: [`replay: says ${head[2]} frames but has ${frames.length}`] };
+  if (frames.length !== total) return { errors: [`replay: says ${total} frames but has ${frames.length}`] };
   return { replay: { scenario: head[1], frames }, errors: [] };
 }
 
-/** The replay in a pasted feedback report (or any text holding one), or the empty string. */
+/** The replay in a pasted feedback report (or any text holding one), or the empty string. The last one, since the report ends with it and the notes before it may mention one. */
 export function findReplay(text: string): string {
-  const at = text.indexOf("pixelbob-replay ");
+  const at = text.lastIndexOf("pixelbob-replay v1 ");
   if (at < 0) return "";
   const end = text.indexOf("```", at);
   return text.slice(at, end < 0 ? undefined : end).trim();
@@ -120,7 +128,7 @@ export interface ReplayFile {
   expect: Outcome;
 }
 
-const OUTCOME_KEYS = ["frames", "finished", "home", "bob"] as const;
+const OUTCOME_KEYS = ["frames", "finished", "home", "bob", "state"] as const;
 
 /** Checks a replay file's contents; returns it, or what's wrong with it. */
 export function parseReplayFile(id: string, raw: unknown): { file?: ReplayFile; errors: string[] } {
@@ -142,9 +150,12 @@ export function parseReplayFile(id: string, raw: unknown): { file?: ReplayFile; 
   else {
     const ex = e as Record<string, unknown>;
     for (const k of Object.keys(ex)) if (!(OUTCOME_KEYS as readonly string[]).includes(k)) errors.push(`expect.${k}: not a field (${OUTCOME_KEYS.join(", ")})`);
-    for (const k of OUTCOME_KEYS) if (!Number.isInteger(ex[k]) || (ex[k] as number) < 0) errors.push(`expect.${k}: a whole number, 0 or more`);
+    for (const k of OUTCOME_KEYS)
+      if (k === "state") {
+        if (typeof ex.state !== "string" || !/^[0-9a-f]{8}$/.test(ex.state)) errors.push("expect.state: the run's fingerprint, 8 hex digits");
+      } else if (!Number.isInteger(ex[k]) || (ex[k] as number) < 0) errors.push(`expect.${k}: a whole number, 0 or more`);
   }
   if (errors.length) return { errors };
   const ex = e as Outcome;
-  return { file: { id, note: o.note as string, replay: replay!, expect: { frames: ex.frames, finished: ex.finished, home: ex.home, bob: ex.bob } }, errors };
+  return { file: { id, note: o.note as string, replay: replay!, expect: { frames: ex.frames, finished: ex.finished, home: ex.home, bob: ex.bob, state: ex.state } }, errors };
 }

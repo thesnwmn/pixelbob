@@ -165,6 +165,8 @@ describe("replays", () => {
   it("round input to eighths, the same way every time", () => {
     expect(quantize({ move: 0.37, jump: true })).toEqual({ move: 0.375, jump: true, down: 0, up: 0 });
     expect(quantize({ move: -3, jump: false, down: 2, up: -1 })).toEqual({ move: -1, jump: false, down: 1, up: 0 });
+    expect(quantize({ move: Number.NaN, jump: false, down: -0.01 })).toEqual({ move: 0, jump: false, down: 0, up: 0 });
+    expect(Object.is(quantize({ move: -0.01, jump: false }).move, 0)).toBe(true);
   });
 
   it("encode as runs, wrapped, and decode to the same frames", () => {
@@ -181,10 +183,13 @@ describe("replays", () => {
     expect(decode("pixelbob-replay v1 ice 3: 8*2").errors).toEqual(["replay: says 3 frames but has 2"]);
     expect(decode("pixelbob-replay v1 ice 3: 9*3").errors[0]).toContain('"9*3" isn\'t a run');
     expect(decode("pixelbob-replay v1 ice 0: 8*0").errors[0]).toContain('"8*0" isn\'t a run');
+    expect(decode("pixelbob-replay v1 ice 3: 8*99999999999").errors).toEqual(["replay: says 3 frames but has more"]);
+    expect(decode("pixelbob-replay v1 ice 99999999999: 8*99999999999").errors[0]).toContain("more than 432000");
   });
 
   it("are found in a pasted feedback report", () => {
     expect(findReplay("## Replay\n```\npixelbob-replay v1 ice 2: 8*2\n```\n")).toBe("pixelbob-replay v1 ice 2: 8*2");
+    expect(findReplay("the pixelbob-replay v1 looked short\n```\npixelbob-replay v1 ice 2: 8*2\n```")).toBe("pixelbob-replay v1 ice 2: 8*2");
     expect(findReplay("no replay here")).toBe("");
   });
 
@@ -209,9 +214,11 @@ describe("replays", () => {
 
   it("are checked against the outcome they expect", () => {
     const text = encode("start", Array.from({ length: 30 }, () => quantize({ move: 1, jump: false })));
-    const { file } = parseReplayFile("roll", { note: "Rolls right.", replay: text, expect: { frames: 30, finished: 0, home: 0, bob: 100 } });
-    expect(checkReplay(file!, byId).problems).toEqual([]);
-    expect(checkReplay({ ...file!, expect: { ...file!.expect, home: 40, frames: 31 } }, byId).problems).toEqual(["frames: expected 31, got 30", "home: expected 40, got 0"]);
+    const { file } = parseReplayFile("roll", { note: "Rolls right.", replay: text, expect: { frames: 30, finished: 0, home: 0, bob: 100, state: "00000000" } });
+    const state = checkReplay(file!, byId).outcome!.state;
+    expect(checkReplay({ ...file!, expect: { ...file!.expect, state } }, byId).problems).toEqual([]);
+    expect(checkReplay(file!, byId).problems).toEqual([`state: expected 00000000, got ${state}`]);
+    expect(checkReplay({ ...file!, expect: { ...file!.expect, state, home: 40, frames: 31 } }, byId).problems).toEqual(["frames: expected 31, got 30", "home: expected 40, got 0"]);
     expect(checkReplay({ ...file!, replay: { ...file!.replay, scenario: "moon" } }, byId).problems).toEqual(["it plays moon, which isn't in game/scenarios/"]);
   });
 
@@ -227,6 +234,7 @@ describe("replays", () => {
       "expect.finished",
       "expect.home",
       "expect.bob",
+      "expect.state",
     ]);
   });
 });

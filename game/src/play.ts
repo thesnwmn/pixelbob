@@ -90,7 +90,20 @@ export class Play {
       finished: this.finishedAt,
       home: Math.round(this.home() * 100),
       bob: Math.round((this.bob.count / this.bob.total) * 100),
+      state: this.fingerprint(),
     };
+  }
+
+  /** FNV-1a over Bob's particles (their exact bits) and the world's cells, as 8 hex digits. */
+  fingerprint(): string {
+    let h = 0x811c9dc5;
+    const mix = (a: ArrayLike<number>) => {
+      for (let i = 0; i < a.length; i++) h = Math.imul(h ^ a[i], 0x01000193);
+    };
+    const v = this.bob.view();
+    for (const f of [v.x, v.y, v.vx, v.vy, v.t]) mix(new Uint32Array(f.buffer, f.byteOffset, f.length));
+    mix(this.level.world.mat);
+    return (h >>> 0).toString(16).padStart(8, "0");
   }
 }
 

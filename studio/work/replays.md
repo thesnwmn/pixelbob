@@ -3,7 +3,7 @@ title: Replays and the Tester's kit
 kind: test
 role: engineer
 size: M
-status: doing
+status: done
 milestone: m1-green-alpha
 needs: [game-shell]
 pr: 23
@@ -23,3 +23,4 @@ Bots (bot-search-spike, bots).
 
 ## Log
 - 2026-10-17 started, #23. Recording, playback and the headless runner went into `game/src` (`replay.ts`, `play.ts`) rather than a new `packages/play`: `Play` already runs there without a DOM, and nothing outside the game needs it yet. A package can come when the bots outgrow `game/`.
+- 2026-10-17 done, #23 ([session](../sessions/2026-10-17-2130-replays.md)). The game records every frame (rounded to eighths), the feedback report carries the replay and names the browser, `game/replays/` are regression tests run by `code/replays`, and `game/scripts/filmstrip.ts` draws a run. Replays are exact on the engine they were recorded on; iPhone replays are untested.

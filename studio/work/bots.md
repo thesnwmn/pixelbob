@@ -5,7 +5,7 @@ role: tester
 size: M
 status: shaped
 milestone: m1-green-alpha
-needs: [bot-search-spike]
+needs: [bot-search-spike, hop-speed]
 ---
 
 ## Why

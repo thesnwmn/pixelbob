@@ -5,7 +5,7 @@ role: tester
 size: M
 status: shaped
 milestone: m1-green-alpha
-needs: [bot-search-spike, hop-speed]
+needs: [bot-search-spike, hop-tune]
 ---
 
 ## Why
@@ -20,3 +20,4 @@ Fuzzing and budgets.
 
 ## Log
 - 2026-10-18 the Director: now waits on the [hop-speed](../asks/hop-speed.md) ask as well, because the slack it measures depends on whether hopping stays the fastest way. The [spike](bot-search-spike.md)'s log says what to build.
+- 2026-10-18 the Director: hop-speed answered (slow hopping slightly), so this waits on [hop-tune](hop-tune.md) instead.

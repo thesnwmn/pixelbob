@@ -265,6 +265,8 @@ function tick(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   readInput();
+  // R while paused or reading doesn't wait to fire on resume.
+  if (paused || sheetOpen()) backTap = false;
   // The game waits while you read the card or fill in the form.
   if (!paused && !sheetOpen()) {
     acc += dt;
@@ -291,7 +293,7 @@ function tick(now: number) {
   best = Math.max(best, home);
   hud.textContent =
     `${scenario!.title}\n` +
-    (p ? `Bob ${Math.round((bob.count / bob.total) * 100)}%\n` : `Bob is gone. Back at the ${play.checkpoint < 0 ? "start" : "checkpoint"} in a moment.\n`) +
+    (p && !play.gone ? `Bob ${Math.round((bob.count / bob.total) * 100)}%\n` : `Bob is gone. Back at the ${play.checkpoint < 0 ? "start" : "checkpoint"} in a moment.\n`) +
     `${play.seconds().toFixed(1)} s` + (best ? ` · home ${home}% (best ${best}%)` : "");
   note.textContent = p ? level.note(p.cx) : "";
   requestAnimationFrame(tick);

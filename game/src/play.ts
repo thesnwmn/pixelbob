@@ -28,6 +28,8 @@ export class Play {
   checkpoint = -1;
   /** Frames since all of Bob was lost, or 0. */
   gone = 0;
+  /** Which of Bob's particles have been in his main piece: a lost bit he hasn't picked up isn't him. */
+  private was = new Uint8Array(0);
   /** Every frame's input since the start (or the last restart). */
   readonly recorder = new Recorder();
 
@@ -57,6 +59,10 @@ export class Play {
     this.bob.fixedTemp = s.bob.temp ?? null;
     const at = this.checkpoint < 0 ? this.start() : this.above(this.level.checkpoints[this.checkpoint]);
     this.bob.spawn(this.level.world, at.x, at.y, s.bob.temp ?? 20, this.level.bits);
+    // All of him at the start is him (the lost bits are their own pieces).
+    const { order } = this.bob.view(), p = this.bob.main!;
+    this.was = new Uint8Array(order.length);
+    for (let j = p.start; j < p.start + p.len; j++) this.was[order[j]] = 1;
     this.gone = 0;
   }
 
@@ -98,13 +104,27 @@ export class Play {
     this.level.world.step();
     this.bob.step(this.level.world, q);
     this.frame++;
-    if (!this.bob.count) {
+    if (!this.here()) {
       if (++this.gone >= GONE) this.respawn();
       return;
     }
     this.touch();
     const p = this.bob.main, f = this.level.finish;
     if (!this.finishedAt && p && p.cx >= f.x0 && this.home() > 0) this.finishedAt = this.frame;
+  }
+
+  /**
+   * Whether any of Bob is left: his main piece holds something that's been him. When all that's
+   * left is lost bits he never picked up, he's lost; a piece he left behind can take over.
+   */
+  private here(): boolean {
+    const p = this.bob.main;
+    if (!p) return false;
+    const { order } = this.bob.view(), was = this.was;
+    let him = false;
+    for (let j = p.start; j < p.start + p.len && !him; j++) him = was[order[j]] === 1;
+    if (him) for (let j = p.start; j < p.start + p.len; j++) was[order[j]] = 1;
+    return him;
   }
 
   /** Lights the checkpoints the main piece touches; the last one touched is where he comes back. */

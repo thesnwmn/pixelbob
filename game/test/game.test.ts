@@ -296,6 +296,16 @@ describe("checkpoints", () => {
     expect(Math.hypot(p.cx - c.x, p.cy - c.y)).toBeLessThan(3);
   });
 
+  it("bring Bob back when all that's left is a lost bit he never picked up", () => {
+    const play = tiny();
+    const { order } = play.bob.view(), p = play.bob.main!;
+    // Drop his body off the map, leaving the lost bit where it is.
+    for (let j = p.start; j < p.start + p.len; j++) play.bob.view().y[order[j]] += 500;
+    for (let i = 0; i < GONE; i++) play.step({ move: 0, jump: false });
+    expect(play.bob.count).toBe(play.bob.total);
+    expect(Math.abs(play.bob.main!.cx - play.level.spawn.x)).toBeLessThan(3);
+  });
+
   it("go unlit on restart", () => {
     const play = toCheckpoint(tiny());
     play.restart();

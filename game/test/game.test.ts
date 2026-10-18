@@ -272,6 +272,10 @@ describe("checkpoints", () => {
     play.step({ move: 0, jump: false, back: true });
     const c = play.above(play.level.checkpoints[0]), p = play.bob.main!;
     expect(play.level.world).not.toBe(world);
+    // The level as it was at the start, a frame on (the frame Bob came back in).
+    const fresh = LEVELS.tiny.build(7).world;
+    fresh.step();
+    expect(Array.from(play.level.world.mat)).toEqual(Array.from(fresh.mat));
     expect(play.frame).toBe(frame + 1);
     expect(play.bob.count).toBe(play.bob.total);
     expect(Math.hypot(p.cx - c.x, p.cy - c.y)).toBeLessThan(3);

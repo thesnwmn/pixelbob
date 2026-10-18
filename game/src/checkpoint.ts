@@ -1,17 +1,22 @@
-// How a checkpoint looks: a little lantern on a post, standing on the ground under the point
-// Bob comes back to, dark until he touches it and then lit. Painted into the cell textures
-// (`Shade`'s colour and glow) before Bob, so he passes in front of it. No DOM.
+// A checkpoint is a lantern on a post, standing on the ground under its point in level.json:
+// Bob lights it by touching the post or the lantern (play.ts) and comes back standing beside it.
+// Painted into the cell textures (`Shade`'s colour and glow) before Bob, so he passes in front
+// of it. No DOM.
 import { CAT, Cat, type Lamp, type World } from "@pixelbob/sim";
 
 const STEM: [number, number, number] = [58, 47, 42];
 const DARK: [number, number, number] = [92, 90, 84];
 const LIT: [number, number, number] = [255, 240, 200];
 
-/** How far below the point the lantern's post stands: on the first solid cell, or 4 cells down if there's none near. */
-function ground(world: World, x: number, y: number): number {
+/** The lantern's height, from the ground to its top. */
+export const POST = 11;
+
+/** The ground under a checkpoint, where its post stands: the first cell down that isn't open (water too), or 4 cells down if there's none near. */
+export function ground(world: World, p: { x: number; y: number }): number {
+  const x = Math.round(p.x), y = Math.max(0, Math.round(p.y));
   for (let gy = y; gy < Math.min(world.h, y + 24); gy++) {
     const c = CAT[world.mat[gy * world.w + x]];
-    if (c === Cat.Static || c === Cat.Powder) return gy;
+    if (c !== Cat.Empty && c !== Cat.Gas) return gy;
   }
   return Math.min(world.h, y + 4);
 }
@@ -19,7 +24,7 @@ function ground(world: World, x: number, y: number): number {
 /** Paints each checkpoint's lantern, lit or not, into the open cells under it. */
 export function paintCheckpoints(world: World, color: Uint8Array, emit: Uint8Array, points: { x: number; y: number }[], lit: boolean[], frame: number): void {
   points.forEach((p, k) => {
-    const x = Math.round(p.x), gy = ground(world, x, Math.round(p.y));
+    const x = Math.round(p.x), gy = ground(world, p);
     const on = lit[k];
     const flick = 0.85 + 0.15 * Math.sin(frame * 0.11 + k * 2.3);
     const put = (cx: number, cy: number, rgb: [number, number, number], glow: number) => {
@@ -34,7 +39,7 @@ export function paintCheckpoints(world: World, color: Uint8Array, emit: Uint8Arr
     };
     // The post, then the lantern on top: a frame round a 1 × 2 light.
     for (let dy = 1; dy <= 7; dy++) put(x, gy - dy, STEM, 0);
-    for (let dy = 8; dy <= 11; dy++)
+    for (let dy = 8; dy <= POST; dy++)
       for (let dx = -1; dx <= 1; dx++) {
         const inside = dx === 0 && (dy === 9 || dy === 10);
         put(x + dx, gy - dy, inside ? (on ? LIT : DARK) : STEM, inside && on ? flick : 0);
@@ -48,6 +53,6 @@ export function lamps(world: World, points: { x: number; y: number }[], lit: boo
     .filter((_, k) => lit[k])
     .map((p) => {
       const x = Math.round(p.x);
-      return { x: x + 0.5, y: ground(world, x, Math.round(p.y)) - 9, color: [1, 0.9, 0.7], radius: 36 };
+      return { x: x + 0.5, y: ground(world, p) - 9, color: [1, 0.9, 0.7], radius: 36 };
     });
 }

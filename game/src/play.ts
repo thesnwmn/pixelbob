@@ -3,12 +3,13 @@
 // it and feeds it input.
 import { type BobModel, DEFAULTS, type Input, type Tweaks, createBob } from "@pixelbob/bob";
 import { CAT, Cat } from "@pixelbob/sim";
+import { POST, ground } from "./checkpoint.ts";
 import { type Built, LEVELS } from "./levels.ts";
 import { type Outcome, Recorder, type Replay, type ReplayFile, quantize } from "./replay.ts";
 import type { Scenario } from "./scenario.ts";
 
 export const STEP = 1 / 60;
-/** How near a checkpoint, in cells, a bit of Bob's main piece has to come to light it. */
+/** How near a checkpoint's post or lantern, in cells, a bit of Bob's main piece has to come to light it. */
 export const TOUCH = 6;
 /** How long Bob stays gone, in frames, before he comes back at the last checkpoint. */
 export const GONE = 60;
@@ -83,14 +84,9 @@ export class Play {
     return { x, y: top - this.tweaks.size - 3 };
   }
 
-  /** Where Bob comes back to at a checkpoint: on the ground under it (or at it, with nothing under it near). */
+  /** Where Bob comes back to at a checkpoint: standing on the ground its post stands on. */
   above(c: { x: number; y: number }): { x: number; y: number } {
-    const { world } = this.level, x = Math.round(c.x), size = this.tweaks.size;
-    for (let y = Math.max(0, Math.round(c.y)); y < Math.min(world.h, c.y + 40); y++) {
-      const k = CAT[world.mat[y * world.w + x]];
-      if (k !== Cat.Empty && k !== Cat.Gas) return { x, y: Math.min(c.y, y - size - 3) };
-    }
-    return c;
+    return { x: Math.round(c.x), y: ground(this.level.world, c) - this.tweaks.size - 3 };
   }
 
   /**
@@ -133,9 +129,11 @@ export class Play {
     if (!p) return;
     const { x, y, order } = this.bob.view();
     this.level.checkpoints.forEach((c, k) => {
+      // The post and lantern, from the ground up: the nearest point on it to each bit of him.
+      const cx = Math.round(c.x) + 0.5, gy = ground(this.level.world, c);
       for (let j = p.start; j < p.start + p.len; j++) {
-        const i = order[j];
-        if ((x[i] - c.x) ** 2 + (y[i] - c.y) ** 2 <= TOUCH * TOUCH) {
+        const i = order[j], py = Math.max(gy - POST, Math.min(gy, y[i]));
+        if ((x[i] - cx) ** 2 + (y[i] - py) ** 2 <= TOUCH * TOUCH) {
           this.lit[k] = true;
           this.checkpoint = k;
           return;

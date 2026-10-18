@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Bot search spike</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #121014; color: #eee; font: 14px/1.4 system-ui, sans-serif; }
+      body { display: flex; flex-direction: column; }
+      canvas { flex: 1; width: 100%; min-height: 0; display: block; }
+      #hud { padding: 8px 16px; white-space: pre-wrap; }
+      button { font: inherit; margin-left: 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="hud"></div>
+    <canvas id="view"></canvas>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

@@ -5,7 +5,7 @@ role: tester
 size: M
 status: shaped
 milestone: m1-green-alpha
-needs: [bot-search-spike]
+needs: [bot-search-spike, hop-speed]
 ---
 
 ## Why
@@ -17,3 +17,6 @@ A number for "too precise" that tracks the producer's difficulty ratings, and pr
 
 ## Not this
 Fuzzing and budgets.
+
+## Log
+- 2026-10-18 the Director: now waits on the [hop-speed](../asks/hop-speed.md) ask as well, because the slack it measures depends on whether hopping stays the fastest way. The [spike](bot-search-spike.md)'s log says what to build.

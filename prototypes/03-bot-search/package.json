@@ -1,0 +1,21 @@
+{
+  "name": "@pixelbob/03-bot-search",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike: can a search bot finish a level? A beam search over input moves from snapshots of the sim, in Node; the page plays the route it found",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p .",
+    "search": "node src/search.ts"
+  },
+  "dependencies": {
+    "@pixelbob/bob": "workspace:*",
+    "@pixelbob/render": "workspace:*",
+    "@pixelbob/sim": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}

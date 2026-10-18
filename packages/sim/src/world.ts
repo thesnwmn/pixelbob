@@ -807,6 +807,16 @@ export class World {
       }
   }
 
+  /**
+   * Plants and vines lose the growth energy they're placed with, so they only grow where
+   * they drink. A painted level calls this: its ground stays as painted, not sprouting a
+   * stubble of blades (which Bob jams against) in its first seconds.
+   */
+  dormant(): void {
+    const { mat, aux } = this;
+    for (let i = 0; i < mat.length; i++) if (mat[i] === M.plant || mat[i] === M.vine) aux[i] = 0;
+  }
+
   /** Wake every chunk (after editing arrays directly). */
   wakeAll(): void {
     this.next.fill(1);

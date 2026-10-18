@@ -192,6 +192,22 @@ describe("heat and reactions", () => {
     run(w, 1500);
     expect(w.count(M.plant)).toBeGreaterThan(before + 3);
   });
+
+  it("dormant, they stay put until they drink", () => {
+    const lawn = () => {
+      const w = box(30, 30);
+      for (let x = 5; x < 25; x++) { w.set(x, 28, M.dirt); w.set(x, 27, M.plant); }
+      w.dormant();
+      return w;
+    };
+    const dry = lawn();
+    run(dry, 600);
+    expect(dry.count(M.plant)).toBe(20);
+    const wet = lawn();
+    wet.paint(15, 20, 3, M.water);
+    run(wet, 1500);
+    expect(wet.count(M.plant)).toBeGreaterThan(23);
+  });
 });
 
 describe("mushrooms", () => {

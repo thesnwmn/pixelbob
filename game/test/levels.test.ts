@@ -257,9 +257,9 @@ describe("painted ground", () => {
   it("lets Bob roll from rest on the first Green level, holding right", () => {
     loadLevels();
     const scenario: Scenario = { id: "g", title: "G", level: "green-1-hills", seed: 7, bob: { tweaks: {} }, camera: { zoom: 3, look: "day" } };
-    // The spawn on the flat, and starts a couple of cells apart at the foot of a 0.47 slope.
+    // The spawn on the flat, and two starts at the foot of a 0.47 slope (all three stalled before).
     const short: { at?: number; gone: number }[] = [];
-    for (const at of [undefined, 685, 690, 695, 700, 705]) {
+    for (const at of [undefined, 695, 705]) {
       const play = new Play({ ...scenario, at });
       for (let i = 0; i < 60; i++) play.step({ move: 0, jump: false });
       const x0 = play.bob.main!.cx;

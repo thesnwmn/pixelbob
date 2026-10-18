@@ -34,7 +34,7 @@ Anything denser falls through anything lighter, with drag through liquids and po
 | fire | fire | Climbs, flickers, heats, and spreads to flammables. Water puts it out (into steam and smoke). |
 | wood | static | Burns in place (throwing flames) and leaves ash. |
 | plant | static | Drinks adjacent water and grows upward. Burns. |
-| vine | static | Hangs: grows down, or creeps along a ceiling. Drinks water for more growth. Burns. |
+| vine | static | Hangs: grows down, or creeps along a ceiling. Drinks water for more growth. Burns. In a painted level, plants and vines start dormant: they grow only where they drink. |
 | spores | powder | Faint glow; drift down. Sprout into mushrooms underground on dirt, wood, plants or ash, much faster near water. Dry up if they never find a spot. |
 | stem / cap | static | The mushroom: the stem climbs, then opens a glowing cap. Caps shed spores, so colonies spread. Both burn. |
 | ash | powder | Left by fire. Slightly denser than water, so it settles as sludge. |

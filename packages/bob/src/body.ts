@@ -1,6 +1,6 @@
 import { CAT, CONDUCT, Cat, DENSITY, FRICTION, M, MOBILITY, SHARP, type World } from "@pixelbob/sim";
 import type { BobModel, BobView, Input, Losses, Piece } from "./model.ts";
-import { DEFAULTS, frozenness, muscleAt, runniness, type Tweaks } from "./tweaks.ts";
+import { DEFAULTS, frozenness, hopLean, muscleAt, runniness, type Tweaks } from "./tweaks.ts";
 
 export const DT = 1 / 60;
 /** Bob is a little denser than water: he sinks slowly and floats on brine, mud and lava. */
@@ -105,6 +105,8 @@ export abstract class Body implements BobModel {
   charge = 0;
   stretch = 0;
   coyote = 0;
+  /** On the ground last step: a landing is the step he touches down. */
+  wasGrounded = false;
   facing = 1;
   protected held = false;
   /** Jump released this long ago and not yet used (fires on landing), with the charge it had. */
@@ -395,6 +397,16 @@ export abstract class Body implements BobModel {
     const grounded = this.footing(p);
     const swim = p.wet > 0.3;
     this.coyote = grounded ? 0.15 : this.coyote - DT;
+    // Landing soaks up the part of his speed past top speed that `hop` doesn't keep, so chained
+    // hops can't stack speed without limit. Rolling never goes past top speed on the flat.
+    if (grounded && !this.wasGrounded) {
+      const over = Math.abs(p.vx) - tw.speed;
+      if (over > 0) {
+        const dv = Math.sign(p.vx) * over * (1 - tw.hop);
+        for (let k = p.start; k < p.start + p.len; k++) vx[order[k]] -= dv;
+      }
+    }
+    this.wasGrounded = grounded;
     const dir = Math.max(-1, Math.min(1, input.move));
     if (dir) this.facing = Math.sign(dir);
     this.effort = dir !== 0 || input.jump;
@@ -423,11 +435,7 @@ export abstract class Body implements BobModel {
       this.buffer -= DT;
       if ((this.coyote > 0 || p.wet > 0.1) && m > 0.05) {
         // Push off along the ground's normal, leaning up, with a little of the stick.
-        // The lean forward is full up to his top speed, then fades, gone at (1 + hop) times it,
-        // so a jump from a roll goes as far as ever but chained hops can't stack speed without limit.
-        const over = (dir * p.vx - tw.speed) / (tw.speed * Math.max(0.01, tw.hop));
-        const lean = 0.2 * Math.max(0, Math.min(1, 1 - over));
-        let jx = p.nx * 0.45 + dir * lean, jy = p.ny * 0.45 - 0.55;
+        let jx = p.nx * 0.45 + dir * 0.2 * hopLean(Math.sign(dir) * p.vx, tw), jy = p.ny * 0.45 - 0.55;
         if (this.coyote <= 0) { jx = dir * 0.25; jy = -1; }
         const jl = Math.hypot(jx, jy) || 1;
         jx /= jl; jy /= jl;

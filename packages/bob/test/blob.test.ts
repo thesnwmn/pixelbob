@@ -332,6 +332,21 @@ describe("feel", () => {
     return { top: top / b.total, fell: fell / b.total };
   };
 
+  it("when the piece he's steering is lost, a piece left behind takes over", () => {
+    // A lava pool under where he starts; a bit of him stranded on rock off to the right.
+    const w = ground(M.rock, (w) => { for (let y = FLOOR - 4; y < FLOOR + 20; y++) for (let x = 30; x < 100; x++) w.set(x, y, y < FLOOR - 2 ? M.air : M.lava); });
+    const b = make();
+    b.spawn(w, 65, FLOOR - 16, 20, [{ x: 220, y: FLOOR - 10, r: 6 }]);
+    let took = -1;
+    for (let f = 0; f < 1200 && took < 0; f++) {
+      b.step(w, { move: 0, jump: false });
+      if (b.main && b.main.cx > 150) took = f;
+    }
+    expect(took, "the stranded bit became the one he steers").toBeGreaterThan(0);
+    run(b, w, 60, { move: 1, jump: false });
+    expect(b.main!.cx).toBeGreaterThan(222); // and it rolls
+  });
+
   it("he keeps steering the piece he was steering, even when another is bigger", () => {
     const w = ground(), b = make({ size: 5 });
     b.spawn(w, 60, FLOOR - 8, 20, [{ x: 200, y: FLOOR - 10, r: 8 }]);

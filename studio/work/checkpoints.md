@@ -3,7 +3,7 @@ title: Checkpoints
 kind: build
 role: engineer
 size: S
-status: shaped
+status: ready
 milestone: m1-green-alpha
 needs: [level-format]
 ---

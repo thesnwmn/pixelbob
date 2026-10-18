@@ -3,7 +3,7 @@ title: Slow hopping slightly
 kind: build
 role: engineer
 size: S
-status: ready
+status: doing
 milestone: m1-green-alpha
 needs: [hop-speed]
 ---

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pixelbob prototypes</title>
+    <style>
+      body { font: 16px/1.5 ui-monospace, Menlo, Consolas, monospace; max-width: 44rem; margin: 2rem auto; padding: 0 1rem; color: #e9e2d6; background: #121014; }
+      h1 { color: #e7c27a; }
+      h2 { color: #e9e2d6; font-size: 1.1rem; margin-top: 1.6rem; }
+      a { color: #e7c27a; }
+      p, li { color: #b8ae9f; }
+    </style>
+  </head>
+  <body>
+    <h1>Pixelbob</h1>
+    <p>A 2D platformer where everything, including Bob the blob, is simulated pixels.</p>
+    <h2>Concept</h2>
+    <p><a href="./concept/"><b>The concept doc</b></a>: what the game is, how it looks, the worlds, menus and the plan.</p>
+    <h2>Game</h2>
+    <p><a href="./game/"><b>The game</b></a>, from the start. A scenario starts it somewhere, with a card saying what to try:</p>
+    <ul>
+      <li><a href="./game/?scenario=hops">hops</a> - Hopping and rolling (with a handoff card)</li>
+      <li><a href="./game/?scenario=ice">ice</a> - Ice, then the brazier and the spikes (with a handoff card)</li>
+      <li><a href="./game/?scenario=runny">runny</a> - Runny Bob at the pit (with a handoff card)</li>
+      <li><a href="./game/?scenario=shell">shell</a> - The game shell (with a handoff card)</li>
+      <li><a href="./game/?scenario=start">start</a> - Bob's test course</li>
+      <li><a href="./game/?scenario=tiny">tiny</a> - A tiny painted level (with a handoff card)</li>
+    </ul>
+    <h2>Studio</h2>
+    <p><a href="./studio/"><b>The studio</b></a>: the board (what's in flight, what's waiting on the producer, what's next) and the sessions so far.</p>
+    <h2>Prototypes</h2>
+    <ul>
+      <li><a href="./00-stills/">00-stills</a> - Art direction stills: one shot per world, Bob drawn from the real goo sim, and a sheet of his states</li>
+      <li><a href="./01-sandbox/">01-sandbox</a> - World sandbox: dig into rock, pour in sand, water, lava, fire, plants and gases, heat and cool, place lamps</li>
+      <li><a href="./02-bob/">02-bob</a> - Bob playground: roll, jump, freeze, melt and get torn apart on a test course, with live sliders for his physics</li>
+      <li><a href="./03-bot-search/">03-bot-search</a> - Spike: can a search bot finish a level? A beam search over input moves from snapshots of the sim, in Node; the page plays the route it found</li>
+    </ul>
+    <p><a href="https://github.com/thesnwmn/pixelbob/tree/main/docs">Design notes</a></p>
+  </body>
+</html>

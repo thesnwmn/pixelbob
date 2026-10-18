@@ -30,6 +30,7 @@ Rolling hills, ponds and trees: the tutorial world, and the one people see first
 - **Teaches:** rolling and coasting, charged jumps, squashing down, momentum over hills, that water is a trap you can climb out of, that bits of you can be lost and found, and that **green moss grips** (he can roll up a moss slope too steep for rock).
 - **Puzzles:** build speed downhill to crest a rise; jump across ponds; find the lost bit at the top of a moss ramp; don't fall in the pond with the bit in it.
 - **Shot:** golden hour. Bob rolls down a hill towards a moss ramp that climbs to a ledge with a lost bit glinting on it. Trees, a pond, long shadows.
+- **Levels** (planned for the [first alpha](../studio/milestones/m1-green-alpha.md)): four, each teaching one thing, then a finale. 1, hills: momentum and charged jumps. 2, ponds: jump them, climb out, rescue the lost bit from one. 3, moss: roll up what rock won't let you, to the bit at the top. 4, the finale: all of it at once. Ordinary checkpoints; a piece left behind as a checkpoint waits for The Foundry, where splitting on purpose arrives.
 
 ## 2. Glow Caverns
 

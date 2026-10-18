@@ -5,7 +5,7 @@
 // No imports, so the health check can run `parseScenario` on the files from Node.
 
 /** The levels a scenario can name, and their width in cells: the course, and each folder in game/levels/. Each is built by `LEVELS` in levels.ts (a test keeps them in step). */
-export const LEVEL_WIDTHS = { course: 1880, tiny: 160 } as const;
+export const LEVEL_WIDTHS = { course: 1880, tiny: 160, "green-1-hills": 1400 } as const;
 export type LevelId = keyof typeof LEVEL_WIDTHS;
 export const LEVEL_IDS = Object.keys(LEVEL_WIDTHS) as LevelId[];
 

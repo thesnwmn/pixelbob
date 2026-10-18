@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { determinism, noDom, noImports, replays, scenarios, typecheck } from "../src/code.ts";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { determinism, levels, noDom, noImports, replays, scenarios, typecheck } from "../src/code.ts";
 import { ctx, fakeShell, tmpDir } from "./fixture.ts";
 
 describe("code/typecheck (and the other pnpm runs)", () => {
@@ -50,6 +52,28 @@ describe("code/scenarios", () => {
     expect(r.status).toBe("fail");
     expect(r.out).toContain("game/scenarios/moon.json: level: one of course");
     expect(r.out).toContain("game/scenarios/half.json: not JSON");
+  });
+});
+
+describe("code/levels", () => {
+  const tiny = (name: string) => readFileSync(new URL(`../../../game/levels/tiny/${name}`, import.meta.url));
+  it("passes when there are none", () => expect(levels.run(ctx(tmpDir()))).toEqual({ status: "pass", detail: "no levels" }));
+  it("passes on levels in the format", () => {
+    const root = tmpDir({ "game/levels/tiny/level.json": tiny("level.json").toString() });
+    writeFileSync(join(root, "game/levels/tiny/materials.png"), tiny("materials.png"));
+    expect(levels.run(ctx(root))).toEqual({ status: "pass", detail: "1 level" });
+  });
+  it("fails on a broken one, saying what's wrong", () => {
+    const root = tmpDir({
+      "game/levels/lost/level.json": '{ "title": "Lost", "spawn": { "x": 999, "y": 5 }, "finish": { "x0": 0, "y0": 0, "x1": 10, "y1": 10 } }',
+      "game/levels/blank/level.json": '{ "title": "Blank" }',
+    });
+    writeFileSync(join(root, "game/levels/lost/materials.png"), tiny("materials.png"));
+    const r = levels.run(ctx(root));
+    expect(r.status).toBe("fail");
+    expect(r.detail).toBe("2 of 2 levels broken");
+    expect(r.out).toContain("game/levels/lost: spawn: 999, 5 is off the map (160 × 60)");
+    expect(r.out).toContain("game/levels/blank: materials.png: missing");
   });
 });
 

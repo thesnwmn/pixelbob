@@ -4,8 +4,8 @@
 //
 // No imports, so the health check can run `parseScenario` on the files from Node.
 
-/** The levels a scenario can name, and their width in cells. Each is built by `LEVELS` in levels.ts (a test keeps them in step). */
-export const LEVEL_WIDTHS = { course: 1880 } as const;
+/** The levels a scenario can name, and their width in cells: the course, and each folder in game/levels/. Each is built by `LEVELS` in levels.ts (a test keeps them in step). */
+export const LEVEL_WIDTHS = { course: 1880, tiny: 160 } as const;
 export type LevelId = keyof typeof LEVEL_WIDTHS;
 export const LEVEL_IDS = Object.keys(LEVEL_WIDTHS) as LevelId[];
 
@@ -31,7 +31,7 @@ export interface Scenario {
   id: string;
   title: string;
   level: LevelId;
-  /** The level's seed. */
+  /** Bob's seed, and the course's (a painted level has its own). */
   seed: number;
   /** Where Bob starts, in cells across the level; he's put on the ground there. Omitted: the level's spawn. */
   at?: number;

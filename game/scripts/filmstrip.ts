@@ -7,6 +7,9 @@ import { deflateSync } from "node:zlib";
 import { filmstrip } from "../src/filmstrip.ts";
 import { decode, findReplay } from "../src/replay.ts";
 import { parseScenario } from "../src/scenario.ts";
+import { loadLevels } from "./load-levels.ts";
+
+loadLevels();
 
 const [which, out, shots = "6", scale = "2"] = process.argv.slice(2);
 if (!which || !out) {

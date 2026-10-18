@@ -5,6 +5,7 @@
 //   node game/scripts/replays.ts --add <id> <file> <note…>   keep a new one, from a file holding its text (a pasted feedback report will do)
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { checkReplay } from "../src/play.ts";
+import { loadLevels } from "./load-levels.ts";
 import { type ReplayFile, decode, findReplay, parseReplayFile } from "../src/replay.ts";
 import { type Scenario, parseScenario } from "../src/scenario.ts";
 
@@ -21,6 +22,7 @@ const read = (url: URL): unknown => {
   }
 };
 
+loadLevels();
 const scenarios = new Map<string, Scenario>();
 for (const { id, url } of json("scenarios")) {
   const { scenario, errors } = parseScenario(id, read(url));

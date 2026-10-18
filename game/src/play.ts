@@ -30,7 +30,9 @@ export class Play {
   /** Back to the scenario's start: a fresh level and a fresh Bob. */
   restart(): void {
     const s = this.scenario;
-    this.level = LEVELS[s.level].build(s.seed);
+    const level = LEVELS[s.level];
+    if (!level) throw new Error(`the level ${s.level} isn't loaded (the browser loads game/levels/ in main.ts, Node with scripts/load-levels.ts)`);
+    this.level = level.build(s.seed);
     this.bob = createBob(this.tweaks, s.seed);
     this.bob.fixedTemp = s.bob.temp ?? null;
     const at = this.start();

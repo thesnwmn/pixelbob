@@ -8,6 +8,9 @@ import { Play, checkReplay, runReplay } from "../src/play.ts";
 import { decode, encode, findReplay, parseReplayFile, quantize, type Frame } from "../src/replay.ts";
 import { buildName, report } from "../src/report.ts";
 import { LEVEL_IDS, LEVEL_WIDTHS, LOOK_IDS, TWEAK_KEYS, parseScenario, type Scenario } from "../src/scenario.ts";
+import { loadLevels } from "../scripts/load-levels.ts";
+
+loadLevels();
 
 const dir = new URL("../scenarios/", import.meta.url);
 const scenarios: Scenario[] = readdirSync(dir)

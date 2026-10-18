@@ -2,7 +2,9 @@
 // card, runs it (play.ts) with keyboard and touch, draws it, and has the feedback button.
 import { BobPainter, type Input } from "@pixelbob/bob";
 import { GLRenderer, LOOKS, Shade, type View } from "@pixelbob/render";
+import { LEVELS, addLevel, parseLevel } from "./levels.ts";
 import { Play, STEP } from "./play.ts";
+import { decodePngAsync } from "./png.ts";
 import { type Feedback, buildName, report } from "./report.ts";
 import { type Scenario, parseScenario } from "./scenario.ts";
 
@@ -34,6 +36,29 @@ if (!scenario) {
   $("#error").hidden = false;
   throw new Error(`no scenario ${asked}`);
 }
+// A painted level is read from game/levels/<id>/ the first time a scenario needs it.
+const levelFiles = import.meta.glob<unknown>("../levels/*/level.json", { eager: true, import: "default" });
+const levelPngs = import.meta.glob<string>("../levels/*/materials.png", { query: "?url", import: "default" });
+if (!LEVELS[scenario.level]) {
+  const at = `../levels/${scenario.level}/`;
+  const url = await levelPngs[`${at}materials.png`]?.();
+  const errors: string[] = [];
+  try {
+    if (!url || !(at + "level.json" in levelFiles)) throw new Error("the level's folder is missing a file");
+    const image = await decodePngAsync(new Uint8Array(await (await fetch(url)).arrayBuffer()));
+    const { level, errors: bad } = parseLevel(scenario.level, levelFiles[at + "level.json"], image);
+    if (level) addLevel(scenario.level, level);
+    errors.push(...bad);
+  } catch (e) {
+    errors.push((e as Error).message);
+  }
+  if (errors.length) {
+    $("#error .box").innerHTML = `<h2>The level "${esc(scenario.level)}" is broken</h2><p class="meta">${errors.map(esc).join("<br>")}</p>`;
+    $("#error").hidden = false;
+    throw new Error(`level ${scenario.level}: ${errors.join("; ")}`);
+  }
+}
+
 document.title = scenario.card ? `${scenario.title} · Pixelbob` : "Pixelbob";
 const play = new Play(scenario);
 

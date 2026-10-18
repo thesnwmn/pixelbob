@@ -65,7 +65,7 @@ describe("the session log", () => {
   });
   it("passes with one, or a reason", () => {
     expect(sessionLogProblem({ changes: [{ status: "A", path: "studio/sessions/2026-10-17-0900-x.md" }], body: "" })).toBeUndefined();
-    expect(sessionLogProblem(pr(["a.ts"], "**Session log:** none, because a /feedback session"))).toBeUndefined();
+    expect(sessionLogProblem(pr(["a.ts"], "**Session log:** none, because a /playtest session"))).toBeUndefined();
   });
 });
 

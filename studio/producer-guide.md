@@ -19,11 +19,11 @@ You don't need to plan, size, review code or merge, except PRs that need your ca
 | **GitHub** | The history: short PRs (merged by the studio), issues for bugs, releases for alpha and beta builds. Comment on any of them and the next session picks it up; file a bug with the bug form if you're not in a session |
 | **The studio page** (`thesnwmn.github.io/pixelbob/studio/`) | What's going on, without starting a session |
 | **Session logs** (`studio/sessions/`) | The story behind any PR: what was said, tried, dropped and learned |
-| **Builds** (preview links, `…/game/`, `…/builds/alpha-1/`) | Playing, and the feedback button (copies your notes and a replay for `/feedback`) |
+| **Builds** (preview links, `…/game/`, `…/builds/alpha-1/`) | Playing, and the feedback button (copies your notes and a replay for `/playtest`) |
 
 ## The commands
 
-Six, typed into a session. Anything you type without a command goes to the Director too.
+Six, typed into a session. Anything you type without a command goes to the Director too. None shares a name with one of Claude Code's own commands, which would run instead (`/feedback` and `/status` did, so they're now `/playtest` and `/board`; the health check keeps it that way).
 
 ### `/go`
 
@@ -62,7 +62,7 @@ The Director's first job is to understand you. If it's clear, it says what it'll
 /director pause everything on audio until the slice is done
 ```
 
-### `/feedback <notes>`
+### `/playtest <notes>`
 
 After playing. Paste what the build's feedback button copied, or just write.
 
@@ -76,7 +76,7 @@ The session then grills you, a few questions at a time with options to pick from
 Then it writes the report to the repo, raises a GitHub issue for each thing that's wrong (with the replay), turns the rest into ideas, units and taste notes, and tells you what will happen. Each issue closes when its fix merges.
 
 ```
-/feedback split gate: splitting is great but I kept losing track of which piece was me. fun 4, difficulty right.
+/playtest split gate: splitting is great but I kept losing track of which piece was me. fun 4, difficulty right.
 ```
 
 ### `/next`
@@ -101,16 +101,16 @@ It changes nothing. Then `/go` takes the top pick, or `/go <one of the others>`,
 4. **Playtests requested**: each with its link, how long it takes, and what to look for.
 5. **One-time setup** still to do.
 
-If there's nothing, it says so in one line and suggests `/next`. Otherwise it goes through the items one at a time, each with the context and options (and a recommendation) so you can answer with a click. You can skip any of them and stop whenever you like; whatever you skip stays waiting, and an ask's default still applies when it expires. Your answers are recorded the usual way, with asks closed and settings, direction and taste notes updated, in a PR it merges before it ends. Playtests aren't done in the session: you get the links, and `/feedback` afterwards.
+If there's nothing, it says so in one line and suggests `/next`. Otherwise it goes through the items one at a time, each with the context and options (and a recommendation) so you can answer with a click. You can skip any of them and stop whenever you like; whatever you skip stays waiting, and an ask's default still applies when it expires. Your answers are recorded the usual way, with asks closed and settings, direction and taste notes updated, in a PR it merges before it ends. Playtests aren't done in the session: you get the links, and `/playtest` afterwards.
 
 ```
 /needs-me                 everything, one at a time
 /needs-me quick           just the list, answer later
 ```
 
-### `/status`
+### `/board`
 
-What's in flight, what needs you, what's queued, how the milestone is going, recent builds. Same as the studio page. `/status` is the state of things; `/next` is the decision `/go` would make.
+What's in flight, what needs you, what's queued, how the milestone is going, recent builds. Same as the studio page. `/board` is the state of things; `/next` is the decision `/go` would make.
 
 ## Playtesting
 
@@ -118,7 +118,7 @@ Every request to play comes with:
 
 - **A link that drops you in the right place**: the build, the level, Bob's state, the camera. No playing through to get there.
 - **A handoff card** on screen: what changed, what to try, what to look for, what's known broken. A few minutes, not a session.
-- **A feedback button**: fun, difficulty, frustration, free text, prefilled with the card's questions. It attaches a **replay** of what you did, so anything odd you saw can be reproduced exactly (on Chrome or Android; an iPhone's replay may drift, since its browser engine's maths can differ slightly). It copies everything for `/feedback`.
+- **A feedback button**: fun, difficulty, frustration, free text, prefilled with the card's questions. It attaches a **replay** of what you did, so anything odd you saw can be reproduced exactly (on Chrome or Android; an iPhone's replay may drift, since its browser engine's maths can differ slightly). It copies everything for `/playtest`.
 
 Milestone builds (alpha, beta) come with release notes and a short playtest script covering the whole milestone.
 
@@ -126,7 +126,7 @@ What helps most: what you *tried* and what you *expected*, not just whether it w
 
 ## Questions for you (asks)
 
-When the studio needs a call only you can make, it writes an ask: context, options, a recommendation and a **default**. Asks show on the studio page and in `/status`, and every session's report says how many are waiting. `/needs-me` goes through them with you; you can also answer as a comment on the PR that raised them.
+When the studio needs a call only you can make, it writes an ask: context, options, a recommendation and a **default**. Asks show on the studio page and in `/board`, and every session's report says how many are waiting. `/needs-me` goes through them with you; you can also answer as a comment on the PR that raised them.
 
 Most asks expire: if you don't answer after a few sessions, the default stands and the work says so (and can be revisited). **Gated** asks (direction, milestones, Bob's character, the colour language, the studio's own rules) wait for you.
 
@@ -167,4 +167,4 @@ Tweak panels for every number (settings travel in the link), scenario links you 
 - **Day 2.** `/director` to confirm, adding "and I want the split in it". The Designer asks two questions about splitting. Then `/go`: a spike on split controls, with a kill criterion.
 - **Day 3.** You play the spike's preview on your phone for five minutes and press feedback. `/go` triages it: keep the swipe, drop the button. The spike is closed with its verdict and the build unit is shaped.
 - **Day 4.** `/go` twice: the split action, then its HUD. Two preview links, one playtest card.
-- **Day 5.** `/status` on the studio page from your phone. Nothing needs you; the next unit is a regression replay of your day 3 run.
+- **Day 5.** `/board` on the studio page from your phone. Nothing needs you; the next unit is a regression replay of your day 3 run.

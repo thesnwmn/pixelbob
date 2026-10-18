@@ -1,9 +1,9 @@
 ---
-name: feedback
+name: playtest
 description: Take the producer's playtest feedback for Pixelbob - notes or a pasted report from the feedback button - grill them until it's complete, write the report to studio/playtests/, raise an issue for each thing that's wrong, and update the taste notes.
 ---
 
-# /feedback
+# /playtest
 
 The producer played something and says: `$ARGUMENTS`. It may be a report pasted from the build's feedback button (with the build, the scenario, ratings and a replay) or rough notes.
 

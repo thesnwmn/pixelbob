@@ -111,7 +111,7 @@ describe("the feedback report", () => {
     expect(buildName("/")).toBe("dev");
   });
 
-  it("has what /feedback asks for", () => {
+  it("has what /playtest asks for", () => {
     const text = report({
       build: "preview/pr-21",
       commit: "abc1234",

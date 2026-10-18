@@ -1,0 +1,12 @@
+{
+  "recorded": "2026-10-18",
+  "note": "A scripted run through the first Green level (the driver in the green-1-hills session log): charged jumps up the first step, over the ravine and up the second step, then two more seconds rolling into the finish. It skips the lost bit in the ravine.",
+  "replay": "pixelbob-replay v1 green-1-hills 1683: 8*410 8j*22 8*159 8j*4 8*415 8j*22 8*258 8j*22 8*371",
+  "expect": {
+    "frames": 1683,
+    "finished": 1563,
+    "home": 88,
+    "bob": 100,
+    "state": "b263d56c"
+  }
+}

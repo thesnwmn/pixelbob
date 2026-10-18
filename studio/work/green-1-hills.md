@@ -3,7 +3,8 @@ title: The Green, level 1: hills
 kind: build
 role: designer
 size: M
-status: shaped
+status: playtest
+pr: 34
 milestone: m1-green-alpha
 needs: [level-format, checkpoints]
 ---
@@ -18,3 +19,6 @@ The Green is four levels and a finale (the producer's call, 2026-10-18 in `/go`)
 
 ## Not this
 Decoration beyond what the material layer gives, other levels' ideas, title and map.
+
+## Log
+- 2026-10-18 built, #34 ([session](../sessions/2026-10-18-1205-green-1-hills.md), which has the measurements and the Tester's report). Hills, a 28-cell step, a 56-cell ravine with a lost bit and steps back out, a 26-cell step, downhill to the finish; two checkpoints. A full charge clears each obstacle every time, a tap never does. It teaches charged jumps, not momentum: a run-up barely matters yet ([#36](https://github.com/thesnwmn/pixelbob/issues/36)). Tapping jump in a rhythm skips the obstacles: a question for the producer on the card. Waiting on the producer's playtest.

@@ -1,0 +1,24 @@
+{
+  "title": "The Green, level 1: hills",
+  "level": "green-1-hills",
+  "card": {
+    "changed": "The first level of The Green: hills. Roll and coast over them, a step too high to roll up, a ravine to jump, a second step, then downhill to the finish. Two checkpoints.",
+    "try": [
+      "Play it through once without thinking, then once for time.",
+      "The step: hold jump to wind up, let go to spring. A tap won't get you up.",
+      "The ravine: a full charge gets you over. A lost bit waits at the bottom, if you want it, and steps lead back out."
+    ],
+    "lookFor": [
+      "Does each obstacle teach its one thing without words?",
+      "Fun, and difficulty, each out of 5. About a minute is the aim."
+    ],
+    "known": [
+      "No decoration yet (grass tufts, trees): the material layer only.",
+      "Tapping jump in a rhythm can get up the steps and over the ravine without a charged jump."
+    ],
+    "questions": [
+      "Does mashing jump past the steps feel like cheating, or just like play?",
+      "Is the lost bit at the bottom of the ravine worth climbing back out for?"
+    ]
+  }
+}

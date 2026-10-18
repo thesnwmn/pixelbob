@@ -26,3 +26,6 @@ What the studio has learned from your feedback, each with where it came from. De
 - Wants to make the calls on direction and taste, and have the studio carry on with everything else without waiting: the studio plan, 2026-10-17.
 - Likes the emergent rescue of a piece left behind taking over when the rest of Bob dies, and wants it used on purpose, alongside ordinary checkpoints, but guarded against abuse (a range limit, say): [playtest 2026-10-18](playtests/2026-10-18-0300-shell-lava-piece.md).
 - Rates a test course's fun as a test course (3): judge fun on real levels, not on the course: [playtest 2026-10-18](playtests/2026-10-18-0300-shell-lava-piece.md).
+- Teach one thing at a time, in steps: a tap jump before a high jump, then combine them: [playtest 2026-10-18](playtests/2026-10-18-1300-green-1-hills.md).
+- Doesn't mind skills that skip what a level teaches (mashing jump up a step is "just timing"): more ways to play, not cheating. Same playtest.
+- Wants atmosphere to carry the opening: finished scenery, a camera move to start, music and sound. Same playtest.

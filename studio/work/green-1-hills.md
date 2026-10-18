@@ -3,7 +3,7 @@ title: The Green, level 1: hills
 kind: build
 role: designer
 size: M
-status: shaped
+status: doing
 milestone: m1-green-alpha
 needs: [level-format, checkpoints]
 ---

@@ -8,6 +8,10 @@ import { type Outcome, Recorder, type Replay, type ReplayFile, quantize } from "
 import type { Scenario } from "./scenario.ts";
 
 export const STEP = 1 / 60;
+/** How near a checkpoint, in cells, a bit of Bob's main piece has to come to light it. */
+export const TOUCH = 6;
+/** How long Bob stays gone, in frames, before he comes back at the last checkpoint. */
+export const GONE = 60;
 
 export class Play {
   readonly scenario: Scenario;
@@ -18,6 +22,12 @@ export class Play {
   frame = 0;
   /** The frame the main piece reached the finish, or 0. */
   finishedAt = 0;
+  /** Which of the level's checkpoints Bob has touched. */
+  lit: boolean[] = [];
+  /** The one he comes back to: the last he touched, or -1 for the start. */
+  checkpoint = -1;
+  /** Frames since all of Bob was lost, or 0. */
+  gone = 0;
   /** Every frame's input since the start (or the last restart). */
   readonly recorder = new Recorder();
 
@@ -27,19 +37,27 @@ export class Play {
     this.restart();
   }
 
-  /** Back to the scenario's start: a fresh level and a fresh Bob. */
+  /** Back to the scenario's start: a fresh level and a fresh Bob, no checkpoints lit, and a new replay. */
   restart(): void {
+    this.checkpoint = -1;
+    this.respawn();
+    this.lit = this.level.checkpoints.map(() => false);
+    this.frame = 0;
+    this.finishedAt = 0;
+    this.recorder.clear();
+  }
+
+  /** Bob back whole at the last checkpoint (or the start), with the level as it was at the start. The run goes on. */
+  respawn(): void {
     const s = this.scenario;
     const level = LEVELS[s.level];
     if (!level) throw new Error(`the level ${s.level} isn't loaded (the browser loads game/levels/ in main.ts, Node with scripts/load-levels.ts)`);
     this.level = level.build(s.seed);
     this.bob = createBob(this.tweaks, s.seed);
     this.bob.fixedTemp = s.bob.temp ?? null;
-    const at = this.start();
+    const at = this.checkpoint < 0 ? this.start() : this.above(this.level.checkpoints[this.checkpoint]);
     this.bob.spawn(this.level.world, at.x, at.y, s.bob.temp ?? 20, this.level.bits);
-    this.frame = 0;
-    this.finishedAt = 0;
-    this.recorder.clear();
+    this.gone = 0;
   }
 
   /** Where Bob starts: the level's spawn, or on the ground at `at`. */
@@ -59,15 +77,51 @@ export class Play {
     return { x, y: top - this.tweaks.size - 3 };
   }
 
-  /** One frame. The input is rounded to eighths (`quantize`) and recorded, so the replay is exactly this run. */
-  step(input: Input): void {
+  /** Where Bob comes back to at a checkpoint: on the ground under it (or at it, with nothing under it near). */
+  above(c: { x: number; y: number }): { x: number; y: number } {
+    const { world } = this.level, x = Math.round(c.x), size = this.tweaks.size;
+    for (let y = Math.max(0, Math.round(c.y)); y < Math.min(world.h, c.y + 40); y++) {
+      const k = CAT[world.mat[y * world.w + x]];
+      if (k !== Cat.Empty && k !== Cat.Gas) return { x, y: Math.min(c.y, y - size - 3) };
+    }
+    return c;
+  }
+
+  /**
+   * One frame. The input is rounded to eighths (`quantize`) and recorded, so the replay is exactly
+   * this run. `back` (R) and losing all of Bob for `GONE` frames bring him back at the last checkpoint.
+   */
+  step(input: Input & { back?: boolean }): void {
     const q = quantize(input);
     this.recorder.push(q);
+    if (q.back) this.respawn();
     this.level.world.step();
     this.bob.step(this.level.world, q);
     this.frame++;
+    if (!this.bob.count) {
+      if (++this.gone >= GONE) this.respawn();
+      return;
+    }
+    this.touch();
     const p = this.bob.main, f = this.level.finish;
     if (!this.finishedAt && p && p.cx >= f.x0 && this.home() > 0) this.finishedAt = this.frame;
+  }
+
+  /** Lights the checkpoints the main piece touches; the last one touched is where he comes back. */
+  private touch(): void {
+    const p = this.bob.main;
+    if (!p) return;
+    const { x, y, order } = this.bob.view();
+    this.level.checkpoints.forEach((c, k) => {
+      for (let j = p.start; j < p.start + p.len; j++) {
+        const i = order[j];
+        if ((x[i] - c.x) ** 2 + (y[i] - c.y) ** 2 <= TOUCH * TOUCH) {
+          this.lit[k] = true;
+          this.checkpoint = k;
+          return;
+        }
+      }
+    });
   }
 
   /** How much of Bob is in the finish box, 0 to 1. */

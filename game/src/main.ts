@@ -2,6 +2,7 @@
 // card, runs it (play.ts) with keyboard and touch, draws it, and has the feedback button.
 import { BobPainter, type Input } from "@pixelbob/bob";
 import { GLRenderer, LOOKS, Shade, type View } from "@pixelbob/render";
+import { lamps as lanterns, paintCheckpoints } from "./checkpoint.ts";
 import { LEVELS, addLevel, parseLevel } from "./levels.ts";
 import { Play, STEP } from "./play.ts";
 import { decodePngAsync } from "./png.ts";
@@ -82,10 +83,16 @@ const look = LOOKS[scenario.camera.look] ?? LOOKS.day;
 
 function restart() {
   play.restart();
-  shade = new Shade(play.level.world, scenario!.seed);
   best = 0;
-  const s = play.start();
-  cam.x = s.x; cam.y = s.y;
+}
+/** Each time Bob comes back the level is rebuilt: shade the new world, and jump the camera to him. */
+let world = play.level.world;
+function followWorld() {
+  if (play.level.world === world) return;
+  world = play.level.world;
+  shade = new Shade(world, scenario!.seed);
+  const p = play.bob.main;
+  if (p) { cam.x = p.cx; cam.y = p.cy; }
 }
 
 // ---- Camera ----
@@ -185,6 +192,7 @@ const pauseEl = $<HTMLButtonElement>("#pause");
 const togglePause = () => { paused = !paused; pauseEl.textContent = paused ? "Play" : "Pause"; pauseEl.classList.toggle("on", paused); };
 pauseEl.onclick = togglePause;
 $<HTMLButtonElement>("#restart").onclick = () => restart();
+$<HTMLButtonElement>("#back").onclick = () => { backTap = true; };
 const fsEl = $<HTMLButtonElement>("#fs");
 if (!document.fullscreenEnabled) fsEl.hidden = true;
 fsEl.onclick = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}));
@@ -196,6 +204,8 @@ const input: Input = { move: 0, jump: false, down: 0, up: 0 };
 const JUMP_KEYS = [" ", "w", "arrowup"];
 /** A jump pressed since the last step, so a tap shorter than a frame still reaches the sim. */
 let jumpTap = false;
+/** Back to the checkpoint asked for since the last step: it's one frame's input, recorded in the replay. */
+let backTap = false;
 const stick = { id: -1, x0: 0, y0: 0, move: 0, down: 0, up: 0 }, jumpTouch = new Set<number>();
 window.addEventListener("keydown", (e) => {
   if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
@@ -210,7 +220,7 @@ window.addEventListener("keydown", (e) => {
   else if (k === "h" || k === "?") showCard(cardEl.hidden !== false);
   else if (sheetOpen()) return;
   else if (k === "p") togglePause();
-  else if (k === "r") restart();
+  else if (k === "r") backTap = true;
   keys.add(k);
   if (JUMP_KEYS.includes(k)) jumpTap = true;
   if ([" ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) e.preventDefault();
@@ -259,10 +269,11 @@ function tick(now: number) {
   if (!paused && !sheetOpen()) {
     acc += dt;
     let n = 0;
-    while (acc >= STEP && n < 3) { play.step(input); acc -= STEP; n++; }
+    while (acc >= STEP && n < 3) { play.step({ ...input, back: backTap }); backTap = false; acc -= STEP; n++; }
     if (n) jumpTap = false;
     if (n === 3) acc = 0;
   }
+  followWorld();
   const { bob, level } = play, p = bob.main;
   if (p) {
     // Follow with a little look-ahead in the direction he's moving.
@@ -271,14 +282,16 @@ function tick(now: number) {
     cam.x += (tx - cam.x) * 0.08; cam.y += (ty - cam.y) * 0.08;
   }
   shade.update(play.frame);
+  paintCheckpoints(level.world, shade.color, shade.emit, level.checkpoints, play.lit, play.frame);
   painter.draw(bob.view(), level.world, shade.color, shade.emit, play.frame);
-  gl.render(shade.color, shade.emit, level.lamps, { ...look, depth: look.depth * 0.55 }, view());
+  const lamps = [...level.lamps, ...lanterns(level.world, level.checkpoints, play.lit)];
+  gl.render(shade.color, shade.emit, lamps, { ...look, depth: look.depth * 0.55 }, view());
 
   const home = Math.round(play.home() * 100);
   best = Math.max(best, home);
   hud.textContent =
     `${scenario!.title}\n` +
-    (p ? `Bob ${Math.round((bob.count / bob.total) * 100)}%\n` : "Bob is gone. R to restart.\n") +
+    (p ? `Bob ${Math.round((bob.count / bob.total) * 100)}%\n` : `Bob is gone. Back at the ${play.checkpoint < 0 ? "start" : "checkpoint"} in a moment.\n`) +
     `${play.seconds().toFixed(1)} s` + (best ? ` · home ${home}% (best ${best}%)` : "");
   note.textContent = p ? level.note(p.cx) : "";
   requestAnimationFrame(tick);

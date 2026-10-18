@@ -7,13 +7,16 @@
 //
 // The text form, run-length encoded, wraps anywhere between runs:
 //   pixelbob-replay v1 <scenario> <frames>: <run> <run> …
-// A run is `<move>[j][d<down>][u<up>][*<count>]`, each axis in eighths: `8*120` is full
-// right for 120 frames, `8j` right with jump held, `0d8*30` crouching still for 30.
+// A run is `<move>[j][b][d<down>][u<up>][*<count>]`, each axis in eighths: `8*120` is full
+// right for 120 frames, `8j` right with jump held, `0d8*30` crouching still for 30, `0b`
+// back to the last checkpoint (R).
 
 /** One frame's input, in eighths: what the game feeds Bob, so a replay matches the run exactly. */
 export interface Frame {
   move: number;
   jump: boolean;
+  /** Back to the last checkpoint (R), this frame. */
+  back: boolean;
   down: number;
   up: number;
 }
@@ -40,12 +43,12 @@ const EIGHTHS = 8;
 const eighths = (v: number | undefined, lo: number) => Math.max(lo * EIGHTHS, Math.min(EIGHTHS, Math.round((Number.isFinite(v) ? v! : 0) * EIGHTHS))) / EIGHTHS + 0; // + 0: never -0, which the replay would read back as 0; NaN is 0
 
 /** Input rounded to eighths: the game steps with this, so what's recorded is exactly what ran. */
-export function quantize(input: { move: number; jump: boolean; down?: number; up?: number }): Frame {
-  return { move: eighths(input.move, -1), jump: !!input.jump, down: eighths(input.down, 0), up: eighths(input.up, 0) };
+export function quantize(input: { move: number; jump: boolean; back?: boolean; down?: number; up?: number }): Frame {
+  return { move: eighths(input.move, -1), jump: !!input.jump, back: !!input.back, down: eighths(input.down, 0), up: eighths(input.up, 0) };
 }
 
 const token = (f: Frame) =>
-  `${Math.round(f.move * EIGHTHS)}${f.jump ? "j" : ""}${f.down ? `d${Math.round(f.down * EIGHTHS)}` : ""}${f.up ? `u${Math.round(f.up * EIGHTHS)}` : ""}`;
+  `${Math.round(f.move * EIGHTHS)}${f.jump ? "j" : ""}${f.back ? "b" : ""}${f.down ? `d${Math.round(f.down * EIGHTHS)}` : ""}${f.up ? `u${Math.round(f.up * EIGHTHS)}` : ""}`;
 
 /** Records frames as runs, so an hour of play stays small. */
 export class Recorder {
@@ -87,7 +90,7 @@ export function encode(scenario: string, frames: Frame[], width?: number): strin
 export const MAX_FRAMES = 2 * 60 * 60 * 60;
 
 const HEAD = /^pixelbob-replay v1 ([a-z0-9]+(?:-[a-z0-9]+)*) (\d+):$/;
-const RUN = /^(-?\d)(j)?(?:d(\d))?(?:u(\d))?(?:\*(\d+))?$/;
+const RUN = /^(-?\d)(j)?(b)?(?:d(\d))?(?:u(\d))?(?:\*(\d+))?$/;
 
 /** Reads a replay's text; returns it, or what's wrong with it. */
 export function decode(text: string): { replay?: Replay; errors: string[] } {
@@ -100,10 +103,10 @@ export function decode(text: string): { replay?: Replay; errors: string[] } {
   const axis = (s: string | undefined) => Number(s ?? 0) / EIGHTHS;
   for (const w of words.slice(4)) {
     const m = RUN.exec(w);
-    const n = m ? Number(m[5] ?? 1) : 0;
-    if (!m || n < 1 || Math.abs(Number(m[1])) > EIGHTHS || Number(m[3] ?? 0) > EIGHTHS || Number(m[4] ?? 0) > EIGHTHS)
-      return { errors: [`replay: "${w}" isn't a run (<move>[j][d<down>][u<up>][*<count>], in eighths)`] };
-    const f: Frame = { move: axis(m[1]), jump: m[2] === "j", down: axis(m[3]), up: axis(m[4]) };
+    const n = m ? Number(m[6] ?? 1) : 0;
+    if (!m || n < 1 || Math.abs(Number(m[1])) > EIGHTHS || Number(m[4] ?? 0) > EIGHTHS || Number(m[5] ?? 0) > EIGHTHS)
+      return { errors: [`replay: "${w}" isn't a run (<move>[j][b][d<down>][u<up>][*<count>], in eighths)`] };
+    const f: Frame = { move: axis(m[1]), jump: m[2] === "j", back: m[3] === "b", down: axis(m[4]), up: axis(m[5]) };
     if (frames.length + n > total) return { errors: [`replay: says ${total} frames but has more`] };
     for (let i = 0; i < n; i++) frames.push(f);
   }

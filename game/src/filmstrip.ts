@@ -4,6 +4,7 @@
 // Node; game/scripts/filmstrip.ts writes it to a PNG.
 import { BobPainter } from "@pixelbob/bob";
 import { Shade } from "@pixelbob/render";
+import { paintCheckpoints } from "./checkpoint.ts";
 import { Play, runReplay } from "./play.ts";
 import type { Replay } from "./replay.ts";
 import type { Scenario } from "./scenario.ts";
@@ -41,16 +42,18 @@ export function filmstrip(scenario: Scenario, replay: Replay, opts: StripOptions
   const w = frames.length * sw + (frames.length - 1) * GAP, h = sh;
   const rgba = new Uint8ClampedArray(w * h * 4).fill(255);
   const painter = new BobPainter();
-  let shade: Shade | undefined;
+  let shade: Shade | undefined, shaded: unknown;
   let at = { x: 0, y: 0 };
   const shoot = (play: Play, k: number) => {
     const { world } = play.level;
-    shade ??= new Shade(world, scenario.seed);
-    shade.update(play.frame);
-    painter.draw(play.bob.view(), world, shade.color, shade.emit, play.frame);
+    // Bob coming back at a checkpoint rebuilds the level: shade the new one.
+    if (shaded !== world) shade = new Shade((shaded = world), scenario.seed);
+    shade!.update(play.frame);
+    paintCheckpoints(world, shade!.color, shade!.emit, play.level.checkpoints, play.lit, play.frame);
+    painter.draw(play.bob.view(), world, shade!.color, shade!.emit, play.frame);
     const x0 = Math.max(0, Math.min(world.w - cw, Math.round(at.x - cw / 2)));
     const y0 = Math.max(0, Math.min(world.h - ch, Math.round(at.y - ch / 2)));
-    const { color, emit } = shade;
+    const { color, emit } = shade!;
     for (let py = 0; py < sh; py++)
       for (let px = 0; px < sw; px++) {
         const cx = x0 + Math.floor(px / scale), cy = y0 + Math.floor(py / scale);

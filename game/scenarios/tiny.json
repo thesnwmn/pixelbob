@@ -2,10 +2,17 @@
   "title": "A tiny painted level",
   "level": "tiny",
   "card": {
-    "changed": "Levels can now be painted: a PNG for the materials and a JSON file for the spawn, finish, lost bits and lamps. This is the smallest one, a strip of grass, to show a painted level loads and plays. The Green's real levels come next.",
-    "try": ["Roll right to the finish, picking up the lost bit on the way."],
-    "lookFor": ["Anything that looks or plays differently from the test course's ground."],
-    "known": ["Checkpoints are in the file but don't do anything yet: that's the next unit.", "No decoration yet (grass tufts, moss, trees): the material layer only."],
+    "changed": "Checkpoints: a lantern on a post. Touch it and it lights; R (or the Checkpoint button), or losing all of Bob, brings him back there whole, with the level as it was. Restart goes back to the start.",
+    "try": [
+      "Roll right to the finish, picking up the lost bit on the way.",
+      "Roll past the lantern so it lights, then press R (or Checkpoint): Bob comes back there, with the level as it was."
+    ],
+    "lookFor": [
+      "Anything that looks or plays differently from the test course's ground."
+    ],
+    "known": [
+      "No decoration yet (grass tufts, moss, trees): the material layer only."
+    ],
     "questions": []
   }
 }

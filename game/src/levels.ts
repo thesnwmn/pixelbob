@@ -19,7 +19,7 @@ export interface Built {
   bits: { x: number; y: number; r: number }[];
   /** Get as much of Bob into this box as you can. */
   finish: Box;
-  /** Where Bob can come back to (not yet used: the checkpoints unit). */
+  /** Where Bob comes back to once he's touched one (play.ts): in the open, like the spawn. */
   checkpoints: Point[];
   /** What the bit of the level at `x` is for, if anything. */
   note(x: number): string;
@@ -120,13 +120,16 @@ export function parseLevel(id: string, raw: unknown, image: Image): { level?: Le
   const seed = raw.seed ?? 7;
   if (!Number.isInteger(seed)) bad("seed: an integer");
 
+  // Bob is put at the spawn and at checkpoints, so they have to be in the open.
+  const open = (p: Point | undefined, at: string) => {
+    if (!p) return p;
+    const c = CAT[mat[Math.floor(p.y) * w + Math.floor(p.x)]];
+    if (c !== Cat.Empty && c !== Cat.Gas) return void bad(`${at}: ${p.x}, ${p.y} is inside something solid or liquid`);
+    return p;
+  };
   let spawn: Point | undefined;
   if (raw.spawn === undefined) bad("spawn: missing (where Bob starts)");
-  else spawn = point(raw.spawn, "spawn");
-  if (spawn) {
-    const c = CAT[mat[Math.floor(spawn.y) * w + Math.floor(spawn.x)]];
-    if (c !== Cat.Empty && c !== Cat.Gas) bad(`spawn: ${spawn.x}, ${spawn.y} is inside something solid or liquid`);
-  }
+  else spawn = open(point(raw.spawn, "spawn"), "spawn");
 
   let finish: Box | undefined;
   const f = raw.finish;
@@ -139,7 +142,7 @@ export function parseLevel(id: string, raw: unknown, image: Image): { level?: Le
     if (finish.x0 < 0 || finish.y0 < 0 || finish.x1 > w || finish.y1 > h) bad(`finish: reaches off the map (${w} × ${h})`);
   }
 
-  const checkpoints = list("checkpoints", (v, at) => point(v, at));
+  const checkpoints = list("checkpoints", (v, at) => open(point(v, at), at));
   const bits = list("bits", (v, at) => {
     const p = point(v, at, ["r"]);
     const r = isObject(v) ? (v.r ?? 2) : 2;

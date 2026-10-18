@@ -16,7 +16,7 @@ if (!scenario) throw new Error(errors.join("; "));
 
 /** A move: 20 frames of one input, the jump held for the first 8. */
 const LEN = 20;
-const f = (move: number, jump = false, down = 0, up = 0): Frame => ({ move, jump, down, up });
+const f = (move: number, jump = false, down = 0, up = 0): Frame => ({ move, jump, back: false, down, up });
 const MOVES: { name: string; frame(i: number): Frame }[] = [
   { name: "right", frame: () => f(1) },
   { name: "right+jump", frame: (i) => f(1, i < 8) },

@@ -4,7 +4,7 @@ import { LOOKS } from "@pixelbob/render";
 import { describe, expect, it } from "vitest";
 import { LEVELS } from "../src/levels.ts";
 import { filmstrip } from "../src/filmstrip.ts";
-import { Play, checkReplay, runReplay } from "../src/play.ts";
+import { GONE, Play, TOUCH, checkReplay, runReplay } from "../src/play.ts";
 import { decode, encode, findReplay, parseReplayFile, quantize, type Frame } from "../src/replay.ts";
 import { buildName, report } from "../src/report.ts";
 import { LEVEL_IDS, LEVEL_WIDTHS, LOOK_IDS, TWEAK_KEYS, parseScenario, type Scenario } from "../src/scenario.ts";
@@ -166,9 +166,9 @@ const wiggle = (i: number) => ({ move: Math.sin(i / 7) * 1.3, jump: i % 40 < 5, 
 
 describe("replays", () => {
   it("round input to eighths, the same way every time", () => {
-    expect(quantize({ move: 0.37, jump: true })).toEqual({ move: 0.375, jump: true, down: 0, up: 0 });
-    expect(quantize({ move: -3, jump: false, down: 2, up: -1 })).toEqual({ move: -1, jump: false, down: 1, up: 0 });
-    expect(quantize({ move: Number.NaN, jump: false, down: -0.01 })).toEqual({ move: 0, jump: false, down: 0, up: 0 });
+    expect(quantize({ move: 0.37, jump: true })).toEqual({ move: 0.375, jump: true, back: false, down: 0, up: 0 });
+    expect(quantize({ move: -3, jump: false, down: 2, up: -1 })).toEqual({ move: -1, jump: false, back: false, down: 1, up: 0 });
+    expect(quantize({ move: Number.NaN, jump: false, down: -0.01 })).toEqual({ move: 0, jump: false, back: false, down: 0, up: 0 });
     expect(Object.is(quantize({ move: -0.01, jump: false }).move, 0)).toBe(true);
   });
 
@@ -179,6 +179,9 @@ describe("replays", () => {
     expect(Math.max(...text.split("\n").map((l) => l.length))).toBeLessThanOrEqual(60);
     expect(decode(text)).toEqual({ replay: { scenario: "ice", frames }, errors: [] });
     expect(encode("start", [quantize({ move: 1, jump: false }), quantize({ move: 1, jump: false }), quantize({ move: -0.5, jump: true, down: 1 })])).toBe("pixelbob-replay v1 start 3: 8*2 -4jd8");
+    const back = [quantize({ move: 0, jump: true, back: true, up: 0.5 }), quantize({ move: 0, jump: false })];
+    expect(encode("start", back)).toBe("pixelbob-replay v1 start 2: 0jbu4 0");
+    expect(decode(encode("start", back)).replay!.frames).toEqual(back);
   });
 
   it("say what's wrong with a broken one", () => {
@@ -240,6 +243,87 @@ describe("replays", () => {
       "expect.bob",
       "expect.state",
     ]);
+  });
+});
+
+describe("checkpoints", () => {
+  const tiny = () => new Play(byId.get("tiny")!);
+  /** Rolls right until the first checkpoint lights (or gives up). */
+  const toCheckpoint = (play: Play) => {
+    for (let i = 0; i < 900 && !play.lit[0]; i++) play.step({ move: 1, jump: false });
+    return play;
+  };
+
+  it("light when Bob touches one, and not before", () => {
+    const play = tiny();
+    expect(play.level.checkpoints.length).toBeGreaterThan(0);
+    for (let i = 0; i < 30; i++) play.step({ move: 0, jump: false });
+    expect([play.lit, play.checkpoint]).toEqual([[false], -1]);
+    toCheckpoint(play);
+    expect([play.lit, play.checkpoint]).toEqual([[true], 0]);
+    const c = play.level.checkpoints[0];
+    expect(Math.abs(play.bob.main!.cx - c.x)).toBeLessThan(play.bob.main!.radius + TOUCH + 1);
+  });
+
+  it("bring Bob back there whole on R, with the level as it was, and the run goes on", () => {
+    const play = toCheckpoint(tiny());
+    for (let i = 0; i < 60; i++) play.step({ move: 1, jump: false });
+    const frame = play.frame, world = play.level.world;
+    play.step({ move: 0, jump: false, back: true });
+    const c = play.above(play.level.checkpoints[0]), p = play.bob.main!;
+    expect(play.level.world).not.toBe(world);
+    // The level as it was at the start, a frame on (the frame Bob came back in).
+    const fresh = LEVELS.tiny.build(7).world;
+    fresh.step();
+    expect(Array.from(play.level.world.mat)).toEqual(Array.from(fresh.mat));
+    expect(play.frame).toBe(frame + 1);
+    expect(play.bob.count).toBe(play.bob.total);
+    expect(Math.hypot(p.cx - c.x, p.cy - c.y)).toBeLessThan(3);
+    expect(play.lit).toEqual([true]);
+  });
+
+  it("bring Bob back on R at the start when none is lit", () => {
+    const play = tiny();
+    for (let i = 0; i < 60; i++) play.step({ move: 1, jump: false });
+    play.step({ move: 0, jump: false, back: true });
+    expect(Math.abs(play.bob.main!.cx - play.level.spawn.x)).toBeLessThan(3);
+  });
+
+  it("bring Bob back after he's all lost", () => {
+    const play = toCheckpoint(tiny());
+    play.bob.shift(0, play.level.world.h + 10);
+    play.step({ move: 0, jump: false });
+    expect([play.bob.count, play.bob.main]).toEqual([0, undefined]);
+    for (let i = 1; i < GONE; i++) play.step({ move: 0, jump: false });
+    const c = play.above(play.level.checkpoints[0]), p = play.bob.main!;
+    expect(play.bob.count).toBe(play.bob.total);
+    expect(Math.hypot(p.cx - c.x, p.cy - c.y)).toBeLessThan(3);
+  });
+
+  it("bring Bob back when all that's left is a lost bit he never picked up", () => {
+    const play = tiny();
+    const { order } = play.bob.view(), p = play.bob.main!;
+    // Drop his body off the map, leaving the lost bit where it is.
+    for (let j = p.start; j < p.start + p.len; j++) play.bob.view().y[order[j]] += 500;
+    for (let i = 0; i < GONE; i++) play.step({ move: 0, jump: false });
+    expect(play.bob.count).toBe(play.bob.total);
+    expect(Math.abs(play.bob.main!.cx - play.level.spawn.x)).toBeLessThan(3);
+  });
+
+  it("go unlit on restart", () => {
+    const play = toCheckpoint(tiny());
+    play.restart();
+    expect([play.lit, play.checkpoint]).toEqual([[false], -1]);
+  });
+
+  it("are in the replay: a run through one, back and on again, plays back exactly", () => {
+    const play = toCheckpoint(tiny());
+    for (let i = 0; i < 40; i++) play.step(wiggle(i));
+    play.step({ move: 0, jump: false, back: true });
+    for (let i = 0; i < 120; i++) play.step({ move: 1, jump: i % 50 < 4 });
+    const again = runReplay(byId.get("tiny")!, decode(play.replay()).replay!);
+    expect(again.lit).toEqual(play.lit);
+    expect(again.outcome()).toEqual(play.outcome());
   });
 });
 

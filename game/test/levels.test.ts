@@ -160,7 +160,7 @@ describe("the level format", () => {
     const { level, errors } = parseLevel("bad", {
       title: "",
       spawn: { x: 10, y: 25 },
-      checkpoints: [{ x: 80, y: 5 }],
+      checkpoints: [{ x: 80, y: 5 }, { x: 30, y: 22 }],
       bits: [{ x: 5, y: 5, r: -1 }],
       lamps: [{ x: 5, y: 5, color: "red" }],
       music: "loud",
@@ -173,6 +173,7 @@ describe("the level format", () => {
       "spawn: 10, 25 is inside something solid or liquid",
       "finish: missing (the box to get Bob into)",
       "checkpoints[0]: 80, 5 is off the map (60 × 30)",
+      "checkpoints[1]: 30, 22 is inside something solid or liquid",
       "bits[0].r: a size in cells, more than 0",
       "lamps[0].color: [r, g, b], each 0 or more",
     ]);

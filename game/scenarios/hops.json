@@ -9,12 +9,15 @@
       "Jump the gaps and the lava as you normally would."
     ],
     "lookFor": [
-      "Whether hopping still feels worth it, but not the only way to move.",
-      "Whether single jumps over things feel the same as before."
+      "Whether hopping still feels worth it, but not the only way to move, on the flat and over the hills.",
+      "Whether landings after fast hops feel like a brake or a stumble.",
+      "Whether a long-charged jump from a full roll feels shorter or floatier than before."
     ],
     "known": [
-      "Measured over 8 s from the start (`node prototypes/03-bot-search/src/speed.ts`): rolling 445 cells; hopping every 20 frames 664 (it was 1118). The fastest rhythm the bot tried, every 12 frames, about 700 (it was about 1250).",
-      "A jump from faster than top speed (rolling downhill) leans forward a little less than before."
+      "Measured over 8 s from the start (`node prototypes/03-bot-search/src/speed.ts`): rolling 445 cells; hopping every 20 frames 664 (it was 1118). The fastest rhythm found, 714 (it was about 1400).",
+      "Over the hills, hopping is still about twice as fast as rolling (it was four times): rolling uphill is slow.",
+      "A jump from faster than top speed leans forward a little less: rolling downhill, or a long wind-up while rolling (he speeds up as he squashes). Those land a few cells shorter and a little higher.",
+      "A landing after fast hops takes the extra speed in one frame."
     ],
     "questions": [
       "Is hopping slowed the right amount: too little, right, or too much?",

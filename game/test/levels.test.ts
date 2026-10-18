@@ -6,6 +6,7 @@ import { CAT, Cat, M, PAINT } from "@pixelbob/sim";
 import { describe, expect, it } from "vitest";
 import { LEVELS, parseLevel } from "../src/levels.ts";
 import { Play } from "../src/play.ts";
+import type { Scenario } from "../src/scenario.ts";
 import { type Image, decodePng, decodePngAsync } from "../src/png.ts";
 import { loadLevels, readLevel } from "../scripts/load-levels.ts";
 
@@ -238,5 +239,35 @@ describe("the tiny level", () => {
     expect(below === Cat.Empty || below === Cat.Gas).toBe(true);
     expect(p.cy).toBeLessThan(40);
     expect(p.cy).toBeGreaterThan(30);
+  });
+});
+
+describe("painted ground", () => {
+  // #35: painted grass used to sprout a stubble of blades up to 3 cells tall in its first
+  // seconds, and Bob, rolling from rest, jammed against them.
+  it("stays as painted: grass only grows where it drinks", () => {
+    const lawn = image(60, 30, (_, y) => (y >= 23 ? M.dirt : y >= 20 ? M.plant : M.air));
+    const { level } = parseLevel("good", good, lawn);
+    const world = level!.build(7).world;
+    const before = world.mat.slice();
+    for (let i = 0; i < 300; i++) world.step();
+    expect(world.mat).toEqual(before);
+  });
+
+  it("lets Bob roll from rest on the first Green level, holding right", () => {
+    loadLevels();
+    const scenario: Scenario = { id: "g", title: "G", level: "green-1-hills", seed: 7, bob: { tweaks: {} }, camera: { zoom: 3, look: "day" } };
+    // The spawn on the flat, and two starts at the foot of a 0.47 slope (all three stalled before).
+    const short: { at?: number; gone: number }[] = [];
+    for (const at of [undefined, 695, 705]) {
+      const play = new Play({ ...scenario, at });
+      for (let i = 0; i < 60; i++) play.step({ move: 0, jump: false });
+      const x0 = play.bob.main!.cx;
+      for (let i = 0; i < 180; i++) play.step({ move: 1, jump: false });
+      const gone = Math.round(play.bob.main!.cx - x0);
+      // Rolling freely he goes about 120 to 170 cells in the 3 s; stalled, under 40.
+      if (gone < 100) short.push({ at, gone });
+    }
+    expect(short).toEqual([]);
   });
 });

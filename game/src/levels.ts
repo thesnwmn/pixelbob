@@ -168,6 +168,7 @@ export function parseLevel(id: string, raw: unknown, image: Image): { level?: Le
       build() {
         const world = new World(w, h, file.seed);
         for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (mat[y * w + x] !== M.air) world.set(x, y, mat[y * w + x]);
+        world.dormant();
         world.wakeAll();
         const copy = <T extends object>(a: T[]) => a.map((e) => ({ ...e }));
         return { world, lamps: copy(file.lamps), spawn: { ...file.spawn }, bits: copy(file.bits), finish: { ...file.finish }, checkpoints: copy(file.checkpoints), note: () => "" };

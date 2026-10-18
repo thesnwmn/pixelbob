@@ -284,7 +284,9 @@ describe("checkpoints", () => {
 
   it("bring Bob back on R at the start when none is lit", () => {
     const play = tiny();
-    for (let i = 0; i < 60; i++) play.step({ move: 1, jump: false });
+    for (let i = 0; i < 30; i++) play.step({ move: 1, jump: false });
+    expect(play.lit).toEqual([false]);
+    expect(play.bob.main!.cx - play.level.spawn.x).toBeGreaterThan(10);
     play.step({ move: 0, jump: false, back: true });
     expect(Math.abs(play.bob.main!.cx - play.level.spawn.x)).toBeLessThan(3);
   });

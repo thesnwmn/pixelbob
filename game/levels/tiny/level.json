@@ -1,0 +1,9 @@
+{
+  "title": "A tiny level",
+  "seed": 7,
+  "spawn": { "x": 20, "y": 28 },
+  "finish": { "x0": 130, "y0": 0, "x1": 160, "y1": 60 },
+  "checkpoints": [{ "x": 80, "y": 36 }],
+  "bits": [{ "x": 100, "y": 37, "r": 2 }],
+  "lamps": [{ "x": 145, "y": 20, "radius": 60 }]
+}

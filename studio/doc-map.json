@@ -2,6 +2,7 @@
   "$comment": "Which docs describe which code, for the docs/in-step check (studio/README.md#keeping-docs-and-the-studio-in-step). A PR that changes a file under `paths` changes one of `docs`, or says `Docs: none needed, because …`. A changed file belongs to the first entry it matches, so the specific entries come first. `*` is any name, `**` any path; a doc ending in / is a folder, and a #heading is where to look (any change to the file counts). A PR that adds a package, a prototype or a format adds its entries.",
   "map": [
     { "paths": ["packages/sim/src/materials.ts"], "docs": ["docs/materials.md"] },
+    { "paths": ["packages/sim/src/paint.ts", "game/src/levels.ts", "game/src/png.ts", "game/levels/**", "game/scripts/levels.ts", "game/scripts/load-levels.ts"], "docs": ["docs/tech-and-toolchain.md#level-format"] },
     { "paths": ["packages/sim/src/**"], "docs": ["docs/simulation.md"] },
     { "paths": ["packages/bob/src/**"], "docs": ["docs/bob.md"] },
     { "paths": ["game/src/scenario.ts", "game/src/report.ts", "game/src/replay.ts"], "docs": ["docs/tech-and-toolchain.md#the-game", "studio/README.md#builds-and-playtesting"] },

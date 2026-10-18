@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { M, World, generate } from "../src/index.ts";
+import { M, MATS, PAINT, World, generate, paintedMaterial } from "../src/index.ts";
 
 /** A box with rock walls and floor, open top. */
 function box(w = 40, h = 40, seed = 1): World {
@@ -303,5 +303,15 @@ describe("world", () => {
     w.paint(30, 10, 4, M.sand);
     run(w, 400);
     expect(w.awakeCount()).toBeLessThan(2);
+  });
+});
+
+describe("the level palette", () => {
+  it("gives every material its own colour, and reads each back", () => {
+    expect(PAINT.length).toBe(MATS.length);
+    expect(new Set(PAINT).size).toBe(MATS.length);
+    for (const m of MATS) expect(paintedMaterial(PAINT[m.id]), m.name).toBe(m.id);
+    expect(PAINT[M.air]).toBe(0x000000);
+    expect(paintedMaterial(0x123456)).toBe(-1);
   });
 });

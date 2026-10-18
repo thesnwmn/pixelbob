@@ -37,7 +37,7 @@ The first cut implements this section: `World` stores `mat`, `shade`, `temp`, `l
 - **Plants grow on water**: a plant cell next to water drinks it and passes growth energy up to a new tip.
 - **Mushrooms grow from spores**: a spore resting on dirt, wood or plants underground (rock wall behind it) sprouts a stem, far more readily near water. The stem climbs on stored energy and opens a domed, glowing cap; caps now and then drop new spores, so colonies spread. Spores that find nowhere to grow dry up.
 
-Every material and its interactions are listed in [Materials](materials.md).
+Every material and its interactions are listed in [Materials](materials.md). The colour each material is painted in, in a level's material layer, is `PAINT` in `paint.ts` ([Level format](tech-and-toolchain.md#level-format)).
 
 Settled worlds cost about 1.3 ms a step at 480×270; a busy one about 3 ms (Node, desktop CPU).
 

@@ -98,14 +98,14 @@ pixelbob/
     bob/                    Bob; no DOM
     render/                 the WebGL2 renderer and the cells-to-textures pass
     play/                   (planned) bots, if they outgrow game/; no DOM
-    levels/                 (planned) the level format: load, save, decorate
+    levels/                 (planned) the level format, if it outgrows game/ (now game/src/levels.ts)
 
   game/                     the game itself: a Vite app, built to …/pixelbob/game/
-    src/                    the scenario format, playing one, replays, filmstrips, the feedback button (planned: title, map, HUD, saves)
-    levels/                 (planned) the levels: material PNGs plus entity JSON
+    src/                    the scenario and level formats, playing one, replays, filmstrips, the feedback button (planned: title, map, HUD, saves)
+    levels/                 the painted levels: a material PNG and a level.json each
     scenarios/              start points with handoff cards, for `?scenario=`
     replays/                recorded runs with their expected outcomes; the health check replays them
-    scripts/                replays (check, keep, update) and filmstrips, in Node
+    scripts/                levels (check, palette, new), replays (check, keep, update) and filmstrips, in Node
 
   prototypes/               spikes: throwaway, one question each
     00-stills/ 01-sandbox/ 02-bob/ …
@@ -447,7 +447,7 @@ Checks are grouped in tiers and run in order. A tier that fails stops the run, b
 | **1. Tools** | Node is the version the repo pins; pnpm matches `packageManager`; git. Later: Chromium is where Playwright looks (once browser tests exist) | A fresh container with the wrong Node, or a missing tool |
 | **2. Dependencies** | Install from the lockfile (`--frozen-lockfile`); `node_modules` matches the lockfile; every workspace package resolves | "tsc not found" because nothing was installed, as happened when this plan was written |
 | **3. Repo** | On a session branch, not `main`; no conflict markers; every top-level folder is in the [repo map](#repo-structure); how far behind `main` the branch is; at the end (`--end`), also: tree clean, everything pushed, and a PR for the branch's commits: open, or merged at this very commit (asked of GitHub with `gh api`; nothing to land passes) | Work that wasn't pushed before the container was thrown away |
-| **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim`, `packages/bob`, `game/src`, the stills or the bot search spike, no DOM in the sim or Bob, no imports in the scenario and replay formats (`code/no-imports`); scenarios load (`code/scenarios`) and kept replays still give their recorded outcome (`code/replays`) | Main red, or a convention quietly broken |
+| **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim`, `packages/bob`, `game/src`, the stills or the bot search spike, no DOM in the sim or Bob, no imports in the scenario and replay formats (`code/no-imports`); scenarios and painted levels load (`code/scenarios`, `code/levels`) and kept replays still give their recorded outcome (`code/replays`) | Main red, or a convention quietly broken |
 | **5. Studio and docs** | Every studio file follows its format, and every name in one points at a file (`studio/files`); no unit on main is `doing` or `review` (`studio/in-flight`), and at the end no unit is still `doing` (`studio/landed`); every doc and decision is in the docs index (`docs/index`); every relative link in the Markdown resolves, headings included (`docs/links`); every role has a brief and a row in the roles table (`studio/roles`), and every command a skill and a section in the producer guide (`studio/commands`); every path in the gate's list exists and the gate's own files are on it (`github/gate`); the studio page shows every unit and leaves no Markdown unconverted (`studio/page`); every label the studio uses is in `.github/labels.json`, and the bug form files with one (`github/labels`); every entry in the doc map matches a file and names docs and headings that exist (`docs/map`); on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step) (`docs/in-step`, `studio/unit`, `studio/session-log`), and the workflow that enforces them runs them, again on an edit (`github/in-step`). | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
 | **6. Budgets** (later) | The sim step and render stay within their time budgets on the benchmark scene | A change that quietly costs 3 ms a frame |
 

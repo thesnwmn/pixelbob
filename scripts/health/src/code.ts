@@ -2,6 +2,7 @@
 // CLAUDE.md that a script can test still hold.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseScenario } from "../../../game/src/scenario.ts";
 import { type Check, type Ctx, fail, findInCode, pass, sourceFiles, tail } from "./check.ts";
 
@@ -37,7 +38,7 @@ export const determinism: Check = {
 };
 
 /** Packages that run in Workers and Node, so may not touch the DOM. */
-export const NO_DOM = ["packages/sim/src", "packages/bob/src", "game/src/play.ts", "game/src/levels.ts", "game/src/scenario.ts", "game/src/report.ts", "game/src/replay.ts", "game/src/filmstrip.ts"];
+export const NO_DOM = ["packages/sim/src", "packages/bob/src", "game/src/play.ts", "game/src/levels.ts", "game/src/png.ts", "game/src/scenario.ts", "game/src/report.ts", "game/src/replay.ts", "game/src/filmstrip.ts"];
 const DOM_GLOBALS = /\b(document|window|navigator|localStorage|sessionStorage|requestAnimationFrame|HTML\w*Element|CanvasRenderingContext2D|OffscreenCanvas|ImageData)\b/;
 
 export const noDom: Check = {
@@ -93,6 +94,24 @@ export const scenarios: Check = {
   },
 };
 
+export const LEVELS = "game/levels";
+/** The levels tool, run from this checkout whichever root is checked (a test hands it a fixture). */
+const LEVELS_TOOL = fileURLToPath(new URL("../../../game/scripts/levels.ts", import.meta.url));
+
+export const levels: Check = {
+  id: "code/levels",
+  tier: 4,
+  repro: "node game/scripts/levels.ts",
+  hint: "A painted level in game/levels/ doesn't follow the format (docs/tech-and-toolchain.md#level-format): a colour that isn't in the level palette (`node game/scripts/levels.ts palette <out.gpl>`), something off the map, or a missing spawn or finish. Its scenarios won't start.",
+  run({ root, sh }) {
+    const dir = join(root, LEVELS);
+    if (!existsSync(dir)) return pass("no levels");
+    const r = sh("node", [LEVELS_TOOL, dir]);
+    const last = r.out.trim().split("\n").pop() ?? "";
+    return r.code === 0 ? pass(last) : fail(last || "the levels tool didn't run", tail(r.out));
+  },
+};
+
 export const replays: Check = {
   id: "code/replays",
   tier: 4,
@@ -107,4 +126,4 @@ export const replays: Check = {
 };
 
 // Cheap scans first, so a broken convention shows before the slow runs.
-export const CODE = [determinism, noDom, noImports, scenarios, typecheck, test, replays, build];
+export const CODE = [determinism, noDom, noImports, scenarios, levels, typecheck, test, replays, build];

@@ -22,7 +22,7 @@ packages/
   bob/        Bob: goo (a viscoelastic particle fluid), his body (collisions, heat, controller, pieces), the test course, his painter. No DOM.
   render/     WebGL2 renderer and the CPU pass that turns cells into its textures (shared by the sandbox and the playground).
   play/       (planned) bots, if they outgrow game/ (recording, replaying and the headless runner are in game/src). No DOM.
-  levels/     (planned) level format, loading/saving, generation helpers.
+  levels/     (planned) if the level format outgrows game/ (it's in game/src/levels.ts, the palette in packages/sim)
 game/         the game: a level, Bob, the handoff card and the feedback button (see below)
 prototypes/
   00-stills/      art direction: one shot per world and Bob's states (CPU renderer, real goo Bob)
@@ -74,8 +74,8 @@ The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at
 
 `game/` is the game itself, apart from the prototypes: a Vite app built to `…/pixelbob/game/` (and `…/preview/pr-N/game/` in a PR's preview). Nothing in it imports from `prototypes/`.
 
-- `src/scenario.ts`: the [scenario](../studio/README.md#scenarios-putting-you-where-the-change-is) format, one JSON file per scenario in `game/scenarios/`, named by its id. A scenario names a level and its seed, where Bob starts (`at`, in cells across; he's put on the ground there), his temperature and tweaks (any of Bob's numeric tweaks, `RANGES` in `packages/bob`, such as `hop`), the camera's zoom and look, and the handoff card (`changed`, `try`, `lookFor`, `known`, `questions`). `?scenario=<id>` starts there; without one the game starts at `start`. The health check (`code/scenarios`) checks every file.
-- `src/levels.ts`: the levels a scenario can name. For now only `course`, Bob's test course; the level format adds the Green's.
+- `src/scenario.ts`: the [scenario](../studio/README.md#scenarios-putting-you-where-the-change-is) format, one JSON file per scenario in `game/scenarios/`, named by its id. A scenario names a level and its seed (Bob's, and the course's: a painted level has its own), where Bob starts (`at`, in cells across; he's put on the ground there), his temperature and tweaks (any of Bob's numeric tweaks, `RANGES` in `packages/bob`, such as `hop`), the camera's zoom and look, and the handoff card (`changed`, `try`, `lookFor`, `known`, `questions`). `?scenario=<id>` starts there; without one the game starts at `start`. The health check (`code/scenarios`) checks every file.
+- `src/levels.ts`: the levels a scenario can name: `course`, Bob's test course, built in code, and the painted levels in `game/levels/` (the [level format](#level-format)), which the browser reads when a scenario needs one and Node reads with `game/scripts/load-levels.ts`. `src/png.ts` reads their PNGs without the DOM. A new level's id goes in `LEVEL_WIDTHS` in `scenario.ts` too (a test keeps them in step).
 - `src/play.ts`: a scenario being played (the world and Bob, stepped at 60 Hz), recording its input. No DOM, so the tests run every scenario in Node, and so do replays (`runReplay`) and, later, bots.
 - `src/replay.ts`: the replay format. Each frame's input is rounded to eighths before Bob sees it, so what's recorded is exactly what ran, then run-length encoded as text: `pixelbob-replay v1 <scenario> <frames>: 8*120 8j*8 0d8*30 …` (move, `j` jump, `d` down, `u` up, each in eighths, `*` a count). A replay is of the run since the start or the last restart, and is exact on the JavaScript engine it was recorded on: V8 (Chrome, Android, Node) gives the same run, but Bob's maths (`sin`, `exp`, `pow`) isn't required to round the same everywhere, so a replay from Safari or an iPhone may drift. The report names the browser. Kept replays are `game/replays/<id>.json`, named for what they cover (the day it was `recorded`, a `note` saying why it's kept, the `replay`, and the outcome it should `expect`: frames, the frame it finished, % of Bob home, % of Bob left, and a fingerprint of Bob's particles and the world's cells, so any change to the run shows). The health check (`code/replays`, a slow check) plays them all with `node game/scripts/replays.ts`, which also keeps a new one (`--add <id> <file> <note>`, from a pasted feedback report) and rewrites the outcomes when a change means to alter them (`--update`).
 - `src/filmstrip.ts`: key frames of a run side by side, cropped around Bob, from the game's cell colours and Bob's painter but unlit. `node game/scripts/filmstrip.ts <replay id or file> <out.png> [shots] [scale]` writes one.
@@ -84,10 +84,19 @@ The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at
 
 ## Level format
 
-- **Material layer as an indexed PNG** (one palette index per material), plus optional temperature and back-wall layers. Editable in our sandbox *and* in Aseprite or any paint tool.
-- **Entities as JSON**: spawn points, lights, machines, triggers, with positions in world pixels.
-- Big levels are cut into chunks on load; the sandbox saves the same format.
-- Procedural decoration (grass, moss, vines, stalactites) is generated from the material layer with a seed, as in the stills, so artists paint big shapes and the game adds detail.
+A level is a folder, `game/levels/<id>/` (the id in kebab-case), holding two files:
+
+- **`materials.png`, the material layer**: one pixel a cell, in the level palette (`PAINT` in `packages/sim/src/paint.ts`): air is black, and every other material is one colour from its own ramp, so a painted level looks like what it will be. Palette index *i* is material *i*, so an indexed PNG saved with the palette reads straight through, but any PNG (indexed, RGB or RGBA, not interlaced) is read by colour, and transparent pixels are air. A colour that isn't in the palette is an error, not the nearest material.
+- **`level.json`, what's in it**, with positions in cells from the top left: `title`, `seed` (the world's: a painted level is the same world whichever scenario starts in it; default 7), `spawn` `{x, y}` (in the open, where Bob is put), `finish` `{x0, y0, x1, y1}` (the box to get Bob into), `checkpoints` `[{x, y}]` (not used yet), `bits` `[{x, y, r}]` (lost bits of Bob, `r` default 2), `lamps` `[{x, y, color, radius}]` (`color` as `[r, g, b]`, default warm; `radius` default 80).
+
+To paint one:
+
+1. `node game/scripts/levels.ts new <id> <w> <h>` starts it: grass over dirt over rock, a spawn on the left and a finish on the right.
+2. `node game/scripts/levels.ts palette <out.gpl>` writes the palette for Aseprite, GIMP or Krita (each colour named for its material). Paint `materials.png` with it and no antialiasing; save it indexed or RGB.
+3. Place things in `level.json`, add the id and width to `LEVEL_WIDTHS` in `game/src/scenario.ts`, and make a scenario that names it (`game/scenarios/tiny.json` plays `game/levels/tiny/`).
+4. `node game/scripts/levels.ts` checks every level, as the health check does (`code/levels`): colours not in the palette, things off the map, a spawn inside something, no spawn or finish.
+
+Still to come: optional temperature and back-wall layers (ice and lava start at their own temperature, but nothing holds them there as the course does), procedural decoration (grass, moss, vines, stalactites generated from the material layer with a seed, as in the stills, so artists paint big shapes and the game adds detail), cutting big levels into chunks on load, and the sandbox saving the same format.
 
 ## Input
 

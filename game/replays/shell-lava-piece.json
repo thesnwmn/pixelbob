@@ -1,0 +1,11 @@
+{
+  "note": "The producer's first playtest (studio/playtests/2026-10-18-shell-lava-piece.md), on Android: through the course on touch; most of Bob melts in the lava pit and a piece shed earlier takes over and finishes.",
+  "replay": "pixelbob-replay v1 shell 2130: 0*167 1*2 2*2 3 4 5*2 7 8*162 8j*4 8*51 8j*4 8*90 8j*5 8*41 8j*5 8*43\n8j*4 8*32 8j*4 8*30 8j*9 8*20 8j*3 8*42 8j*5 8*42 8j*4 8*43 8j*4 8*32 8j*3 8*43 8j 8*34 8u1 8u3 7u4\n5u5 3u6 1u7*2 0u7 -1u8 -2u8*6 -1u8*12 -1ju8*6 -1u8*15 -1ju8*5 -1u8*4 -1ju8*6 -1u8*5 -1ju8*4 -1u8*4\n-1ju8*5 -1u8*2 -1ju8 -2ju8*5 -2u8*3 -2ju8 -3ju8*5 -3u8*2 -3ju8*5 -3u8*5 -3ju8*5 -3u8*7 -3ju8*6\n-3u8*3 -3ju8*6 -3u8*5 -3ju8*6 -3u8*4 -3ju8*5 -3u8*6 -2u8*52 -3u8*6 -4u8*4 -5u8*52 -4u8 -3u8 1u8 4u8\n7u8 8u8*2 8u7 8u5 8u4*2 8u3*74 8ju3*7 8u3*102 8u4*42 8u5 8u6 8u7*6 8u6*2 8u5 8u4 8u1 8*9 8d1 8d2\n8d3*3 8d4*2 8d5*2 8d6*11 8d5*3 8d4 8d5*8 8d4 8d3 8d2 8d1*8 8*2 7*3 8*2 8u2 8u3 8u4 8u5*2 8u6*2 8u7*2\n8u8*23 8ju8*8 8u8*5 7u8*3 6u8*16 7u8*2 8u8*4 8u7*10 8u8*13 8u7*40 8u8*4 7u8*3 6u8*5 7u8*2 8u8*36\n8ju8*9 8u8*328 0*89",
+  "expect": {
+    "frames": 2130,
+    "finished": 1970,
+    "home": 51,
+    "bob": 69,
+    "state": "01a59e7c"
+  }
+}

@@ -28,6 +28,7 @@ prototypes/
   00-stills/      art direction: one shot per world and Bob's states (CPU renderer, real goo Bob)
   01-sandbox/     world sandbox: dig, paint materials, heat, light
   02-bob/         Bob playground
+  03-bot-search/  spike: a beam search over inputs finds a route through a level (verdict: yes, in about 3 minutes)
 concept/          the concept doc, not a prototype: the game, look, worlds, menus, settings, plan (shots drawn live)
 ```
 

@@ -268,3 +268,33 @@ describe("filmstrips", () => {
     }
   });
 });
+
+describe("hopping", () => {
+  const shell = () => scenarios.find((s) => s.id === "shell")!;
+  /** Cells covered in `frames`, holding right, with jump held for `hold` of every `period` frames (0: rolling). */
+  const run = (scenario: Scenario, frames: number, period: number, hold: number) => {
+    const play = new Play(scenario);
+    const x0 = play.bob.main!.cx;
+    for (let i = 0; i < frames; i++) play.step({ move: 1, jump: period > 0 && i % period < hold });
+    return play.bob.main!.cx - x0;
+  };
+
+  it("chained hops are faster than rolling, but not twice as fast", () => {
+    const roll = run(shell(), 240, 0, 0);
+    for (const [period, hold] of [[12, 5], [20, 8]]) {
+      const hop = run(shell(), 240, period, hold);
+      expect(hop / roll, `every ${period} frames`).toBeGreaterThan(1.1);
+      expect(hop / roll, `every ${period} frames`).toBeLessThan(1.7);
+    }
+  });
+
+  it("a single jump from a roll doesn't depend on how hops are capped", () => {
+    const jumpOnce = (hop: number) => {
+      const s = shell();
+      const play = new Play({ ...s, bob: { ...s.bob, tweaks: { ...s.bob.tweaks, hop } } });
+      for (let i = 0; i < 230; i++) play.step({ move: 1, jump: i >= 150 && i < 165 });
+      return play.fingerprint();
+    };
+    expect(jumpOnce(0)).toBe(jumpOnce(2));
+  });
+});

@@ -423,7 +423,11 @@ export abstract class Body implements BobModel {
       this.buffer -= DT;
       if ((this.coyote > 0 || p.wet > 0.1) && m > 0.05) {
         // Push off along the ground's normal, leaning up, with a little of the stick.
-        let jx = p.nx * 0.45 + dir * 0.2, jy = p.ny * 0.45 - 0.55;
+        // The lean forward is full up to his top speed, then fades, gone at (1 + hop) times it,
+        // so a jump from a roll goes as far as ever but chained hops can't stack speed without limit.
+        const over = (dir * p.vx - tw.speed) / (tw.speed * Math.max(0.01, tw.hop));
+        const lean = 0.2 * Math.max(0, Math.min(1, 1 - over));
+        let jx = p.nx * 0.45 + dir * lean, jy = p.ny * 0.45 - 0.55;
         if (this.coyote <= 0) { jx = dir * 0.25; jy = -1; }
         const jl = Math.hypot(jx, jy) || 1;
         jx /= jl; jy /= jl;

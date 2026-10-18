@@ -4,6 +4,7 @@ kind: build
 role: engineer
 size: S
 status: doing
+pr: 29
 milestone: m1-green-alpha
 needs: [hop-speed]
 ---

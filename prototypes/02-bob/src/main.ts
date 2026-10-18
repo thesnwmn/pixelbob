@@ -75,7 +75,7 @@ try {
 
 const LABELS: Record<keyof typeof RANGES, string> = {
   cohesion: "cohesion", memory: "memory", softness: "softness", muscle: "muscle", grip: "grip",
-  speed: "speed", jump: "jump", air: "air ctrl", size: "size", gravity: "gravity", soak: "heat soak", hold: "heat hold", stringy: "stringy",
+  speed: "speed", jump: "jump", air: "air ctrl", hop: "hop push", size: "size", gravity: "gravity", soak: "heat soak", hold: "heat hold", stringy: "stringy",
 };
 const panel = $("#panel"), sliders = $("#sliders");
 const inputs = new Map<string, HTMLInputElement>();

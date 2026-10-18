@@ -20,6 +20,8 @@ export interface Tweaks {
   jump: number;
   /** 0..1: how much he can steer while airborne or swimming. */
   air: number;
+  /** 0..2: how far past his top speed a jump's lean forward can still push him, as a fraction of it: chained hops can't stack speed beyond about (1 + hop) times rolling. */
+  hop: number;
   /** "roll": he turns like a tread and friction carries him. "crawl": he pushes the ground with his underside. */
   drive: "roll" | "crawl";
   /** Radius in particles at spawn. */
@@ -43,6 +45,7 @@ export const DEFAULTS: Tweaks = {
   speed: 70,
   jump: 190,
   air: 0.35,
+  hop: 0,
   drive: "roll",
   size: 9,
   gravity: 420,
@@ -61,6 +64,7 @@ export const RANGES: Record<Exclude<keyof Tweaks, "drive">, [number, number, num
   speed: [10, 200, 5],
   jump: [0, 400, 10],
   air: [0, 1, 0.05],
+  hop: [0, 2, 0.05],
   size: [3, 14, 1],
   gravity: [100, 900, 20],
   soak: [0, 2, 0.05],

@@ -14,7 +14,7 @@ export const LOOK_IDS = ["day", "dusk", "night", "work"] as const;
 export type LookId = (typeof LOOK_IDS)[number];
 
 /** Bob's numeric tweaks (`RANGES` in packages/bob), which a scenario may set. */
-export const TWEAK_KEYS = ["cohesion", "memory", "softness", "muscle", "grip", "speed", "jump", "air", "size", "gravity", "soak", "hold", "stringy"] as const;
+export const TWEAK_KEYS = ["cohesion", "memory", "softness", "muscle", "grip", "speed", "jump", "air", "hop", "size", "gravity", "soak", "hold", "stringy"] as const;
 export type TweakKey = (typeof TWEAK_KEYS)[number];
 
 /** What the playtester reads before playing: what changed, what to try, what to look for. */

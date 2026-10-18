@@ -1,0 +1,23 @@
+{
+  "title": "Hopping and rolling",
+  "level": "course",
+  "card": {
+    "changed": "Chained hops no longer stack speed without limit. A jump still leans the way you're going, fully up to Bob's top rolling speed, so a single jump from a roll goes as far as before; past top speed the lean fades. Hopping is now about one and a half times as fast as rolling, where it was more than twice.",
+    "try": [
+      "Roll right through the hills and along the flat (hold right).",
+      "Press R, then do the same stretch hopping: tap jump over and over while holding right.",
+      "Jump the gaps and the lava as you normally would."
+    ],
+    "lookFor": [
+      "Whether hopping still feels worth it, but not the only way to move.",
+      "Whether single jumps over things feel the same as before."
+    ],
+    "known": [
+      "The search bot's numbers: rolling about 445 cells in 8 s; the best hopping rhythm about 680 (it was about 1250)."
+    ],
+    "questions": [
+      "Is hopping slowed the right amount: too little, right, or too much?",
+      "Do single jumps feel the same as before?"
+    ]
+  }
+}

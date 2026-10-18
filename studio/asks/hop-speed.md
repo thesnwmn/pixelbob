@@ -1,8 +1,8 @@
 ---
 title: Should hopping be twice as fast as rolling?
 from: prototyper
-status: open
-blocks: [bots]
+status: answered
+blocks: [hop-tune]
 default: Leave it as it is, and the bots measure levels with hopping allowed.
 gated: true                 # how Bob moves is his character
 ---
@@ -17,3 +17,7 @@ Options:
 - **Look first**: watch the bot's route in the spike's preview (`…/preview/pr-27/03-bot-search/`) and decide then.
 
 Answer with `/needs-me` or `/director`.
+
+## Answer
+2026-10-18, in `/needs-me`: "I'd like it to be slightly less, probably different. So slow hopping slightly." Hopping stays a way to go faster, but by less: the [hop-tune](../work/hop-tune.md) unit slows it a little, and you playtest it.
+

@@ -20,6 +20,8 @@ export interface Tweaks {
   jump: number;
   /** 0..1: how much he can steer while airborne or swimming. */
   air: number;
+  /** 0..1: how much speed past his top speed hops can carry. A jump's lean forward fades from top speed to (1 + hop) times it, and a landing keeps this fraction of the speed past top speed: at 1, chained hops stack speed freely; lower, they can't build up. */
+  hop: number;
   /** "roll": he turns like a tread and friction carries him. "crawl": he pushes the ground with his underside. */
   drive: "roll" | "crawl";
   /** Radius in particles at spawn. */
@@ -43,6 +45,7 @@ export const DEFAULTS: Tweaks = {
   speed: 70,
   jump: 190,
   air: 0.35,
+  hop: 0.25,
   drive: "roll",
   size: 9,
   gravity: 420,
@@ -61,6 +64,7 @@ export const RANGES: Record<Exclude<keyof Tweaks, "drive">, [number, number, num
   speed: [10, 200, 5],
   jump: [0, 400, 10],
   air: [0, 1, 0.05],
+  hop: [0, 1, 0.05],
   size: [3, 14, 1],
   gravity: [100, 900, 20],
   soak: [0, 2, 0.05],
@@ -69,6 +73,13 @@ export const RANGES: Record<Exclude<keyof Tweaks, "drive">, [number, number, num
 };
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+/**
+ * How much of a jump's lean forward (0..1) he gets at speed `v` (px/s, + the way he's going):
+ * all of it up to his top speed, then less and less, none at (1 + hop) times top speed. A
+ * fade, never a cut, so chained hops can't stack speed without limit.
+ */
+export const hopLean = (v: number, tw: Pick<Tweaks, "speed" | "hop">) => clamp01(1 - (v - tw.speed) / (tw.speed * Math.max(0.05, tw.hop)));
 
 /** How frozen (0..1) and how runny (0..1) a particle is at temperature t (°C). */
 export const frozenness = (t: number) => clamp01((2 - t) / 10);

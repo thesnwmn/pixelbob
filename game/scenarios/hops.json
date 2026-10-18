@@ -1,0 +1,27 @@
+{
+  "title": "Hopping and rolling",
+  "level": "course",
+  "card": {
+    "changed": "Chained hops no longer stack speed without limit. A jump from a roll flies exactly as before; past top speed its lean forward fades smoothly, and a landing soaks up some of the speed past top speed. The best hopping rhythm is now about one and a half times as fast as rolling, where it was nearly three times.",
+    "try": [
+      "Roll right through the hills and along the flat (hold right).",
+      "Press R, then do the same stretch hopping: tap jump over and over while holding right.",
+      "Jump the gaps and the lava as you normally would."
+    ],
+    "lookFor": [
+      "Whether hopping still feels worth it, but not the only way to move, on the flat and over the hills.",
+      "Whether landings after fast hops feel like a brake or a stumble.",
+      "Whether a long-charged jump from a full roll feels shorter or floatier than before."
+    ],
+    "known": [
+      "Measured over 8 s from the start (`node prototypes/03-bot-search/src/speed.ts`): rolling 445 cells; hopping every 20 frames 664 (it was 1118). The fastest rhythm found, 714 (it was about 1400).",
+      "Over the hills, hopping is still about twice as fast as rolling (it was four times): rolling uphill is slow.",
+      "A jump from faster than top speed leans forward a little less: rolling downhill, or a long wind-up while rolling (he speeds up as he squashes). Those land a few cells shorter and a little higher.",
+      "A landing after fast hops takes the extra speed in one frame."
+    ],
+    "questions": [
+      "Is hopping slowed the right amount: too little, right, or too much?",
+      "Do single jumps feel the same as before?"
+    ]
+  }
+}

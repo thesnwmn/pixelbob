@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { RANGES, runniness } from "@pixelbob/bob";
+import { DEFAULTS, RANGES, hopLean, runniness } from "@pixelbob/bob";
 import { LOOKS } from "@pixelbob/render";
 import { describe, expect, it } from "vitest";
 import { LEVELS } from "../src/levels.ts";
@@ -266,5 +266,55 @@ describe("filmstrips", () => {
         }
       expect(pink, `shot ${k}`).toBeGreaterThan(20);
     }
+  });
+});
+
+describe("hopping", () => {
+  const shell = () => scenarios.find((s) => s.id === "shell")!;
+  /** Cells covered in `frames`, holding right, with jump held for `hold` of every `period` frames (0: rolling). */
+  const run = (scenario: Scenario, frames: number, period: number, hold: number) => {
+    const play = new Play(scenario);
+    const x0 = play.bob.main!.cx;
+    for (let i = 0; i < frames; i++) play.step({ move: 1, jump: period > 0 && i % period < hold });
+    return play.bob.main!.cx - x0;
+  };
+
+  it("chained hops are faster than rolling, but not twice as fast", () => {
+    const roll = run(shell(), 240, 0, 0);
+    for (const [period, hold] of [[12, 5], [20, 8]]) {
+      const hop = run(shell(), 240, period, hold);
+      expect(hop / roll, `every ${period} frames`).toBeGreaterThan(1.2);
+      expect(hop / roll, `every ${period} frames`).toBeLessThan(1.65);
+    }
+  });
+
+  it("a single jump from a roll flies exactly as it would with hops uncapped, until it lands", () => {
+    const xs = (hop: number) => {
+      const s = shell();
+      const play = new Play({ ...s, bob: { ...s.bob, tweaks: { ...s.bob.tweaks, hop } } });
+      const out: number[] = [];
+      for (let i = 0; i < 260; i++) {
+        play.step({ move: 1, jump: i >= 150 && i < 165 });
+        out.push(play.bob.main!.cx, play.bob.main!.cy);
+      }
+      return out;
+    };
+    const capped = xs(DEFAULTS.hop), free = xs(1);
+    // Released at frame 165; he lands about 50 frames later, where the landing soak starts.
+    expect(capped.slice(0, 2 * 210)).toEqual(free.slice(0, 2 * 210));
+  });
+
+  it("the lean forward fades with speed, never cuts off", () => {
+    const tw = { speed: 70, hop: DEFAULTS.hop };
+    let last = hopLean(0, tw);
+    expect(last).toBe(1);
+    for (let v = 0; v <= 140; v += 0.25) {
+      const l = hopLean(v, tw);
+      expect(l).toBeLessThanOrEqual(last);
+      expect(last - l, `at ${v} px/s`).toBeLessThan(0.02);
+      last = l;
+    }
+    expect(hopLean(70, tw)).toBe(1);
+    expect(hopLean(70 * (1 + tw.hop), tw)).toBe(0);
   });
 });

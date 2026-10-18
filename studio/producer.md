@@ -24,3 +24,5 @@ Your settings, the rules you've given the studio, and what it has learned about 
 What the studio has learned from your feedback, each with where it came from. Designers read these before shaping anything.
 
 - Wants to make the calls on direction and taste, and have the studio carry on with everything else without waiting: the studio plan, 2026-10-17.
+- Likes the emergent rescue of a piece left behind taking over when the rest of Bob dies, and wants it used on purpose, alongside ordinary checkpoints, but guarded against abuse (a range limit, say): [playtest 2026-10-18](playtests/2026-10-18-shell-lava-piece.md).
+- Rates a test course's fun as a test course (3): judge fun on real levels, not on the course: [playtest 2026-10-18](playtests/2026-10-18-shell-lava-piece.md).

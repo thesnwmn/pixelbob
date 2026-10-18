@@ -3,18 +3,24 @@ title: Replays and the Tester's kit
 kind: test
 role: engineer
 size: M
-status: shaped
+status: done
 milestone: m1-green-alpha
 needs: [game-shell]
+pr: 23
+scenario: shell
 ---
 
 ## Why
 The sim and Bob are deterministic, so a replay is a test case. See [Automated playtesting](../README.md#automated-playtesting).
 
 ## Done when
-- `packages/play` records and plays back input frame by frame, and runs a level headless in Node.
+- The game records and plays back input frame by frame, and runs a level headless in Node (`game/src`; first written as a `packages/play`, see the log).
 - The feedback button attaches the replay; the health check replays `game/replays/` and compares outcomes.
 - Filmstrips of a run render to PNG.
 
 ## Not this
 Bots (bot-search-spike, bots).
+
+## Log
+- 2026-10-17 started, #23. Recording, playback and the headless runner went into `game/src` (`replay.ts`, `play.ts`) rather than a new `packages/play`: `Play` already runs there without a DOM, and nothing outside the game needs it yet. A package can come when the bots outgrow `game/`.
+- 2026-10-17 done, #23 ([session](../sessions/2026-10-17-2130-replays.md)). The game records every frame (rounded to eighths), the feedback report carries the replay and names the browser, `game/replays/` are regression tests run by `code/replays`, and `game/scripts/filmstrip.ts` draws a run. Replays are exact on the engine they were recorded on; iPhone replays are untested.

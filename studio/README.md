@@ -97,14 +97,15 @@ pixelbob/
     sim/                    the world grid; no DOM
     bob/                    Bob; no DOM
     render/                 the WebGL2 renderer and the cells-to-textures pass
-    play/                   (planned) input, recording and replaying, the headless runner, bots; no DOM
+    play/                   (planned) bots, if they outgrow game/; no DOM
     levels/                 (planned) the level format: load, save, decorate
 
   game/                     the game itself: a Vite app, built to …/pixelbob/game/
-    src/                    the scenario format, playing one, the feedback button (planned: title, map, HUD, saves)
+    src/                    the scenario format, playing one, replays, filmstrips, the feedback button (planned: title, map, HUD, saves)
     levels/                 (planned) the levels: material PNGs plus entity JSON
     scenarios/              start points with handoff cards, for `?scenario=`
-    replays/                (planned) recorded runs with their expected outcomes; the health check replays them
+    replays/                recorded runs with their expected outcomes; the health check replays them
+    scripts/                replays (check, keep, update) and filmstrips, in Node
 
   prototypes/               spikes: throwaway, one question each
     00-stills/ 01-sandbox/ 02-bob/ …
@@ -446,8 +447,8 @@ Checks are grouped in tiers and run in order. A tier that fails stops the run, b
 | **1. Tools** | Node is the version the repo pins; pnpm matches `packageManager`; git. Later: Chromium is where Playwright looks (once browser tests exist) | A fresh container with the wrong Node, or a missing tool |
 | **2. Dependencies** | Install from the lockfile (`--frozen-lockfile`); `node_modules` matches the lockfile; every workspace package resolves | "tsc not found" because nothing was installed, as happened when this plan was written |
 | **3. Repo** | On a session branch, not `main`; no conflict markers; every top-level folder is in the [repo map](#repo-structure); how far behind `main` the branch is; at the end (`--end`), also: tree clean, everything pushed, and a PR for the branch's commits: open, or merged at this very commit (asked of GitHub with `gh api`; nothing to land passes) | Work that wasn't pushed before the container was thrown away |
-| **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim`, `packages/bob` or the stills, no DOM in the sim or Bob | Main red, or a convention quietly broken |
-| **5. Studio and docs** | Every studio file follows its format, and every name in one points at a file (`studio/files`); no unit on main is `doing` or `review` (`studio/in-flight`), and at the end no unit is still `doing` (`studio/landed`); every doc and decision is in the docs index (`docs/index`); every relative link in the Markdown resolves, headings included (`docs/links`); every role has a brief and a row in the roles table (`studio/roles`), and every command a skill and a section in the producer guide (`studio/commands`); every path in the gate's list exists and the gate's own files are on it (`github/gate`); the studio page shows every unit and leaves no Markdown unconverted (`studio/page`); every label the studio uses is in `.github/labels.json`, and the bug form files with one (`github/labels`); every entry in the doc map matches a file and names docs and headings that exist (`docs/map`); on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step) (`docs/in-step`, `studio/unit`, `studio/session-log`), and the workflow that enforces them runs them, again on an edit (`github/in-step`). Later, scenarios load and golden replays still give their recorded outcome | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
+| **4. Code** | `pnpm typecheck`, `pnpm test`, `pnpm build:site`; the conventions in `CLAUDE.md` that a script can test, e.g. no `Math.random()` in `packages/sim`, `packages/bob` or the stills, no DOM in the sim or Bob, no imports in the scenario and replay formats (`code/no-imports`); scenarios load (`code/scenarios`) and kept replays still give their recorded outcome (`code/replays`) | Main red, or a convention quietly broken |
+| **5. Studio and docs** | Every studio file follows its format, and every name in one points at a file (`studio/files`); no unit on main is `doing` or `review` (`studio/in-flight`), and at the end no unit is still `doing` (`studio/landed`); every doc and decision is in the docs index (`docs/index`); every relative link in the Markdown resolves, headings included (`docs/links`); every role has a brief and a row in the roles table (`studio/roles`), and every command a skill and a section in the producer guide (`studio/commands`); every path in the gate's list exists and the gate's own files are on it (`github/gate`); the studio page shows every unit and leaves no Markdown unconverted (`studio/page`); every label the studio uses is in `.github/labels.json`, and the bug form files with one (`github/labels`); every entry in the doc map matches a file and names docs and headings that exist (`docs/map`); on a branch, the [docs-in-step checks](#keeping-docs-and-the-studio-in-step) (`docs/in-step`, `studio/unit`, `studio/session-log`), and the workflow that enforces them runs them, again on an edit (`github/in-step`). | A session that changed Bob's controller and left `docs/bob.md` describing the old one |
 | **6. Budgets** (later) | The sim step and render stay within their time budgets on the benchmark scene | A change that quietly costs 3 ms a frame |
 
 - **Quick and full.** `pnpm health` runs everything; it should take a couple of minutes at most (about 80 s today, most of it the tests). `pnpm health --quick` skips the slow checks (build, replays, budgets) for use while working. Sessions start on the full run and end on `pnpm health --end`, which adds the end-of-session checks; CI runs the full run.
@@ -541,9 +542,9 @@ A **scenario** is a small data file in `game/scenarios/`: a level, where Bob sta
 
 ### Feedback: with a replay attached
 
-The build has a feedback button (and a key, F). It opens a short form: fun, difficulty (too easy / right / too hard), frustration, and free text, prefilled with the build, the scenario and the questions from the handoff card. It will also attach a **replay** (with the replays unit; not yet): the inputs you pressed, frame by frame. The sim and Bob are deterministic, so the replay plus the build reproduces exactly what you saw, which makes "it did something weird on the second jump" a test case rather than a mystery.
+The build has a feedback button (and a key, F). It opens a short form: fun, difficulty (too easy / right / too hard), frustration, and free text, prefilled with the build, the scenario and the questions from the handoff card. It also attaches a **replay**: the inputs you pressed, frame by frame, since the start or the last restart. The sim and Bob are deterministic, so the replay plus the build reproduces exactly what you saw on the same JavaScript engine (Chrome's V8 matches Node, where the tests run; the report says which browser it came from, since Safari's maths can differ in the last bit), which makes "it did something weird on the second jump" a test case rather than a mystery.
 
-The button copies the report (with the replay, compressed) to paste into a session with `/feedback`, which works on any device and needs no server or sign-in. Notes can also be typed straight into `/feedback` without the button.
+The button copies the report (with the replay, run-length encoded text) to paste into a session with `/feedback`, which works on any device and needs no server or sign-in. Notes can also be typed straight into `/feedback` without the button.
 
 Then the session **grills you** until the report is complete, a few questions at a time, each with options:
 
@@ -564,11 +565,11 @@ Then it does the rest itself:
 
 The Tester's kit, all running in Node except the smoke test:
 
-- **Replays as regression tests.** Your replays and the Tester's are kept with the expected outcome (finished, % of Bob home, time). If a change alters an outcome, the PR says so: sometimes that's the point (a level got easier), sometimes it's a bug.
+- **Replays as regression tests.** Your replays and the Tester's are kept with the expected outcome (finished, % of Bob home, time). If a change alters an outcome, the PR says so: sometimes that's the point (a level got easier), sometimes it's a bug. They're in `game/replays/`; `node game/scripts/replays.ts --add <id> <file> <note>` keeps one from a pasted report, and the health check plays them all ([the format](../docs/tech-and-toolchain.md#the-game)).
 - **Bots.** Scripted input for set pieces, and a search bot that explores input sequences in the deterministic sim to prove a level can be finished, find skips, softlocks and unintended routes.
 - **Forgiveness.** For each hard moment, how far the bot's timing and position can be off and still succeed: frames of slack on the jump, pixels of margin on the ledge. That's a number for "too precise" that tracks your difficulty ratings.
 - **Invariants and fuzzing.** Particles conserved, no NaN, nothing tunnels through rock, the step stays within its time budget; random input soaks to shake out crashes.
-- **Filmstrips.** Key frames of a run rendered to a PNG strip (the stills' renderer already runs headless). Agents look at them; they go in PRs so you can see a change without playing it.
+- **Filmstrips.** Key frames of a run rendered to a PNG strip (`node game/scripts/filmstrip.ts <replay> <out.png>`), cropped around Bob and unlit. Agents look at them; they go in PRs so you can see a change without playing it.
 - **Browser smoke test.** Playwright loads the preview, runs a replay, checks for errors and frame rate.
 
 What bots can't judge is whether it's fun: that's what your playtests are for, and the handoff card spends your time only on that.
@@ -599,7 +600,7 @@ The order it gets built in, each a unit of its own. The first three make the har
 3. **Roles and commands (M; on the board as three units: roles-and-commands, done; docs-in-step, done; github-gate, done).** `.claude/agents/` briefs, the `go`, `next`, `needs-me`, `director`, `feedback` and `status` skills, the doc map and its checks, labels, the bug form, the gate check, the `CLAUDE.md` pointer, and the [one-time setup](producer-guide.md#one-time-setup) for the producer. (The PR template is already in, with this plan.)
 4. **Studio page (S), done.** The board on Pages, rebuilt on merges and PR events.
 5. **Game shell and scenarios (M).** `game/` (the real game, distinct from the prototypes) with `?scenario=`, handoff cards, and the feedback button (copy to clipboard).
-6. **Replays and the Tester's kit (M).** Input recording and playback, the headless runner, regression replays, filmstrips.
+6. **Replays and the Tester's kit (M), done.** Input recording and playback, the headless runner, regression replays, filmstrips.
 7. **Bots and forgiveness (M, spike first).** The search bot and the slack measure.
 8. **Release (S).** Tag-cut alpha and beta builds under `/builds/`, GitHub Releases with notes from PR titles.
 9. **Fan-out (S, later).** Parallel sessions for independent units, when the producer wants it.

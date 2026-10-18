@@ -5,15 +5,14 @@
     "changed": "The game has its own home, apart from the prototypes: it starts from a link like this one, shows this card, and has a feedback button.",
     "try": [
       "Roll right through the hills and over the steps (arrows or A / D, space to jump; on a phone, drag on the left, tap on the right).",
-      "Press F (or the Feedback button), fill it in and copy the report."
+      "Press F (or the Feedback button), fill it in and copy the report: it ends with a replay of your run since the start (or your last R)."
     ],
     "lookFor": [
       "Whether the card is enough to know what to do.",
-      "Whether the copied report has what you'd want /feedback to see."
+      "Whether the copied report has what you'd want /feedback to see, replay included."
     ],
     "known": [
-      "The only level is Bob's test course: the Green's levels come with the level format.",
-      "No replay is attached yet: that's the replays unit."
+      "The only level is Bob's test course: the Green's levels come with the level format."
     ],
     "questions": [
       "Was the card enough to know what to try?",

@@ -4,6 +4,8 @@
 export interface Feedback {
   build: string;
   commit: string;
+  /** The browser's user agent: a replay is exact on the engine it was recorded on (V8 matches Node). */
+  browser: string;
   /** The scenario's id, or empty when the game started without one. */
   scenario: string;
   /** Seconds played when the form was opened. */
@@ -14,6 +16,8 @@ export interface Feedback {
   notes: string;
   /** The handoff card's questions, with the answers given. */
   answers: { question: string; answer: string }[];
+  /** The run since the start (or the last restart), as a replay's text (replay.ts). */
+  replay: string;
 }
 
 /**
@@ -36,6 +40,7 @@ export function report(f: Feedback): string {
     "---",
     `build: ${f.build}`,
     `commit: ${f.commit}`,
+    `browser: ${f.browser}`,
     `scenario: ${f.scenario || "none"}`,
     `played: ${f.seconds.toFixed(0)} s`,
     `fun: ${f.fun ?? "?"}`,
@@ -50,6 +55,7 @@ export function report(f: Feedback): string {
     lines.push("", "## The card's questions");
     for (const a of f.answers) lines.push(`- ${a.question}`, `  ${a.answer.trim() || "(not answered)"}`);
   }
-  lines.push("", "## Replay", "none: replays aren't recorded yet");
+  // Fenced, so it pastes whole; game/scripts/replays.ts --add keeps it as a test.
+  lines.push("", "## Replay", "```", f.replay.trim() || "none", "```");
   return lines.join("\n") + "\n";
 }

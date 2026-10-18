@@ -53,6 +53,17 @@ Built: the course scores the % of Bob that reaches the finish; lost bits wait wh
 - **Should loose droplets count** towards the finish, or only pieces? (Open question in [Bob](bob.md#open-questions).)
 - **Size gates**: slots that normal Bob can't fit but runny Bob can; too small to push something, too big to fit.
 
+## Collectables and challenges
+
+From the producer, 2026-10-18: probably much later, but it should shape how levels are designed now. Two halves: spaces that hide things, and harder optional challenges. Hidden bits and optional areas (above) are the first of each.
+
+- **Hiding with the sim.** Things are hidden by what the world is made of, not by invisible walls: a crumbly wall that gives when frozen Bob hits it, sand that drains away, ice that melts open under a brazier, a curtain of water to pass through, a dark cave only a glowing Bob lights. The player finds them by reading materials, so finding teaches the material language.
+- **Places only one Bob reaches.** A slot only runny Bob pours through, a ledge only a small piece climbs to, a gum ceiling only warm Bob holds. The secret is a state, not a key.
+- **What gets collected.** Either more of Bob (it's already the score, but it makes him bigger, so it can lock him out of slots) or something that isn't Bob (a token, a seed) that changes nothing in play. Open: one, the other or both.
+- **Optional challenges.** Per level, on top of finishing: arrive whole (100%), finish without freezing, finish in one piece (no splits), or take the hard route (the gum ceiling over the spikes instead of the path round). They ask more of the same verbs rather than adding new ones.
+- **For level design now.** Leave room for this: corners, pockets and alternative routes off the main path in The Green's levels, even before there's anything to put in them.
+- **Not this:** a collectathon that pads levels, or secrets that need a guide. A player who never looks should still have a complete game.
+
 ## From the design, not built yet
 
 - **Absorb**: water swells him (bigger, heavier, translucent: weigh down plates, dilute toxins, squeeze it out over fire for steam); glow goo makes him a light that fades (light caves, lure creatures).

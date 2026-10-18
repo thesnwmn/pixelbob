@@ -2,7 +2,7 @@
 date: 2026-10-18
 command: /go
 units: [level-format, checkpoints, green-1-hills, green-2-ponds, green-3-moss, green-4-finale, title-map-saves, audio-spike]
-pr: 30
+pr: 31
 issues: []
 session: https://claude.ai/code/session_01HGxWwztdMSYVSeDXX6hYfX
 health: green at start; green at end

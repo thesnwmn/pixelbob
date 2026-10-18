@@ -33,6 +33,8 @@ interface Node {
   frames: Frame[];
   score: number;
   finished: number;
+  /** The fingerprint of where the run ended (the same as a replay's `expect.state`). */
+  state: string;
 }
 
 /** Further right is better; losing bits of Bob costs a little; finishing beats everything, sooner better. */
@@ -46,7 +48,7 @@ function score(play: Play): number {
 const t0 = performance.now();
 const play = new Play(scenario);
 let steps = 0;
-let beam: Node[] = [{ snap: snapshot(play), frames: [], score: score(play), finished: 0 }];
+let beam: Node[] = [{ snap: snapshot(play), frames: [], score: score(play), finished: 0, state: play.fingerprint() }];
 let found: Node | undefined;
 for (let depth = 0; !found && performance.now() - t0 < BUDGET; depth++) {
   const children: Node[] = [];
@@ -60,7 +62,7 @@ for (let depth = 0; !found && performance.now() - t0 < BUDGET; depth++) {
         frames.push(fr);
         steps++;
       }
-      children.push({ snap: snapshot(play), frames, score: score(play), finished: play.finishedAt });
+      children.push({ snap: snapshot(play), frames, score: score(play), finished: play.finishedAt, state: play.fingerprint() });
     }
   // Keep the best, but not two that ended up in the same place (a cheap way to keep the beam varied).
   children.sort((a, b) => b.score - a.score);
@@ -86,5 +88,6 @@ if (!found) {
 const text = encode(id, found.frames);
 const again = runReplay(scenario, decode(text).replay!).outcome();
 console.log(`found in ${secs.toFixed(0)} s, ${steps} steps: finishes at frame ${found.finished} (${(found.finished / 60).toFixed(1)} s of play)`);
-console.log(`replayed from the start: ${JSON.stringify(again)} ${again.finished === found.finished ? "(same)" : "(DIFFERENT)"}`);
+// The same fingerprint means restoring from snapshots gave exactly the run a fresh play gives.
+console.log(`replayed from the start: ${JSON.stringify(again)} ${again.state === found.state ? "(the same run, fingerprint for fingerprint)" : `(DIFFERENT: ${found.state} in the search)`}`);
 if (out) writeFileSync(out, text + "\n");

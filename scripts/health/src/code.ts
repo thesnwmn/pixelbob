@@ -22,7 +22,7 @@ export const test = pnpmScript("code/test", "test", "A failing test: the output 
 export const build = pnpmScript("code/build", "build:site", "The site doesn't build: a prototype's Vite build, or scripts/build-site.mjs.", true);
 
 /** Where simulation and generation live: they must be deterministic. */
-export const DETERMINISTIC = ["packages/sim/src", "packages/bob/src", "game/src", "prototypes/00-stills/src"];
+export const DETERMINISTIC = ["packages/sim/src", "packages/bob/src", "game/src", "prototypes/00-stills/src", "prototypes/03-bot-search/src"];
 
 export const determinism: Check = {
   id: "code/no-math-random",

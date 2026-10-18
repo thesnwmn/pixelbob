@@ -23,6 +23,15 @@ size: M planned; well under a session
 - The verdict in [the unit](../work/bot-search-spike.md), and what to build in [bots](../work/bots.md).
 - An ask, [hop-speed](../asks/hop-speed.md): hopping is more than twice as fast as rolling.
 
+## Review
+- The critic re-ran the search (same route, token for token), the snapshot check and the hop speeds, and they held.
+- Its blocking finding: the spike had rewritten the bots unit, which is outside the prototyper's limits. That edit is reverted. The Director's call: bots waits on hop-speed, because the slack it measures depends on the answer.
+- Also fixed:
+  - The search now checks its run against a fresh replay fingerprint for fingerprint, and `src/speed.ts` reproduces the hop speeds.
+  - The log says the search was only tested where further right is always better.
+  - The page's port clashed with the game's.
+  - `dev:bot-search` is added, and the spike's code is in the determinism scan.
+
 ## Tried and dropped
 - Nothing: the first design worked. Without snapshots, each branch would replay from the start, and a minute-long level wouldn't fit the budget.
 

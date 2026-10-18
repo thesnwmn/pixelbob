@@ -102,6 +102,7 @@ pnpm dev:sandbox      # world sandbox at http://localhost:5181
 pnpm dev:bob          # Bob playground at http://localhost:5182
 pnpm dev:concept      # concept doc at http://localhost:5183
 pnpm dev:game         # the game at http://localhost:5184 (?scenario=<id>)
+pnpm dev:bot-search   # the bot search spike's route at http://localhost:5185
 pnpm health           # the health check (--quick skips the build, --end at the end of a session)
 pnpm board            # the studio's board (--github adds open PRs and bugs)
 pnpm typecheck

@@ -15,7 +15,7 @@ A few questions at a time, each with options (AskUserQuestion). Stop when there'
 - **The handoff card's questions** that weren't answered (the unit's scenario).
 
 ## Write the report
-`studio/playtests/<date>-<slug>.md`:
+`studio/playtests/<date>-<HHMM>-<slug>.md`, with the UTC time it was written, like a session log:
 
 ```markdown
 ---

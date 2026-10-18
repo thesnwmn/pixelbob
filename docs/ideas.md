@@ -10,7 +10,7 @@ Today he only splits when hazards cut him (spikes, hard landings, a snapped thre
 - **A split action.** Split on purpose: E / X, or swipe through Bob on touch. Which way it cuts, and how big the halves are, is open.
 - **A hard edge that halves him.** A blade or sharp lip that cuts him into two pieces big enough to steer, rather than spikes' crumbs.
 - **Leave a piece behind.** Split off a chunk to hold a pressure plate while the rest goes on, then go back for it.
-- **A piece as a checkpoint.** When the rest of Bob dies, the biggest piece left takes over: it already happens, because the biggest piece is always Bob. Raised in playtest as a good thing ([2026-10-18](../studio/playtests/2026-10-18-shell-lava-piece.md)): use it on purpose, alongside ordinary checkpoints, with a guard against abuse (a range limit, say, so a piece left at the start isn't a free life).
+- **A piece as a checkpoint.** When the rest of Bob dies, the biggest piece left takes over: it already happens, because the biggest piece is always Bob. Raised in playtest as a good thing ([2026-10-18](../studio/playtests/2026-10-18-0300-shell-lava-piece.md)): use it on purpose, alongside ordinary checkpoints, with a guard against abuse (a range limit, say, so a piece left at the start isn't a free life).
 - **Which piece the camera follows**, and how the HUD shows the pieces and their sizes.
 
 ## Climbing

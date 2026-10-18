@@ -29,7 +29,7 @@ for (const { id, url } of json("scenarios")) {
 }
 
 const write = (url: URL, f: ReplayFile, text: string) =>
-  writeFileSync(url, JSON.stringify({ note: f.note, replay: text, expect: f.expect }, null, 2) + "\n");
+  writeFileSync(url, JSON.stringify({ recorded: f.recorded, note: f.note, replay: text, expect: f.expect }, null, 2) + "\n");
 
 const [flag, ...rest] = process.argv.slice(2);
 if (flag !== undefined && flag !== "--add" && flag !== "--update") {
@@ -42,9 +42,9 @@ if (flag === "--add") {
   const text = findReplay(path && existsSync(path) ? readFileSync(path, "utf8") : "");
   const { replay, errors } = decode(text);
   const { outcome, problems } = replay
-    ? checkReplay({ id, note: "", replay, expect: { frames: 0, finished: 0, home: 0, bob: 0, state: "" } }, scenarios)
+    ? checkReplay({ id, recorded: "", note: "", replay, expect: { frames: 0, finished: 0, home: 0, bob: 0, state: "" } }, scenarios)
     : { outcome: undefined, problems: errors };
-  const kept = { note: words.join(" "), replay: text, expect: outcome };
+  const kept = { recorded: new Date().toISOString().slice(0, 10), note: words.join(" "), replay: text, expect: outcome };
   const bad = outcome ? parseReplayFile(id ?? "", kept).errors : problems;
   if (id && existsSync(new URL(`replays/${id}.json`, root))) bad.push(`game/replays/${id}.json is already kept: pick another id`);
   if (bad.length) {

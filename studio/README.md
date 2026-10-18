@@ -87,7 +87,7 @@ pixelbob/
     milestones/             one file per milestone: scope, exit criteria
     work/                   one file per unit of work
     asks/                   one file per question waiting on the producer
-    playtests/              the producer's reports, and the Tester's (format in the `feedback` skill; none yet)
+    playtests/              the producer's reports, and the Tester's: `<date>-<HHMM>-<slug>.md` (format in the `playtest` skill)
     sessions/               one log per session: what it did, what was said, tried and learned
     board.ts                reads the files above and generates the board (`pnpm board`)
     page.ts                 the studio page: the board and the sessions as HTML, for Pages

@@ -1,0 +1,12 @@
+{
+  "recorded": "2026-10-18",
+  "note": "Rolls up to the first step, stops against it and taps jump (4 frames): a tap mustn't get Bob up the step, so the level teaches the charged jump. If this run's outcome changes, check he still can't.",
+  "replay": "pixelbob-replay v1 green-1-hills 600: 8*360 8j*4 8*236",
+  "expect": {
+    "frames": 600,
+    "finished": 0,
+    "home": 0,
+    "bob": 100,
+    "state": "c4001d3e"
+  }
+}

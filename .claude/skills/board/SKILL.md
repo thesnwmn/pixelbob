@@ -1,9 +1,9 @@
 ---
-name: status
+name: board
 description: Show the state of the Pixelbob studio - in flight, what needs the producer, what's queued, milestone progress, recent merges and builds. Read-only.
 ---
 
-# /status
+# /board
 
 The state of things, the same as the studio page. `/next` is the decision `/go` would make; this is just the state.
 

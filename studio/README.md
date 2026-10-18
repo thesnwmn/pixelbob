@@ -27,7 +27,7 @@ How a team of agents builds Pixelbob from here, with one human as producer and p
 - **All state is in the repo.** `studio/` holds the board as one file per unit, the producer's settings, the asks waiting on you, milestones and playtest reports. Decisions go in `docs/decisions/`. A session's memory is the repo, so nothing depends on a conversation surviving.
 - **Main is the truth.** Every session ends with its work merged to main, finished or not: unfinished code lands switched off, and a failed attempt lands as a handoff note. The next session starts from main and nothing else. The only PRs left open between sessions are the ones waiting for your call.
 - **Visible.** Every unit opens a draft PR as soon as it starts, so the work in progress shows on GitHub while the session runs. A generated **studio page** on Pages shows the board (in flight, needs you, next, milestone progress, done) and the sessions; decisions and builds are planned.
-- **Playable.** Every PR that changes play gets a preview link that drops you straight into a **scenario** (a level, a place, Bob's state) with a card saying what changed and what to look for, and a feedback button that copies your notes, with an exact **replay** of what you did, to paste into `/feedback`.
+- **Playable.** Every PR that changes play gets a preview link that drops you straight into a **scenario** (a level, a place, Bob's state) with a card saying what changed and what to look for, and a feedback button that copies your notes, with an exact **replay** of what you did, to paste into `/playtest`.
 - **Healthy in, healthy out.** Every session starts by running `pnpm health`, which checks the tools, dependencies, code and studio files. If it's red, that session's only job is to make it green. Every session that changes anything ends by running it again, as proof it left the repo in a good state. CI runs the same script. It grows with the repo.
 - **Bots play too.** The sim is deterministic and runs in Node, so the Tester proves levels can be finished, measures how forgiving they are, replays your runs as regression tests and renders filmstrips the agents (and you) can look at.
 
@@ -144,11 +144,11 @@ Each file starts with front matter: `key: value` lines between `---`, where a va
 
 ### The board
 
-`pnpm board` prints the board, generated from the files and never committed: the milestones and how far along each is, what needs you (open asks, gated PRs, playtests), what's in flight, then the units that are ready, shaped and ideas, and what's done and dropped. `pnpm board --github` adds open PRs and bugs from GitHub, and `--json` prints the same as data. It's what `/go`, `/next` and `/status` read.
+`pnpm board` prints the board, generated from the files and never committed: the milestones and how far along each is, what needs you (open asks, gated PRs, playtests), what's in flight, then the units that are ready, shaped and ideas, and what's done and dropped. `pnpm board --github` adds open PRs and bugs from GitHub, and `--json` prints the same as data. It's what `/go`, `/next` and `/board` read.
 
 ### Main is the truth
 
-The next session reads main and nothing else, so **no session ends with state that exists only on a branch** (or only in the container). What a session does on GitHub itself, an issue raised or a comment on a PR, is already landed: it isn't in the container. A session that changes nothing in the repo (`/next`, `/status`, a question answered) has nothing to land: no PR, no log, no end check. A session's PR is a working space and a record: it opens as a draft so the work shows while the session runs, and it's merged before the session ends. Sessions don't continue each other's branches; a session picks up from what's on main.
+The next session reads main and nothing else, so **no session ends with state that exists only on a branch** (or only in the container). What a session does on GitHub itself, an issue raised or a comment on a PR, is already landed: it isn't in the container. A session that changes nothing in the repo (`/next`, `/board`, a question answered) has nothing to land: no PR, no log, no end check. A session's PR is a working space and a record: it opens as a draft so the work shows while the session runs, and it's merged before the session ends. Sessions don't continue each other's branches; a session picks up from what's on main.
 
 How every session ends:
 
@@ -326,8 +326,8 @@ The handoff: where things stand, what's next, what to watch out for.
 - **Who reads them.** The next session, when it picks up a unit (its log links each session that touched it); the Critic, for context the diff can't give; the Director at retros; and you, or anyone, for the story behind a PR.
 - **Sizing gets better.** The `size` line records how much of the session the unit really took. The Planner compares it with the estimate when sizing the next units.
 - **Short.** A page at most. A long one means the session should have been split.
-- **Every session that changes something writes one**, including a `/needs-me` or a `/director` conversation. Read-only commands (`/next`, `/status`) don't.
-- **Unless the PR says why not.** `Session log: none, because …` in the PR description, like the `Docs:` and `Unit:` lines, for a PR whose story is already told: a `/feedback` session, whose playtest report is the record, or a one-line fix whose title says it all. Skipping is a written decision, never an oversight.
+- **Every session that changes something writes one**, including a `/needs-me` or a `/director` conversation. Read-only commands (`/next`, `/board`) don't.
+- **Unless the PR says why not.** `Session log: none, because …` in the PR description, like the `Docs:` and `Unit:` lines, for a PR whose story is already told: a `/playtest` session, whose playtest report is the record, or a one-line fix whose title says it all. Skipping is a written decision, never an oversight.
 - **One file per session**, so parallel sessions never conflict. The unit's log gets a single line linking to it.
 - **Enforced** like the docs: the health check fails a PR from a session that changes anything without adding a session log or saying why not.
 
@@ -343,7 +343,7 @@ The repo holds the plan and the work. GitHub holds the conversation around the w
 |---|---|
 | **Issues** | **Things that are wrong**, never planned work: bugs and problems you hit in a playtest, failures the Tester's bots find, main going red overnight. Each has the build, the scenario and a replay where there is one. Ideas, features and tasks stay in `studio/`. |
 | **Labels** | On issues: `bug`, plus `blocker` for a bug that stops a milestone build. On PRs: the unit's kind, `gated`, `producer-ok`, and `playtest` when it wants you to play it. They're a file, `.github/labels.json`, which the `labels` workflow syncs to GitHub when it changes on main. |
-| **Issue form** | A bug form (`.github/ISSUE_TEMPLATE/bug.yml`) asking for the build, the scenario, what happened, what you expected, and the replay, for when you or anyone else file from GitHub directly. `/feedback` fills in the same fields. |
+| **Issue form** | A bug form (`.github/ISSUE_TEMPLATE/bug.yml`) asking for the build, the scenario, what happened, what you expected, and the replay, for when you or anyone else file from GitHub directly. `/playtest` fills in the same fields. |
 | **PRs** | One per unit; short (see [PRs](#prs)). `Fixes #N` closes the issue when it merges. Review comments are how you or anyone else can say something about a change after the fact; the next session reads them. |
 | **Rulesets** on `main` | Enforce what `CLAUDE.md` asks: no direct pushes, squash merge only, and the CI health check, the PR title, gate and in-step checks must pass before anything merges. |
 | **A gate check** | The `gate` workflow finds PRs touching gated files (listed in `.github/gated.json`: `studio/producer.md`, `direction.md`, milestones, `.claude/` and the health check's runner, CI and the in-step check, the colour language in `docs/art-direction.md`, the kit's palette, and the gate itself; why each, in [Gated files](../docs/decisions/2026-10-17-gated-files.md)), labels them `gated`, and stays red until the PR also has the label `producer-ok`. A PR labelled `gated` by hand is held the same way. Only you add that label. Code owners can't do this job: the studio's PRs are opened under your GitHub account, and GitHub doesn't let you approve your own PR. Since the studio uses your account, the check can't stop it from adding the label deliberately; it does stop a gated change slipping through by accident, which is the real risk. |
@@ -544,7 +544,7 @@ A **scenario** is a small data file in `game/scenarios/`: a level, where Bob sta
 
 The build has a feedback button (and a key, F). It opens a short form: fun, difficulty (too easy / right / too hard), frustration, and free text, prefilled with the build, the scenario and the questions from the handoff card. It also attaches a **replay**: the inputs you pressed, frame by frame, since the start or the last restart. The sim and Bob are deterministic, so the replay plus the build reproduces exactly what you saw on the same JavaScript engine (Chrome's V8 matches Node, where the tests run; the report says which browser it came from, since Safari's maths can differ in the last bit), which makes "it did something weird on the second jump" a test case rather than a mystery.
 
-The button copies the report (with the replay, run-length encoded text) to paste into a session with `/feedback`, which works on any device and needs no server or sign-in. Notes can also be typed straight into `/feedback` without the button.
+The button copies the report (with the replay, run-length encoded text) to paste into a session with `/playtest`, which works on any device and needs no server or sign-in. Notes can also be typed straight into `/playtest` without the button.
 
 Then the session **grills you** until the report is complete, a few questions at a time, each with options:
 
@@ -589,7 +589,7 @@ The Toolsmith's queue, prioritised by the Director like everything else:
 - **GitHub**: every unit is a PR: draft from the first push, merged by the end of the session. Labels by kind, plus `gated`, `producer-ok` and `playtest` (all in `.github/labels.json`).
 - **Session logs** in `studio/sessions/`: the story of every session, beside the PR that says what changed.
 - **The studio page** on Pages (`…/pixelbob/studio/`), regenerated on every merge and whenever a PR or issue opens or closes: the board (milestone progress, needs you, in flight, bugs and open PRs, ready, shaped and ideas, done and dropped) and a timeline of the sessions, each with its PR. Linked from the site index above the prototypes. `studio/page.ts` turns the board's Markdown into HTML; `scripts/build-site.mjs` writes it, asking GitHub only in the deploy (`STUDIO_GITHUB=1`), so a PR preview's page has no PRs or bugs. Planned: decisions, builds (with release-builds), and your fun and difficulty ratings over time (with playtests).
-- **`/status`** prints the same in a session, **`/next`** shows what `/go` would do next and why, and **`/needs-me`** goes through everything waiting on you.
+- **`/board`** prints the same in a session, **`/next`** shows what `/go` would do next and why, and **`/needs-me`** goes through everything waiting on you.
 
 ## Building the studio
 
@@ -612,7 +612,7 @@ Items 1 to 4 were milestone m0-studio. Items 5 to 8 are now units on the board, 
 2026-10-17, on the questions this plan first raised:
 
 - **Merging:** the studio merges its own PRs. PR titles and descriptions are short, following the template in [PRs](#prs).
-- **Feedback:** through `/feedback`. The session grills the producer to complete the report, writes it to the repo, and raises an issue itself for each thing that's wrong.
+- **Feedback:** through `/playtest`. The session grills the producer to complete the report, writes it to the repo, and raises an issue itself for each thing that's wrong.
 - **Backlog and issues:** the backlog is in the repo. Issues are only for things that are wrong (bugs from playtests, bots and the nightly check), never for features or planned work.
 - **Autopilot:** not now; maybe later.
 - **Roles:** the eleven above are the starting set.

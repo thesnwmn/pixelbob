@@ -1,5 +1,5 @@
 // The feedback report: what the feedback button copies for the producer to paste into
-// /feedback. No DOM, so it's tested in Node.
+// /playtest. No DOM, so it's tested in Node.
 
 export interface Feedback {
   build: string;
@@ -33,7 +33,7 @@ export function buildName(pathname: string): string {
   return "dev";
 }
 
-/** The report as text, in the shape /feedback reads (the front matter of a playtest report). */
+/** The report as text, in the shape /playtest reads (the front matter of a playtest report). */
 export function report(f: Feedback): string {
   const lines = [
     "Pixelbob feedback",

@@ -97,11 +97,18 @@ export const roles: Check = {
 /** The commands the producer guide documents, from its "### `/go`" headings. */
 export const guideCommands = (guide: string): string[] => [...guide.matchAll(/^### `\/([\w-]+)/gm)].map((m) => m[1]);
 
+/**
+ * Claude Code's own slash commands. A skill with one of these names is shadowed: typing it
+ * runs the built-in (`/feedback` sent the producer's playtest notes to Anthropic). Add to it
+ * when Claude Code grows a command.
+ */
+export const BUILT_IN = ["add-dir", "agents", "bashes", "bug", "clear", "compact", "config", "context", "cost", "doctor", "exit", "export", "feedback", "help", "hooks", "ide", "init", "install-github-app", "login", "logout", "mcp", "memory", "model", "output-style", "permissions", "plugin", "pr-comments", "privacy-settings", "release-notes", "resume", "review", "rewind", "sandbox", "security-review", "status", "statusline", "terminal-setup", "todos", "upgrade", "usage", "vim"];
+
 export const commands: Check = {
   id: "studio/commands",
   tier: 5,
   repro: "ls .claude/skills",
-  hint: "Every command is a skill in .claude/skills/<name>/SKILL.md and has a section in studio/producer-guide.md#the-commands; the two agree.",
+  hint: "Every command is a skill in .claude/skills/<name>/SKILL.md and has a section in studio/producer-guide.md#the-commands; the two agree. None is named like one of Claude Code's own commands, which would shadow it (BUILT_IN in scripts/health/src/studio.ts).",
   run({ root }) {
     const guidePath = join(root, "studio/producer-guide.md");
     if (!existsSync(guidePath)) return fail("no studio/producer-guide.md");
@@ -110,6 +117,7 @@ export const commands: Check = {
     const problems = [
       ...guide.filter((c) => !skills.includes(c)).map((c) => `/${c}: in the producer guide, but no .claude/skills/${c}/SKILL.md`),
       ...skills.filter((c) => !guide.includes(c)).map((c) => `/${c}: a skill, but not in the producer guide`),
+      ...skills.filter((c) => BUILT_IN.includes(c)).map((c) => `/${c}: Claude Code has its own /${c}, which runs instead of the skill: rename it`),
       ...briefProblems(root, skills.map((n) => `.claude/skills/${n}/SKILL.md`), (f) => f.split("/")[2]),
     ];
     return problems.length ? fail(`${problems.length} problem${problems.length === 1 ? "" : "s"}`, problems.join("\n")) : pass(`${skills.length} commands`);

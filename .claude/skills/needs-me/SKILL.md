@@ -17,7 +17,7 @@ description: Go through everything in the Pixelbob studio that is waiting on the
 Use `pnpm board --github` and the open PRs. If there's nothing, say so in one line and suggest `/next`. With `quick`, show the list and stop.
 
 ## Go through them
-One at a time, with the context, the options and a recommendation, so the producer can answer with a click (AskUserQuestion). They can skip any and stop whenever they like; what's skipped stays waiting, and an ask's default still applies when it expires. Playtests aren't done here: give the links, and `/feedback` afterwards.
+One at a time, with the context, the options and a recommendation, so the producer can answer with a click (AskUserQuestion). They can skip any and stop whenever they like; what's skipped stays waiting, and an ask's default still applies when it expires. Playtests aren't done here: give the links, and `/playtest` afterwards.
 
 ## Record the answers
 - An ask: `status: answered` and an `## Answer` section in their words. Units it blocked whose needs are now all closed go to `ready`.

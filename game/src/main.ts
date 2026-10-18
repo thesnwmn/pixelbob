@@ -144,12 +144,12 @@ form.onsubmit = async (e) => {
   out.value = text;
   try {
     await navigator.clipboard.writeText(text);
-    copied.textContent = "Copied. Paste it into a session with /feedback.";
+    copied.textContent = "Copied. Paste it into a session with /playtest.";
   } catch {
     // No clipboard (an insecure context, or permission refused): show it to copy by hand.
     out.hidden = false;
     out.select();
-    copied.textContent = "Couldn't copy: select the report above and copy it, then paste it into /feedback.";
+    copied.textContent = "Couldn't copy: select the report above and copy it, then paste it into /playtest.";
   }
 };
 

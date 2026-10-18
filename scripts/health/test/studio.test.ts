@@ -155,6 +155,10 @@ describe("studio/commands", () => {
     const r = commands.run(ctx(tmpDir({ ...skills, "studio/producer-guide.md": guide + "\n### `/status`\n", ".claude/skills/secret/SKILL.md": brief("secret") })));
     expect(r.out).toBe(["/status: in the producer guide, but no .claude/skills/status/SKILL.md", "/secret: a skill, but not in the producer guide"].join("\n"));
   });
+  it("fails on a skill named like one of Claude Code's own commands", () => {
+    const r = commands.run(ctx(tmpDir({ ...skills, "studio/producer-guide.md": guide + "\n### `/feedback`\n", ".claude/skills/feedback/SKILL.md": brief("feedback") })));
+    expect(r.out).toBe("/feedback: Claude Code has its own /feedback, which runs instead of the skill: rename it");
+  });
 });
 
 describe("studio/page", () => {

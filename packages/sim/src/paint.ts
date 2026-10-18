@@ -3,6 +3,8 @@
  * Palette index i is material i (`M`), so an indexed PNG saved with this palette reads
  * straight through; any other PNG is read by colour. Air is black; every other colour is
  * one from the material's own ramp, so a painted level looks like what it will be.
+ * Levels are read by colour, so retuning a ramp's middle colour breaks every painted level
+ * that uses it: `node game/scripts/levels.ts` (the health check's code/levels) says which.
  */
 import { M, MATS } from "./materials.ts";
 

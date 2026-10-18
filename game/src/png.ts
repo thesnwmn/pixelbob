@@ -1,5 +1,5 @@
 // Reads a PNG into RGBA, for a level's materials.png. No DOM, so it runs in Node too: the
-// caller brings the inflate (node:zlib's inflateSync in Node, `inflateStream` in a browser),
+// caller brings the inflate (node:zlib's inflateSync in Node; in a browser `decodePngAsync` uses DecompressionStream),
 // which is the one part that's different in each.
 //
 // Takes what paint tools save for a pixel-art layer: indexed (1, 2, 4 or 8 bits, with tRNS

@@ -98,14 +98,14 @@ pixelbob/
     bob/                    Bob; no DOM
     render/                 the WebGL2 renderer and the cells-to-textures pass
     play/                   (planned) bots, if they outgrow game/; no DOM
-    levels/                 (planned) the level format: load, save, decorate
+    levels/                 (planned) the level format, if it outgrows game/ (now game/src/levels.ts)
 
   game/                     the game itself: a Vite app, built to …/pixelbob/game/
-    src/                    the scenario format, playing one, replays, filmstrips, the feedback button (planned: title, map, HUD, saves)
-    levels/                 (planned) the levels: material PNGs plus entity JSON
+    src/                    the scenario and level formats, playing one, replays, filmstrips, the feedback button (planned: title, map, HUD, saves)
+    levels/                 the painted levels: a material PNG and a level.json each
     scenarios/              start points with handoff cards, for `?scenario=`
     replays/                recorded runs with their expected outcomes; the health check replays them
-    scripts/                replays (check, keep, update) and filmstrips, in Node
+    scripts/                levels (check, palette, new), replays (check, keep, update) and filmstrips, in Node
 
   prototypes/               spikes: throwaway, one question each
     00-stills/ 01-sandbox/ 02-bob/ …

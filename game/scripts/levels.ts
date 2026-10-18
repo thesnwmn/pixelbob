@@ -4,9 +4,10 @@
 //   node game/scripts/levels.ts new <id> <w> <h>   start a level: rock ground, a spawn and a finish
 // See docs/tech-and-toolchain.md#level-format.
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { deflateSync } from "node:zlib";
 import { M, MATS, PAINT } from "@pixelbob/sim";
+import { LEVEL_WIDTHS } from "../src/scenario.ts";
 import { LEVELS_DIR, loadLevels } from "./load-levels.ts";
 
 const [cmd, ...args] = process.argv.slice(2);
@@ -31,11 +32,13 @@ if (cmd === "palette") {
   const level = { title: id, seed: 7, spawn: { x: 20, y: ground - 12 }, finish: { x0: w - 30, y0: 0, x1: w, y1: h }, checkpoints: [], bits: [], lamps: [] };
   writeFileSync(join(dir, "level.json"), JSON.stringify(level, null, 2) + "\n");
   console.log(`game/levels/${id}: ${w} × ${h}. Add it to LEVEL_WIDTHS in game/src/scenario.ts, and a scenario to play it.`);
-} else if (args.length === 0 && !(cmd ?? "").startsWith("-")) {
+} else if (args.length === 0 && (cmd === undefined || existsSync(cmd))) {
   const dir = cmd ?? LEVELS_DIR;
   const levels = loadLevels(dir);
   let bad = 0;
-  for (const [id, { errors }] of levels) {
+  for (const [id, { w, errors }] of levels) {
+    // The game's own levels must be nameable by a scenario.
+    if (resolve(dir) === resolve(LEVELS_DIR) && w !== undefined && (LEVEL_WIDTHS as Record<string, number>)[id] !== w) errors.push(`add "${id}": ${w} to LEVEL_WIDTHS in game/src/scenario.ts, so a scenario can name it`);
     if (errors.length) bad++;
     for (const e of errors) console.log(`game/levels/${id}: ${e}`);
   }

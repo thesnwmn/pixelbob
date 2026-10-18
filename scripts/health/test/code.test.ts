@@ -55,6 +55,15 @@ describe("code/scenarios", () => {
   });
 });
 
+function crc(buf: Uint8Array): number {
+  let c = ~0;
+  for (const b of buf) {
+    c ^= b;
+    for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+  }
+  return ~c >>> 0;
+}
+
 describe("code/levels", () => {
   const tiny = (name: string) => readFileSync(new URL(`../../../game/levels/tiny/${name}`, import.meta.url));
   it("passes when there are none", () => expect(levels.run(ctx(tmpDir()))).toEqual({ status: "pass", detail: "no levels" }));
@@ -67,11 +76,19 @@ describe("code/levels", () => {
     const root = tmpDir({
       "game/levels/lost/level.json": '{ "title": "Lost", "spawn": { "x": 999, "y": 5 }, "finish": { "x0": 0, "y0": 0, "x1": 10, "y1": 10 } }',
       "game/levels/blank/level.json": '{ "title": "Blank" }',
+      "game/levels/odd/level.json": tiny("level.json").toString(),
     });
+    // The tiny level's PNG with the rock entry in its palette changed: no material is painted that colour.
+    const odd = Buffer.from(tiny("materials.png"));
+    const plte = odd.indexOf("PLTE") + 4;
+    odd[plte + 3] = 7;
+    odd.writeUInt32BE(crc(odd.subarray(plte - 4, plte + odd.readUInt32BE(plte - 8))), plte + odd.readUInt32BE(plte - 8));
+    writeFileSync(join(root, "game/levels/odd/materials.png"), odd);
     writeFileSync(join(root, "game/levels/lost/materials.png"), tiny("materials.png"));
     const r = levels.run(ctx(root));
     expect(r.status).toBe("fail");
-    expect(r.detail).toBe("2 of 2 levels broken");
+    expect(r.detail).toBe("3 of 3 levels broken");
+    expect(r.out).toContain("game/levels/odd: materials.png: #07483f isn't a material's colour");
     expect(r.out).toContain("game/levels/lost: spawn: 999, 5 is off the map (160 × 60)");
     expect(r.out).toContain("game/levels/blank: materials.png: missing");
   });

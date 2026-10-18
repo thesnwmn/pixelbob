@@ -62,6 +62,7 @@ From the producer, 2026-10-18: probably much later, but it should shape how leve
 - **What gets collected.** Either more of Bob (it's already the score, but it makes him bigger, so it can lock him out of slots) or something that isn't Bob (a token, a seed) that changes nothing in play. Open: one, the other or both.
 - **Optional challenges.** Per level, on top of finishing: arrive whole (100%), finish without freezing, finish in one piece (no splits), or take the hard route (the gum ceiling over the spikes instead of the path round). They ask more of the same verbs rather than adding new ones.
 - **For level design now.** Leave room for this: corners, pockets and alternative routes off the main path in The Green's levels, even before there's anything to put in them.
+- **Scores and badges.** From the producer's playtest of the first Green level (2026-10-18): a score, and a badge for finishing a level with as much of Bob as possible, so a lost bit at the bottom of a ravine is worth the climb back out.
 - **Not this:** a collectathon that pads levels, or secrets that need a guide. A player who never looks should still have a complete game.
 
 ## From the design, not built yet

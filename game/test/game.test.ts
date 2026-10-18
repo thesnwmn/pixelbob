@@ -214,7 +214,7 @@ describe("replays", () => {
 
   it("are checked against the outcome they expect", () => {
     const text = encode("start", Array.from({ length: 30 }, () => quantize({ move: 1, jump: false })));
-    const { file } = parseReplayFile("roll", { note: "Rolls right.", replay: text, expect: { frames: 30, finished: 0, home: 0, bob: 100, state: "00000000" } });
+    const { file } = parseReplayFile("roll", { recorded: "2026-10-18", note: "Rolls right.", replay: text, expect: { frames: 30, finished: 0, home: 0, bob: 100, state: "00000000" } });
     const state = checkReplay(file!, byId).outcome!.state;
     expect(checkReplay({ ...file!, expect: { ...file!.expect, state } }, byId).problems).toEqual([]);
     expect(checkReplay(file!, byId).problems).toEqual([`state: expected 00000000, got ${state}`]);
@@ -227,6 +227,7 @@ describe("replays", () => {
     expect(errors.map((e) => e.split(":")[0])).toEqual([
       'the id "Bad" (the file name) isn\'t kebab-case',
       "extra",
+      "recorded",
       "note",
       "replay",
       "expect.speed",

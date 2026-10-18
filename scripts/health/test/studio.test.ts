@@ -75,9 +75,11 @@ describe("studio/files", () => {
   });
   it("reads a playtest report, and fails on a rating out of range", () => {
     const report = (fun: number) => `---\ndate: 2026-10-21\nby: producer\nbuild: preview/pr-41\nunits: [jump]\nfun: ${fun}\ndifficulty: right\nfrustration: 2\n---\n`;
-    expect(problems({ "studio/playtests/2026-10-21-jump.md": report(4) })).toEqual([]);
-    expect(problems({ "studio/playtests/2026-10-21-jump.md": report(7) })).toEqual(["studio/playtests/2026-10-21-jump.md: fun is 7, not 1 to 5"]);
+    expect(problems({ "studio/playtests/2026-10-21-1400-jump.md": report(4) })).toEqual([]);
+    expect(problems({ "studio/playtests/2026-10-21-1400-jump.md": report(7) })).toEqual(["studio/playtests/2026-10-21-1400-jump.md: fun is 7, not 1 to 5"]);
   });
+  it("fails on a playtest report without its time", () =>
+    expect(problems({ "studio/playtests/2026-10-21-jump.md": "---\ndate: 2026-10-21\nby: producer\nbuild: game\n---\n" })).toEqual(["studio/playtests/2026-10-21-jump.md: the file name should be 2026-10-21-HHMM-<slug>, with the UTC time it was written"]));
   it("fails on a file with no front matter", () => expect(problems({ "studio/work/note.md": "# A note\n" })).toEqual(["studio/work/note.md: no front matter (--- … --- at the top)"]));
 });
 

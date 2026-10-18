@@ -122,6 +122,8 @@ export function findReplay(text: string): string {
 /** A kept replay, `game/replays/<id>.json`: the run and the outcome it should come to. */
 export interface ReplayFile {
   id: string;
+  /** The day it was recorded, YYYY-MM-DD. */
+  recorded: string;
   /** Why it's kept: what it plays through, or the bug it reproduces. */
   note: string;
   replay: Replay;
@@ -136,7 +138,8 @@ export function parseReplayFile(id: string, raw: unknown): { file?: ReplayFile; 
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id)) errors.push(`the id "${id}" (the file name) isn't kebab-case`);
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return { errors: [...errors, "not a JSON object"] };
   const o = raw as Record<string, unknown>;
-  for (const k of Object.keys(o)) if (!["note", "replay", "expect"].includes(k)) errors.push(`${k}: not a field (note, replay, expect)`);
+  for (const k of Object.keys(o)) if (!["recorded", "note", "replay", "expect"].includes(k)) errors.push(`${k}: not a field (recorded, note, replay, expect)`);
+  if (typeof o.recorded !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(o.recorded)) errors.push("recorded: the day it was recorded, YYYY-MM-DD");
   if (typeof o.note !== "string" || !o.note.trim()) errors.push("note: a non-empty string, saying why it's kept");
   let replay: Replay | undefined;
   if (typeof o.replay !== "string") errors.push("replay: the replay's text, as the feedback report has it");
@@ -157,5 +160,5 @@ export function parseReplayFile(id: string, raw: unknown): { file?: ReplayFile; 
   }
   if (errors.length) return { errors };
   const ex = e as Outcome;
-  return { file: { id, note: o.note as string, replay: replay!, expect: { frames: ex.frames, finished: ex.finished, home: ex.home, bob: ex.bob, state: ex.state } }, errors };
+  return { file: { id, recorded: o.recorded as string, note: o.note as string, replay: replay!, expect: { frames: ex.frames, finished: ex.finished, home: ex.home, bob: ex.bob, state: ex.state } }, errors };
 }

@@ -10,6 +10,14 @@ describe("the touch stick", () => {
     }
   });
 
+  it("counts down by the drag's angle, not only its length", () => {
+    // Long and shallow (about 31° below level): a roll. Long and steep (about 63°): a squash.
+    expect(readStick(100, 60).down).toBe(0);
+    expect(readStick(160, 90).down).toBe(0);
+    expect(readStick(60, 120).down).toBeGreaterThan(0.5);
+    expect(readStick(-60, -120).up).toBeGreaterThan(0.5);
+  });
+
   it("reads straight down and up as before", () => {
     expect(readStick(0, STICK_DEAD)).toEqual({ move: 0, down: 0, up: 0 });
     expect(readStick(0, STICK_DEAD + STICK_FULL)).toEqual({ move: 0, down: 1, up: 0 });
@@ -30,7 +38,7 @@ describe("the touch stick", () => {
       const a = { ...readStick(dx, dy) };
       for (const [ex, ey] of [[1, 0], [0, 1]]) {
         const b = readStick(dx + ex, dy + ey);
-        for (const k of ["move", "down", "up"] as const) expect(Math.abs(b[k] - a[k]), `${dx}, ${dy}, ${k}`).toBeLessThanOrEqual(step * 1.75);
+        for (const k of ["move", "down", "up"] as const) expect(Math.abs(b[k] - a[k]), `${dx}, ${dy}, ${k}`).toBeLessThanOrEqual(step);
       }
     }
   });

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pixelbob concept</title>
+    <meta name="description" content="Pixelbob: a platformer where everything is simulated pixels, including the hero, a blob of goo." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="./assets/index-gjhyxN7j.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CTy850Fb.css">
+  </head>
+  <body>
+    <nav id="nav">
+      <a href="#top" class="brand">Pixelbob</a>
+      <a href="#game">The game</a>
+      <a href="#bob">Bob</a>
+      <a href="#look">Look</a>
+      <a href="#worlds">Worlds</a>
+      <a href="#menus">Menus</a>
+      <a href="#settings">Settings</a>
+      <a href="#plan">Plan</a>
+    </nav>
+
+    <header id="top" class="screen title-screen">
+      <div class="live" data-scene="green"></div>
+      <div class="title-ui">
+        <div class="live logo" data-scene="logo"></div>
+        <ul class="menu">
+          <li class="on">Continue <small>The Green · 3</small></li>
+          <li>New game</li>
+          <li>Settings</li>
+        </ul>
+        <p class="hint">▶ press anything</p>
+      </div>
+    </header>
+
+    <main>
+      <section id="game">
+        <h2>The game</h2>
+        <p class="hook">You're a blob. The world is sand, water, fire and ice. Everything is a puzzle piece, <em>especially</em> you.</p>
+        <p class="lede">
+          Pixelbob is a platformer where every pixel is simulated: rock holds, sand pours, water finds its level, fire spreads. Bob is made of the same stuff, a
+          few hundred particles of goo that you steer by squishing. Warm him up and he runs like honey. Chill him and he sets like a brick. Every room comes down
+          to the same question: what shape, what temperature, and where?
+        </p>
+        <div class="cards five">
+          <div class="card"><h3>You are the tool</h3><p>No keys in your pocket, no levers to carry. You pour, plug, dangle, weigh and freeze. Bob is a Swiss army knife made of jelly.</p></div>
+          <div class="card"><h3>The world is real</h3><p>Every pixel is stuff. If it looks like it should work, it does. If it looks like it should hurt, it really does.</p></div>
+          <div class="card"><h3>Heat is your wardrobe</h3><p>Runny to drain through a crack. Frozen to bridge a lake. Normal to, well, roll about. Dressing for the room is half the puzzle.</p></div>
+          <div class="card"><h3>You are the score</h3><p>Spikes, lava and big drops cost you bits of Bob. Every level asks one question: how much of you made it home?</p></div>
+          <div class="card"><h3>Hard to kill, easy to chip</h3><p>Bob sags off ledges, clings on, oozes back. Sloppy play survives. Good play arrives in one piece.</p></div>
+        </div>
+      </section>
+
+      <section id="bob">
+        <h2>Bob</h2>
+        <p class="lede">
+          Bob is <strong>goo</strong>: about 280 particles, one per pixel, held together by surface tension and a stubborn wish to be round. He wobbles when he
+          lands, leans into a roll, and sags when he can't be bothered to hold his shape. Nothing about him is animated by hand. Every Bob on this page is the
+          real one, simulated into his pose.
+        </p>
+        <figure class="shot"><div class="live" data-scene="bob"></div><figcaption>One Bob, nine moods: lounging, rolling, jumping, draining under a door, hanging by a thread, climbing gum, frozen and cracked, sliced on spikes, and steaming gently.</figcaption></figure>
+        <div class="split">
+          <div>
+            <h3>What he can do</h3>
+            <dl class="moves">
+              <dt>Roll</dt><dd>A tank tread made of jelly. Momentum is your friend, right up to the edge.</dd>
+              <dt>Jump</dt><dd>Squash down to charge, let go to boing.</dd>
+              <dt>Pour</dt><dd>Runny, he drains into cracks and under doors like spilt syrup.</dd>
+              <dt>Dangle</dt><dd>Hang off a ledge on a string of yourself. Too far, and you drip.</dd>
+              <dt>Climb</dt><dd>Stick to tacky walls. Push in to hold on, up to climb.</dd>
+              <dt>Split</dt><dd>Leave a bit of yourself on a switch. Come back for it. Probably.</dd>
+              <dt>Merge</dt><dd>Bits that touch become Bob again, no questions asked.</dd>
+              <dt>Absorb</dt><dd>Drink water and get heavy. Drink glow goo and become a lamp.</dd>
+            </dl>
+          </div>
+          <div>
+            <h3>Temperature</h3>
+            <div class="thermo">
+              <span style="--c:#bfe6f7">frozen<br /><small>a brick</small></span>
+              <span style="--c:#9fd3ee">cold<br /><small>sluggish</small></span>
+              <span style="--c:var(--bob)">normal<br /><small>bouncy</small></span>
+              <span style="--c:#ff9a5a">warm<br /><small>floppy</small></span>
+              <span style="--c:#ff6a2a">runny<br /><small>honey</small></span>
+            </div>
+            <p>
+              Heat only comes from things you can see: fires, lava, vents, snow, ice. Bob warms up on the side facing the fire, holds the heat for a while, then
+              lets it go. Hot Bob melts snow. Frozen Bob freezes any water he touches, which is either a bridge or a very cold mistake.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="look">
+        <h2>Look and feel</h2>
+        <p class="lede">
+          Crisp pixels, real light, deep shadow. Most of every screen is dark, and the light tells you where to look: a fire, a pool of glowing goo, a lost bit
+          of Bob glinting on a ledge.
+        </p>
+        <div class="cards three">
+          <div class="card"><h3>Every pixel counts</h3><p>One pixel on screen is one cell of the simulation, on a 320×180 camera. Bob is 20 pixels across: small enough that the world feels big.</p></div>
+          <div class="card"><h3>Light is real</h3><p>Lamps cast soft shadows, sunlight seeps into rock, and anything that glows lights up the room around it.</p></div>
+          <div class="card"><h3>Warm against cool</h3><p>Every world has two lights fighting over the screen. The warm one is where the heat is: the danger, and usually the way out.</p></div>
+        </div>
+        <h3>Colours are a language</h3>
+        <p>The ground is dark and quiet. Bright colour is saved for Bob, for danger and for anything you can use, so a player who knows the colours can read a room before setting foot in it.</p>
+        <div class="language" id="language"></div>
+        <h3>Bob's colour</h3>
+        <div id="bobcolour"></div>
+      </section>
+
+      <section id="worlds">
+        <h2>Worlds</h2>
+        <p class="lede">
+          Bob goes down. Seven worlds, from the meadows on the surface to the molten core, each with its own stuff and its own light. Each one teaches a new
+          trick, then makes you use it with all the others.
+        </p>
+        <div id="worldlist"></div>
+        <h3>The map</h3>
+        <p>The map is a slice through the earth. Every world is a layer deeper than the last.</p>
+        <div class="map" id="map"></div>
+      </section>
+
+      <section id="menus">
+        <h2>Menus and HUD</h2>
+        <p class="lede">The game never leaves the screen. Menus are dark glass and a pixel font, and they get out of the way the moment you're done with them.</p>
+        <div class="mocks">
+          <figure class="screen"><div class="live" data-scene="caverns"></div>
+            <div class="ui pause">
+              <h4>Paused</h4>
+              <ul class="menu"><li class="on">Resume</li><li>Back to checkpoint</li><li>Map</li><li>Settings</li><li>Quit to title</li></ul>
+              <div class="stats"><span>Glow Caverns · 2</span><span>Bob 91%</span><span>bits 2 / 3</span></div>
+            </div>
+            <figcaption>Pause. The world holds its breath behind the glass.</figcaption>
+          </figure>
+          <figure class="screen"><div class="live" data-scene="foundry"></div>
+            <div class="ui hud">
+              <div class="mass"><i style="--v:0.86"></i><span>86%</span></div>
+              <div class="temp"><i style="--t:0.72"></i><span>runny</span></div>
+              <div class="pieces">●●<b>◉</b></div>
+            </div>
+            <figcaption>The HUD: how much of you is left, how hot you are, and which piece is you (the ringed one). It fades when nothing changes.</figcaption>
+          </figure>
+          <figure class="screen"><div class="live" data-scene="ruins"></div>
+            <div class="ui complete">
+              <h4>Sticky Ruins · 4 complete</h4>
+              <div class="big">88<small>%</small></div>
+              <p>of Bob made it</p>
+              <ul class="tally"><li><span>Lost bits found</span><b>3 / 4</b></li><li><span>Crumbs shed climbing</span><b>14</b></li><li><span>Best</span><b>93%</b></li></ul>
+              <ul class="menu row"><li class="on">Next</li><li>Retry</li><li>Map</li></ul>
+            </div>
+            <figcaption>Level complete. The score is simply how much of Bob got there.</figcaption>
+          </figure>
+          <figure class="screen"><div class="live" data-scene="grotto"></div>
+            <div class="ui tip">
+              <p><b>Frozen.</b> You can't roll or jump, but you freeze the water you touch. Find something warm.</p>
+            </div>
+            <figcaption>Tips: one line, in the moment, the first time something happens to Bob. Never a tutorial screen.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="settings">
+        <h2>Settings</h2>
+        <div class="settings">
+          <div class="tabs"><span>Controls</span><span>Display</span><span>Audio</span><span class="on">Accessibility</span><span>Game</span></div>
+          <div class="rows">
+            <label>Bob's colour <select id="bobpick"></select><small>Go on, try it: every shot on this page changes.</small></label>
+            <label>Pattern on tacky surfaces <span class="toggle on"></span><small>Moss, resin and gum get a texture as well as a colour, for colour-blind players.</small></label>
+            <label>Hazard outlines <span class="toggle"></span><small>Spikes, lava and acid get a pale outline.</small></label>
+            <label>Screen shake <span class="range"><i style="--v:0.4"></i></span></label>
+            <label>Bloom <span class="range"><i style="--v:0.8"></i></span></label>
+            <label>Steer in the air <span class="range"><i style="--v:0.35"></i></span><small>Physically he can't. Thumbs on glass appreciate a little cheating.</small></label>
+            <label>Slow motion when climbing <span class="toggle"></span></label>
+          </div>
+        </div>
+        <h3>Controls</h3>
+        <table class="controls">
+          <thead><tr><th></th><th>Keyboard / pad</th><th>Touch (landscape)</th></tr></thead>
+          <tbody>
+            <tr><td>Move</td><td>A / D, arrows, stick</td><td>Left thumb: drag anywhere on the left half</td></tr>
+            <tr><td>Jump (hold to charge)</td><td>Space; W / ↑ off a wall</td><td>Right thumb: tap, or hold and release</td></tr>
+            <tr><td>Down: squash, pour, climb down</td><td>S / ↓</td><td>Left thumb: drag down</td></tr>
+            <tr><td>Up: climb a tacky wall</td><td>W / ↑</td><td>Left thumb: drag up</td></tr>
+            <tr><td>Split</td><td>E, X</td><td>Right thumb: swipe through Bob</td></tr>
+            <tr><td>Swap piece</td><td>Q / R, bumpers</td><td>Tap a piece</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="plan">
+        <h2>The plan</h2>
+        <ol class="phases">
+          <li class="done"><b>Art direction</b> The lighting model and this look. <a href="../00-stills/">shots</a></li>
+          <li class="done"><b>World sandbox</b> The falling-sand world on the GPU: dig, paint, heat, light. <a href="../01-sandbox/">sandbox</a></li>
+          <li class="done"><b>Bob playground</b> Goo Bob on a test course: roll, jump, melt, freeze, dangle, climb. <a href="../02-bob/">playground</a></li>
+          <li class="done"><b>Concept</b> The worlds, the shots, this page.</li>
+          <li><b>Agent harness</b> A team of agents builds the game; a human plays it and says what's wrong.</li>
+          <li><b>First slice</b> The Green: three or four levels, the title screen, the map and saves.</li>
+          <li><b>The run</b> One world at a time, all the way down.</li>
+        </ol>
+        <p>Design notes live in <a href="https://github.com/thesnwmn/pixelbob/tree/main/docs">docs/</a>: <a href="https://github.com/thesnwmn/pixelbob/blob/main/docs/worlds.md">worlds</a>, <a href="https://github.com/thesnwmn/pixelbob/blob/main/docs/bob.md">Bob</a>, <a href="https://github.com/thesnwmn/pixelbob/blob/main/docs/art-direction.md">art direction</a>, <a href="https://github.com/thesnwmn/pixelbob/blob/main/docs/ideas.md">ideas</a>.</p>
+      </section>
+    </main>
+    <footer>Every picture on this page is drawn live, pixel by pixel, by the game's own code. No sprites were harmed.</footer>
+  </body>
+</html>

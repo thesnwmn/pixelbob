@@ -3,7 +3,8 @@ title: What does Bob sound like?
 kind: spike
 role: prototyper
 size: S
-status: ready
+status: doing
+pr: 0
 milestone: m1-green-alpha
 needs: []
 ---
@@ -17,3 +18,6 @@ The milestone asks for an audio prototype. Bob is goo in a simulated world, so t
 
 ## Not this
 Music, final mixing.
+
+## Log
+- 2026-10-19 the question: can Bob's sound be synthesised live with Web Audio from numbers the sim and Bob already have (contacts, impact speeds, charge, squash, wetness, heat, boiling), with no clips, cheaply enough for a phone, and does it sound like him? Built as `prototypes/04-audio/`, the Bob playground plus a synth. **Kill criterion** (stated before any code): the producer, after trying it, wants none of the voices kept, or the reading and synthesis cost more than 1 ms a frame on a phone.

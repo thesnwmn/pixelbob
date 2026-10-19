@@ -81,6 +81,7 @@ The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at
 - `src/filmstrip.ts`: key frames of a run side by side, cropped around Bob, from the game's cell colours and Bob's painter but unlit. `node game/scripts/filmstrip.ts <replay id or file> <out.png> [shots] [scale]` writes one.
 - `src/report.ts`: the feedback report. The Feedback button (or F) asks for fun, difficulty, frustration, notes and the card's questions, and copies a report with the build, commit, scenario and the replay, to paste into `/playtest`.
 - `src/main.ts`: the browser side: the card, the form, keyboard and touch input, the camera and the renderer.
+- `src/stick.ts`: the touch stick, a drag read as move, down and up. Down and up start further out the more sideways the drag is, so only a drag steeper than about 37° counts. No DOM, so it's tested in Node.
 
 ## Level format
 

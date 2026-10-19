@@ -287,6 +287,7 @@ soundEl.onclick = () => {
   }
   const playing = synth.ctx.state === "running";
   const ctx = synth.ctx as AudioContext;
+  if (!playing) ear.reset(bob);
   void (playing ? ctx.suspend() : ctx.resume());
   soundEl.textContent = playing ? "Sound on" : "Sound off";
   soundEl.classList.toggle("on", playing);
@@ -319,7 +320,8 @@ function tick(now: number) {
       if (ptr.down && state.mode === "edit" && state.tool !== "dig") brush(ptr.x, ptr.y);
       world.step();
       bob.step(world, input);
-      if (synth) {
+      // Off (suspended), sounds would queue at a frozen clock and all play on resume: don't listen.
+      if (synth && synth.ctx.state === "running") {
         const t1 = performance.now();
         synth.update(ear.hear(bob, world));
         hearUs += ((performance.now() - t1) * 1000 - hearUs) * 0.05;

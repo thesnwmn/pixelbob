@@ -1,9 +1,8 @@
 // Renders the tour (tour.ts) through the synth offline in headless Chromium, to a WAV file,
 // and prints its levels:  node src/render.ts <out.wav>
-// Needs Playwright (the cloud sessions have it); not part of the page.
+// Needs Playwright (the cloud sessions have it). A spike's script, not a studio tool: nothing else uses it.
 import { readFileSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { stripTypeScriptTypes } from "node:module";
+import { createRequire, stripTypeScriptTypes } from "node:module";
 import { tour } from "./tour.ts";
 
 const out = process.argv[2] ?? "tour.wav";

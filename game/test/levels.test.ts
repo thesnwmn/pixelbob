@@ -259,7 +259,7 @@ describe("painted ground", () => {
     const scenario: Scenario = { id: "g", title: "G", level: "green-1-hills", seed: 7, bob: { tweaks: {} }, camera: { zoom: 3, look: "day" } };
     // The spawn on the flat, and two starts at the foot of a 0.47 slope (all three stalled before).
     const short: { at?: number; gone: number }[] = [];
-    for (const at of [undefined, 695, 705]) {
+    for (const at of [undefined, 926, 936]) {
       const play = new Play({ ...scenario, at });
       for (let i = 0; i < 60; i++) play.step({ move: 0, jump: false });
       const x0 = play.bob.main!.cx;
@@ -270,4 +270,41 @@ describe("painted ground", () => {
     }
     expect(short).toEqual([]);
   });
+});
+
+describe("the first Green level", () => {
+  // One jump height at a time (the producer's playtest, 2026-10-18): two low bumps a tap gets
+  // over, then a high step only a charged jump gets up.
+  const scenario: Scenario = { id: "g", title: "G", level: "green-1-hills", seed: 7, bob: { tweaks: {} }, camera: { zoom: 3, look: "day" } };
+  /** Rolls right from `at` until stuck against what's ahead, jumps holding for `hold` frames, and says whether he got past `x`. */
+  const over = (at: number, hold: number, x: number): boolean => {
+    const play = new Play({ ...scenario, at });
+    let still = 0, last = play.bob.main!.cx, jump = -1;
+    for (let i = 0; i < 300; i++) {
+      const cx = play.bob.main!.cx;
+      if (cx > x) return true;
+      still = Math.abs(cx - last) < 0.15 ? still + 1 : 0;
+      last = cx;
+      if (jump < 0 && still > 15) jump = 0;
+      play.step({ move: 1, jump: jump >= 0 && jump++ < hold });
+    }
+    return false;
+  };
+
+  it("has two bumps a tap gets over, but rolling doesn't", () => {
+    loadLevels();
+    for (const [at, x] of [[372, 416], [470, 518], [480, 518]]) {
+      expect(over(at, 0, x), `rolling at ${x}`).toBe(false);
+      expect(over(at, 4, x), `a tap at ${x}`).toBe(true);
+    }
+   }, 30_000);
+
+  it("then a high step that, from a stop, a tap or a short hop can't get up and a full charge can", () => {
+    loadLevels();
+    for (const at of [620, 640]) {
+      expect(over(at, 4, 674), `a tap from ${at}`).toBe(false);
+      expect(over(at, 10, 674), `a short hop from ${at}`).toBe(false);
+      expect(over(at, 22, 674), `a full charge from ${at}`).toBe(true);
+    }
+   }, 30_000);
 });

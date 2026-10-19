@@ -1,12 +1,12 @@
 {
-  "recorded": "2026-10-18",
-  "note": "A scripted run through the first Green level: roll right, and a full charge (22 frames) when he's been stuck for 20 frames (against the first step) and at x 772 and 1080 (the ravine and the second step), then two more seconds rolling into the finish. It skips the lost bit in the ravine. Re-recorded for #35: with the grass no longer sprouting, he doesn't stall at the start.",
-  "replay": "pixelbob-replay v1 green-1-hills 1450: 8*451 8j*22 8*340 8j*22 8*232 8j*22 8*361",
+  "recorded": "2026-10-19",
+  "note": "A scripted run through the first Green level: roll right; a tap (4 frames) when he's been stuck for 20 frames against either of the two low bumps, a full charge (22 frames) when stuck against the first high step, and at x 1003 and 1311 (the ravine and the second step), then a second and a half rolling into the finish. It skips the lost bit in the ravine. Re-recorded for the tap bumps before the first high step (the level is 231 cells wider).",
+  "replay": "pixelbob-replay v1 green-1-hills 1870: 8*455 8j*4 8*178 8j*4 8*238 8j*22 8*356 8j*22 8*242 8j*22 8*327",
   "expect": {
-    "frames": 1450,
-    "finished": 1331,
+    "frames": 1870,
+    "finished": 1778,
     "home": 93,
     "bob": 100,
-    "state": "298b1b1c"
+    "state": "903c46d4"
   }
 }

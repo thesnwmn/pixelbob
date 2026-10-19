@@ -1,12 +1,12 @@
 {
   "recorded": "2026-10-19",
-  "note": "Rolls right and taps jump (4 frames) whenever he's stuck: the taps get him over the two low bumps, but never up the high step after them, so the level teaches a tap, then the charged jump. If this run's outcome changes, check he still stops at the step (x about 652).",
-  "replay": "pixelbob-replay v1 green-1-hills 900: 8*455 8j*4 8*178 8j*4 8*238 8j*4 8*17",
+  "note": "Rolls right and taps jump (4 frames) whenever he's been stuck for 20 frames: the taps get him over the two low bumps, then he taps six times against the high step after them and never gets up it, so the level teaches a tap, then the charged jump. If this run's outcome changes, check he still stops at the step (x about 654).",
+  "replay": "pixelbob-replay v1 green-1-hills 1500: 8*455 8j*4 8*178 8j*4 8*238 8j*4 8*107 8j*4 8*108 8j*4 8*107 8j*4 8*107 8j*4 8*112 8j*4 8*56",
   "expect": {
-    "frames": 900,
+    "frames": 1500,
     "finished": 0,
     "home": 0,
     "bob": 100,
-    "state": "ae454255"
+    "state": "8dde8bd5"
   }
 }

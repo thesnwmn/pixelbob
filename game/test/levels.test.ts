@@ -293,7 +293,7 @@ describe("the first Green level", () => {
 
   it("has two bumps a tap gets over, but rolling doesn't", () => {
     loadLevels();
-    for (const [at, x] of [[372, 416], [470, 518]]) {
+    for (const [at, x] of [[372, 416], [470, 518], [480, 518]]) {
       expect(over(at, 0, x), `rolling at ${x}`).toBe(false);
       expect(over(at, 4, x), `a tap at ${x}`).toBe(true);
     }

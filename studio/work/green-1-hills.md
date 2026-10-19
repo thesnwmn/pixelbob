@@ -4,7 +4,7 @@ kind: build
 role: designer
 size: M
 status: doing
-pr: 34
+pr: 42
 milestone: m1-green-alpha
 needs: [level-format, checkpoints]
 ---

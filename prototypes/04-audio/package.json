@@ -1,0 +1,21 @@
+{
+  "name": "@pixelbob/04-audio",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike: what does Bob sound like? The Bob playground with a Web Audio synth driven live by the sim's numbers (contacts, impacts, charge, wobble, water, heat), no clips",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p .",
+    "cues": "node src/cues.ts"
+  },
+  "dependencies": {
+    "@pixelbob/bob": "workspace:*",
+    "@pixelbob/render": "workspace:*",
+    "@pixelbob/sim": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}

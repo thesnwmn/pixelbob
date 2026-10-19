@@ -29,6 +29,7 @@ prototypes/
   01-sandbox/     world sandbox: dig, paint materials, heat, light
   02-bob/         Bob playground
   03-bot-search/  spike: a beam search over inputs finds a route through a level (verdict: yes, in about 3 minutes)
+  04-audio/       spike: Bob's sounds synthesised live from the sim's numbers, no clips (verdict: waits on the producer's ears)
 concept/          the concept doc, not a prototype: the game, look, worlds, menus, settings, plan (shots drawn live)
 ```
 
@@ -113,6 +114,7 @@ pnpm dev:bob          # Bob playground at http://localhost:5182
 pnpm dev:concept      # concept doc at http://localhost:5183
 pnpm dev:game         # the game at http://localhost:5184 (?scenario=<id>)
 pnpm dev:bot-search   # the bot search spike's route at http://localhost:5185
+pnpm dev:audio        # the audio spike (the Bob playground with sound) at http://localhost:5186
 pnpm health           # the health check (--quick skips the build, --end at the end of a session)
 pnpm board            # the studio's board (--github adds open PRs and bugs)
 pnpm typecheck

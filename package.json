@@ -10,6 +10,7 @@
     "dev:sandbox": "pnpm --filter @pixelbob/01-sandbox dev",
     "dev:bob": "pnpm --filter @pixelbob/02-bob dev",
     "dev:bot-search": "pnpm --filter @pixelbob/03-bot-search dev",
+    "dev:audio": "pnpm --filter @pixelbob/04-audio dev",
     "dev:concept": "pnpm --filter @pixelbob/concept dev",
     "dev:game": "pnpm --filter @pixelbob/game dev",
     "typecheck": "pnpm -r typecheck",

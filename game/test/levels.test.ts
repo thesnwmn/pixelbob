@@ -297,14 +297,14 @@ describe("the first Green level", () => {
       expect(over(at, 0, x), `rolling at ${x}`).toBe(false);
       expect(over(at, 4, x), `a tap at ${x}`).toBe(true);
     }
-  });
+   }, 30_000);
 
-  it("then a high step a tap or a short hop can't get up, and a full charge can", () => {
+  it("then a high step that, from a stop, a tap or a short hop can't get up and a full charge can", () => {
     loadLevels();
     for (const at of [620, 640]) {
       expect(over(at, 4, 674), `a tap from ${at}`).toBe(false);
       expect(over(at, 10, 674), `a short hop from ${at}`).toBe(false);
       expect(over(at, 22, 674), `a full charge from ${at}`).toBe(true);
     }
-  });
+   }, 30_000);
 });

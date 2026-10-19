@@ -74,8 +74,8 @@ As built in the playground (split and swap are still plans):
 |---|---|---|
 | Move | A/D, arrows, stick | Left thumb: drag anywhere on the left half |
 | Jump (hold to charge) | Space; W / ↑ off a wall | Right thumb: tap, or hold and release |
-| Down: squash, pour, climb down | S / ↓ | Left thumb: drag down |
-| Up: climb a tacky wall you push into | W / ↑ | Left thumb: drag up |
+| Down: squash, pour, climb down | S / ↓ | Left thumb: drag down, steeper than about 37°, so a sideways drag that drifts down stays a roll |
+| Up: climb a tacky wall you push into | W / ↑ | Left thumb: drag up, the same way |
 | Split | E, X (planned) | Right thumb: swipe through Bob (planned) |
 | Swap piece | Q / R, bumpers (planned) | Tap a piece (planned) |
 

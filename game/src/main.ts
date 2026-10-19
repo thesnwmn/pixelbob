@@ -8,6 +8,7 @@ import { Play, STEP } from "./play.ts";
 import { decodePngAsync } from "./png.ts";
 import { type Feedback, buildName, report } from "./report.ts";
 import { type Scenario, parseScenario } from "./scenario.ts";
+import { readStick } from "./stick.ts";
 
 declare const __COMMIT__: string;
 
@@ -245,9 +246,7 @@ canvas.addEventListener("pointerdown", (e) => {
 });
 canvas.addEventListener("pointermove", (e) => {
   if (e.pointerId !== stick.id) return;
-  stick.move = Math.max(-1, Math.min(1, (e.clientX - stick.x0) / 40));
-  stick.down = Math.max(0, Math.min(1, (e.clientY - stick.y0 - 15) / 30));
-  stick.up = Math.max(0, Math.min(1, (stick.y0 - e.clientY - 15) / 30));
+  readStick(e.clientX - stick.x0, e.clientY - stick.y0, stick);
 });
 const up = (e: PointerEvent) => {
   if (e.pointerId === stick.id) Object.assign(stick, { id: -1, move: 0, down: 0, up: 0 });

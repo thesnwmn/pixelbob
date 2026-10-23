@@ -29,3 +29,5 @@ What the studio has learned from your feedback, each with where it came from. De
 - Teach one thing at a time, in steps: a tap jump before a high jump, then combine them: [playtest 2026-10-18](playtests/2026-10-18-1300-green-1-hills.md).
 - Doesn't mind skills that skip what a level teaches (mashing jump up a step is "just timing"): more ways to play, not cheating. Same playtest.
 - Wants atmosphere to carry the opening: finished scenery, a camera move to start, music and sound. Same playtest.
+- Bob should sound squishy and organic: wet and muffled, soft attacks, low damp squelch, never harsh or hissy. Sounds that change with the ground, and nothing steady: the roll should come in pulses, not a hiss: [playtest 2026-10-21](playtests/2026-10-21-1739-audio-spike.md).
+- Likes judging taste by comparing: a soundboard with a few options to play with and pick from, rather than one take. Same playtest.

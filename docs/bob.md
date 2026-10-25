@@ -94,6 +94,8 @@ All impacts are judged by how fast the **whole piece** was moving into the surfa
 
 Every connected group is a **piece**. One has the eyes and takes input; the rest sit where they are, slumped flat. That's the piece with most of what he was already steering, so after a split you keep the bit you had, even if a bigger one broke off. Later: a button to switch between pieces. Pieces draw together when close (surface tension, scaled by `cohesion`) and link up when they touch, a few springs a step at the length they are (so a bit joins without a jolt), unless frozen.
 
+**Copies.** `copy(world)` gives an exact, independent Bob in a copy of the world (`World.copy()`), so the search bot can branch from a point in a run. It copies every field with the sim's `copyFields`: a new field needs nothing.
+
 **Mass is health and score.** The playground shows what fraction of Bob is alive, how much is in the main piece, what was lost and why (boiled, dissolved, crushed, fell), and the **% of Bob that reached the finish**. That's the level goal idea from the brief: losing bits on jumps and hazards costs you, and you can go back and roll over droplets to pick them up.
 
 ## Tweaks

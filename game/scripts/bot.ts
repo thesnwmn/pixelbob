@@ -5,7 +5,7 @@
 // --route measures a route you already have (a kept replay, a feedback report) instead of searching;
 // --out writes the route found; --keep keeps it as game/replays/<scenario>-bot.json.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { HOLD, REACH, forgiveness, probeSoftlocks, search } from "../src/bot.ts";
+import { HOLD, REACH, forgiveness, leftBehind, probeSoftlocks, search, skips } from "../src/bot.ts";
 import { Play, STEP, runReplay } from "../src/play.ts";
 import { type Frame, decode, findReplay } from "../src/replay.ts";
 import { parseScenario } from "../src/scenario.ts";
@@ -61,9 +61,9 @@ const play = runReplay(scenario, { scenario: id, frames });
 const o = play.outcome();
 console.log(`\nReplayed from the start: ${o.finished ? `finishes at ${(o.finished * STEP).toFixed(1)} s` : "doesn't finish"}, ${o.home}% home, ${o.bob}% of Bob, ${play.respawns} respawn(s).`);
 
-const unlit = play.lit.flatMap((l, k) => (l ? [] : [k]));
-console.log(`\n### Skips\n${unlit.length ? unlit.map((k) => `- Checkpoint ${k + 1} (x ${play.level.checkpoints[k].x}) is never touched: the route goes round it.`).join("\n") : "- None: the route touches every checkpoint."}`);
-if (play.level.bits.length && o.bob < 100) console.log("- (It leaves the lost bits: they're optional.)");
+const skipped = skips(play);
+console.log(`\n### Skips\n${skipped.length ? skipped.map((l) => `- ${l}`).join("\n") : "- None: the route touches every checkpoint."}`);
+if (leftBehind(play)) console.log(`- (It leaves ${leftBehind(play)} bits of Bob behind: lost bits are optional.)`);
 
 if (dropped.length) {
   console.log("\n### Softlocks\nShort searches for a way on from low places the search passed through, without going back to a checkpoint:");

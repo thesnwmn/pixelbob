@@ -89,15 +89,32 @@ export function search(start: Play, o: SearchOptions = {}): SearchResult {
       const key = p ? `${Math.round(p.cx / 4)},${Math.round(p.cy / 4)}` : "gone";
       if (seen.has(key)) continue;
       seen.add(key);
-      if (beam.length < width) beam.push(c);
-      // One of the rest, the lowest down, kept to probe for softlocks (pits are where they hide).
-      else if (p && depth % 4 === 0 && p.cy > Math.max(...beam.map((n) => n.play.bob.main?.cy ?? 0)) + 12) dropped.push(c.play), (dropped.length > 40 && dropped.shift());
+      if (beam.length < width) {
+        beam.push(c);
+        continue;
+      }
+      // Of the rest, ones well below the beam are kept to probe for softlocks (pits are where they hide).
+      if (p && depth % 4 === 0 && p.cy > Math.max(...beam.map((n) => n.play.bob.main?.cy ?? 0)) + 12) {
+        dropped.push(c.play);
+        if (dropped.length > 40) dropped.shift();
+      }
     }
-    if (beam[0].score > top + 1) (top = beam[0].score), (stale = 0);
-    else if (++stale >= patience || performance.now() - t0 > budget)
-      return { best: beam[0].play, done: false, steps, ms: performance.now() - t0, dropped };
+    if (beam[0].score > top + 1) {
+      top = beam[0].score;
+      stale = 0;
+    } else if (++stale >= patience || performance.now() - t0 > budget) return { best: beam[0].play, done: false, steps, ms: performance.now() - t0, dropped };
     if (depth % 10 === 0) o.log?.(`move ${depth}: ${(beam[0].play.frame * STEP).toFixed(1)} s in, best x ${Math.round(beam[0].score)}, ${((performance.now() - t0) / 1000).toFixed(0)} s, ${Math.round(steps / ((performance.now() - t0) / 1000))} steps/s`);
   }
+}
+
+/** What a finished run skipped: the checkpoints it never touched, one line each. */
+export function skips(play: Play): string[] {
+  return play.lit.flatMap((lit, k) => (lit ? [] : [`Checkpoint ${k + 1} (x ${play.level.checkpoints[k].x}) is never touched: the route goes round it.`]));
+}
+
+/** How many of Bob's particles aren't in his main piece: lost bits he didn't pick up, or bits of him he left. */
+export function leftBehind(play: Play): number {
+  return play.bob.count - (play.bob.main?.len ?? 0);
 }
 
 export interface Softlock {

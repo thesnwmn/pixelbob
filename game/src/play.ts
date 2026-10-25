@@ -51,6 +51,7 @@ export class Play {
     return copyFields(this, Object.create(Play.prototype) as Play, {
       scenario: this.scenario,
       tweaks: this.tweaks,
+      // The rest of the level (lamps, bits, checkpoints, finish) never changes in a run, so it's shared.
       level: { ...this.level, world },
       bob: this.bob.copy(world),
       recorder: this.recorder.copy(),

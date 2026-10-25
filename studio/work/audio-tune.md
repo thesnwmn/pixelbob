@@ -3,7 +3,7 @@ title: Make Bob sound squishy
 kind: spike
 role: prototyper
 size: S
-status: ready
+status: doing
 milestone: m1-green-alpha
 needs: [audio-spike]
 ---

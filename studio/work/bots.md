@@ -4,6 +4,7 @@ kind: test
 role: tester
 size: M
 status: doing
+pr: 49
 milestone: m1-green-alpha
 needs: [bot-search-spike, hop-tune]
 ---

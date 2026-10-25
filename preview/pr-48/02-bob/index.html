@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="theme-color" content="#121014" />
+    <title>Bob playground</title>
+    <script type="module" crossorigin src="./assets/index-C5Vi_1Nh.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DiSsDAea.css">
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage">
+        <canvas id="view"></canvas>
+        <div id="hud"></div>
+        <div id="note"></div>
+        <div id="touch"><span class="l">◀ drag ▶ · down to pour · up to climb</span><span class="r">tap / hold to jump</span></div>
+        <aside id="panel" hidden>
+          <div class="head"><b>Bob</b><button id="defaults" title="Back to the default numbers">Defaults</button><button id="close" aria-label="Close">✕</button></div>
+          <div id="sliders"></div>
+          <label class="opt">drive
+            <select id="drive"><option value="roll">roll (tread)</option><option value="crawl">crawl (underside)</option></select>
+          </label>
+          <label class="opt"><input id="worldtemp" type="checkbox" checked /> temperature from the world</label>
+          <label class="opt slider">temp <input id="temp" type="range" min="-30" max="110" step="1" value="20" /><span id="tempval">20°C</span></label>
+          <p class="hint">Settings are saved in the link, so good ones can be shared. Size and gravity take effect on respawn (R).</p>
+        </aside>
+      </div>
+      <div id="bar">
+        <div class="row">
+          <div id="modes" class="seg"><button data-mode="play" class="on">Play</button><button data-mode="edit">Edit</button></div>
+          <div id="tools" class="seg"></div>
+          <label class="size">size <input id="size" type="range" min="1" max="16" value="4" /></label>
+          <div class="seg zoom"><button id="zout" title="Zoom out (-)">−</button><span id="zoomval">3×</span><button id="zin" title="Zoom in (+)">+</button></div>
+          <button id="respawn" title="New Bob at the start (R)">Respawn</button>
+          <button id="rebuild" title="Rebuild the course">Reset course</button>
+          <select id="look" aria-label="Lighting">
+            <option value="day">Day</option>
+            <option value="dusk">Dusk</option>
+            <option value="night">Night</option>
+            <option value="work">Work light</option>
+          </select>
+          <button id="pause" title="Pause (P)">Pause</button>
+          <button id="tweaks" title="Bob's physics sliders">Tweaks</button>
+          <button id="fs" title="Full screen">Full screen</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

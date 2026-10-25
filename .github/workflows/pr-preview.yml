@@ -8,8 +8,9 @@ permissions:
   contents: write
   pull-requests: write
 
+# One queue per PR, shared with its cleanup, so it never cancels main's deploy (#47).
 concurrency:
-  group: gh-pages
+  group: gh-pages-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
@@ -31,6 +32,9 @@ jobs:
           folder: _site
           target-folder: preview/pr-${{ github.event.pull_request.number }}
           clean: true
+          # Main and other PRs push to gh-pages at the same time: rebase onto them, never overwrite them.
+          force: false
+          attempt-limit: 10
 
       - uses: actions/github-script@v7
         with:

@@ -61,6 +61,8 @@ Copied from familiar-ground:
 - `pr-cleanup.yml`: delete the preview folder when the PR closes.
 - `scripts/build-site.mjs`: collects the concept doc, the game (with a link to each scenario on the index) and every `prototypes/*/dist` into `_site/` with an index page, and writes the [studio page](../studio/README.md#transparency) to `_site/studio/`.
 
+All three push to `gh-pages`, so they queue rather than race, but not in one queue: GitHub keeps one pending run per concurrency group and cancels the older, and a shared group let a PR's preview cancel main's deploy ([#47](https://github.com/thesnwmn/pixelbob/issues/47)). The site's deploy has its own group, `gh-pages-site`; each PR's preview and cleanup share `gh-pages-pr-N`. Queues running side by side can still push at once, so a rejected push rebases onto the new tip (the deploy action's `force: false`) or, for the cleanup, starts again from it. The `github/pages` health check keeps it that way.
+
 The site is served at `https://thesnwmn.github.io/pixelbob/`, and PR previews at `…/pixelbob/preview/pr-N/`.
 
 **Bootstrapping:** workflows only run from the default branch once it exists. So the first PR, which adds the workflows, has to be merged before previews work, and Pages must be set to "Deploy from a branch: `gh-pages` / root" after the first deploy creates that branch.

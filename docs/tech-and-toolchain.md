@@ -29,7 +29,7 @@ prototypes/
   01-sandbox/     world sandbox: dig, paint materials, heat, light
   02-bob/         Bob playground
   03-bot-search/  spike: a beam search over inputs finds a route through a level (verdict: yes, in about 3 minutes)
-  04-audio/       spike: Bob's sounds synthesised live from the sim's numbers, no clips (verdict: waits on the producer's ears)
+  04-audio/       spike: Bob's sounds synthesised live from the sim's numbers, no clips, with a soundboard of takes to pick from (kept; the tuning pass waits on the producer's ears)
 concept/          the concept doc, not a prototype: the game, look, worlds, menus, settings, plan (shots drawn live)
 ```
 

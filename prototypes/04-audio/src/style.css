@@ -55,6 +55,21 @@ button.on { background: var(--accent); color: #1a1408; border-color: var(--accen
 #panel select { min-height: 28px; padding: 2px 6px; font-size: 12px; }
 #panel .hint { color: var(--dim); font-size: 11px; line-height: 1.4; }
 
+#board {
+  position: absolute; left: 8px; top: 64px; max-height: calc(100% - 72px); width: 290px; overflow-y: auto;
+  background: #1c1920ee; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12px;
+}
+#board .head { display: flex; gap: 6px; align-items: center; }
+#board .head b { flex: 1; color: var(--accent); }
+#board .head button { min-height: 28px; padding: 2px 8px; font-size: 12px; }
+#board .voice { margin: 8px 0; }
+#board .voice b { display: block; margin-bottom: 4px; }
+#board .seg { flex-wrap: wrap; }
+#board .seg button { min-height: 30px; padding: 3px 8px; font-size: 12px; }
+#board .voice p, #board .hint { margin: 4px 0 0; color: var(--dim); font-size: 11px; line-height: 1.4; }
+#board .opt { display: grid; grid-template-columns: 4.6em 1fr 4.6em; align-items: center; gap: 6px; margin: 8px 0 0; color: var(--dim); }
+#board .opt span { text-align: right; color: var(--ink); }
+
 /* Phones in landscape: tools in a side panel so the world gets the full height. */
 @media (orientation: landscape) and (max-height: 560px) {
   #app { flex-direction: row; padding-bottom: env(safe-area-inset-bottom); }
@@ -65,4 +80,5 @@ button.on { background: var(--accent); color: #1a1408; border-color: var(--accen
   .size input { width: 80px; }
   #hud { font-size: 11px; }
   #panel { width: 220px; }
+  #board { width: 240px; }
 }

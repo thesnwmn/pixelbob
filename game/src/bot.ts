@@ -3,6 +3,7 @@
 // sim, branching from copies of the run (Play.copy) rather than replaying from the start.
 // No DOM: game/scripts/bot.ts runs it in Node. What it learned from the spike:
 // studio/work/bot-search-spike.md.
+import { CAT, Cat } from "@pixelbob/sim";
 import { type Play, STEP } from "./play.ts";
 import type { Frame } from "./replay.ts";
 
@@ -160,8 +161,8 @@ export interface Slack {
 /**
  * How forgiving each hard moment of a route is. A jump is a hard moment if Bob can't get on
  * without it: leaving it out, he never gets to where the route was just before its next jump
- * (within `near` cells across, and no lower than the route went), even given extra time to
- * roll there. The rest of the route plays as it was up to that next jump, then he just rolls
+ * (within `near` cells across, and above the ground the route was over there, so not down a
+ * pit it cleared), even given extra time to roll there. The rest of the route plays as it was up to that next jump, then he just rolls
  * on, so a later jump can't rescue one that failed. For each hard jump, how many frames
  * earlier or later it could have started, how many cells of ground that is, and the range of
  * holds that work. Jumps that don't matter (most of a route of hops) are left out.
@@ -182,9 +183,9 @@ export function forgiveness(start: Play, frames: Frame[], o: { near?: number; re
     // Judged a couple of seconds after the jump at most, which keeps a long roll to the next one cheap.
     const goal = Math.min(next, jump.end + 120);
     const t: Trial = { snap, frames, from: lo, next, goal, jump, end: goal + Math.round((goal - lo) * 0.5) + 60 };
-    // Where the route itself got to, and how low it went on the way.
+    // Where the route itself got to, and the ground under it there.
     const route = attempt(t, jump.start, hold);
-    const target = { x: route.x, y: route.low + near, count: route.count - 3, respawns: route.respawns, near };
+    const target = { x: route.x, y: floor(snap, route.x, route.y), count: route.count - 3, respawns: route.respawns, near };
     const ok = (from: number, h: number) => attempt(t, from, h, target);
     if (ok(jump.start, 0).reached) continue;
     let early = 0, late = 0, first = route.takeoff, last = route.takeoff;
@@ -204,12 +205,12 @@ interface Target { x: number; y: number; count: number; respawns: number; near: 
 /**
  * Plays the route from `t.snap` with its jump moved to start at `at` and held for `hold` frames
  * (0: not at all), up to the next jump, then rolls on the way the route was going until `t.end`.
- * Says where he got to by `t.goal` (the next jump, or sooner), the lowest he went, where he took off, and whether
+ * Says where he got to by `t.goal` (the next jump, or sooner), where he took off, and whether
  * he ever got within reach of `target`.
  */
 function attempt(t: Trial, at: number, hold: number, target?: Target) {
   const play = t.snap.copy(), { frames, jump } = t;
-  let reached = false, low = -1e9, takeoff = 0, takeoffY = 0, x = 0, count = 0, respawns = 0;
+  let reached = false, takeoff = 0, takeoffY = 0, x = 0, y = 0, count = 0, respawns = 0;
   const roll = Math.sign(frames[t.next - 1].move);
   for (let i = t.from; i < t.end; i++) {
     if (i === at) (takeoff = play.bob.main?.cx ?? 0), (takeoffY = play.bob.main?.cy ?? 0);
@@ -217,13 +218,22 @@ function attempt(t: Trial, at: number, hold: number, target?: Target) {
     const fr = i >= t.next ? { ...frames[t.next - 1], move: roll, jump: false } : inJump || inNew ? { ...frames[i], jump: inNew } : frames[i];
     play.step(fr);
     const p = play.bob.main;
-    if (i < t.goal) low = Math.max(low, p?.cy ?? 1e9);
-    if (i === t.goal - 1) (x = p?.cx ?? -1e9), (count = play.bob.count), (respawns = play.respawns);
+    if (i === t.goal - 1) (x = p?.cx ?? -1e9), (y = p?.cy ?? 1e9), (count = play.bob.count), (respawns = play.respawns);
     if (target && p && play.respawns === target.respawns && p.cx >= target.x - target.near && p.cy <= target.y && play.bob.count >= target.count) {
       reached = true;
       break;
     }
     if (!target && i >= t.goal - 1) break;
   }
-  return { reached, x, low, count, respawns, takeoff, takeoffY };
+  return { reached, x, y, count, respawns, takeoff, takeoffY };
+}
+
+/** The top of the first solid ground at or below (x, y): the floor Bob is over there. */
+function floor(play: Play, x: number, y: number): number {
+  const w = play.level.world, cx = Math.max(0, Math.min(w.w - 1, Math.round(x)));
+  for (let cy = Math.max(0, Math.round(y)); cy < w.h; cy++) {
+    const c = CAT[w.mat[cy * w.w + cx]];
+    if (c !== Cat.Empty && c !== Cat.Gas && c !== Cat.Liquid && c !== Cat.Fire) return cy;
+  }
+  return w.h;
 }

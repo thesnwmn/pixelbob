@@ -3,7 +3,7 @@ title: Bots and forgiveness
 kind: test
 role: tester
 size: M
-status: ready
+status: doing
 milestone: m1-green-alpha
 needs: [bot-search-spike, hop-tune]
 ---

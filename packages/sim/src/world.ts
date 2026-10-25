@@ -1,3 +1,4 @@
+import { copyFields } from "./copy.ts";
 import { AMBIENT, CAT, CONDUCT, Cat, DENSITY, DISSOLVE, FLAMMABLE, FLOW, IGNITE, M, MATS, MOBILITY } from "./materials.ts";
 
 /** Chunk size in cells (power of two). Chunks with nothing happening sleep. */
@@ -66,6 +67,11 @@ export class World {
     this.next = new Uint8Array(this.cw * this.ch).fill(1);
     this.seed = seed >>> 0 || 1;
     for (let i = 0; i < n; i++) this.shade[i] = this.rand() * 256;
+  }
+
+  /** An exact, independent copy: stepping both the same way keeps them the same. */
+  copy(): World {
+    return copyFields(this, Object.create(World.prototype) as World);
   }
 
   /** xorshift32 in [0, 1). */

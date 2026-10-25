@@ -2,7 +2,7 @@
 // input as a replay. No DOM, so the tests, replays and bots run it in Node; main.ts draws
 // it and feeds it input.
 import { type BobModel, DEFAULTS, type Input, type Tweaks, createBob } from "@pixelbob/bob";
-import { CAT, Cat } from "@pixelbob/sim";
+import { CAT, Cat, copyFields } from "@pixelbob/sim";
 import { POST, ground } from "./checkpoint.ts";
 import { type Built, LEVELS } from "./levels.ts";
 import { type Outcome, Recorder, type Replay, type ReplayFile, quantize } from "./replay.ts";
@@ -27,6 +27,8 @@ export class Play {
   lit: boolean[] = [];
   /** The one he comes back to: the last he touched, or -1 for the start. */
   checkpoint = -1;
+  /** How many times he's come back at a checkpoint (or the start) since the start. */
+  respawns = 0;
   /** Frames since all of Bob was lost, or 0. */
   gone = 0;
   /** Which of Bob's particles have been in his main piece: a lost bit he hasn't picked up isn't him. */
@@ -40,10 +42,26 @@ export class Play {
     this.restart();
   }
 
+  /**
+   * An exact, independent copy of the run so far (the world, Bob, the checkpoints, the replay):
+   * the bots branch from it rather than replaying from the start. Stepping both the same way keeps them the same.
+   */
+  copy(): Play {
+    const world = this.level.world.copy();
+    return copyFields(this, Object.create(Play.prototype) as Play, {
+      scenario: this.scenario,
+      tweaks: this.tweaks,
+      level: { ...this.level, world },
+      bob: this.bob.copy(world),
+      recorder: this.recorder.copy(),
+    });
+  }
+
   /** Back to the scenario's start: a fresh level and a fresh Bob, no checkpoints lit, and a new replay. */
   restart(): void {
     this.checkpoint = -1;
     this.respawn();
+    this.respawns = 0;
     this.lit = this.level.checkpoints.map(() => false);
     this.frame = 0;
     this.finishedAt = 0;
@@ -65,6 +83,7 @@ export class Play {
     this.was = new Uint8Array(order.length);
     for (let j = p.start; j < p.start + p.len; j++) this.was[order[j]] = 1;
     this.gone = 0;
+    this.respawns++;
   }
 
   /** Where Bob starts: the level's spawn, or on the ground at `at`. */

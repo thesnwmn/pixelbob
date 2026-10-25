@@ -38,14 +38,14 @@ export const determinism: Check = {
 };
 
 /** Packages that run in Workers and Node, so may not touch the DOM. */
-export const NO_DOM = ["packages/sim/src", "packages/bob/src", "game/src/play.ts", "game/src/levels.ts", "game/src/png.ts", "game/src/scenario.ts", "game/src/report.ts", "game/src/replay.ts", "game/src/filmstrip.ts", "game/src/stick.ts"];
+export const NO_DOM = ["packages/sim/src", "packages/bob/src", "game/src/play.ts", "game/src/levels.ts", "game/src/png.ts", "game/src/scenario.ts", "game/src/report.ts", "game/src/replay.ts", "game/src/filmstrip.ts", "game/src/stick.ts", "game/src/bot.ts"];
 const DOM_GLOBALS = /\b(document|window|navigator|localStorage|sessionStorage|requestAnimationFrame|HTML\w*Element|CanvasRenderingContext2D|OffscreenCanvas|ImageData)\b/;
 
 export const noDom: Check = {
   id: "code/no-dom",
   tier: 4,
   repro: `grep -rnE "document|window|HTML.*Element|requestAnimationFrame" ${NO_DOM.join(" ")}`,
-  hint: "packages/sim, packages/bob and the game's play, levels, scenario, report, replay, filmstrip and stick are renderer-agnostic (no DOM), so they run in a Worker and in Node. Move DOM code to packages/render or game/src/main.ts.",
+  hint: "packages/sim, packages/bob and the game's play, levels, scenario, report, replay, filmstrip, stick and bot are renderer-agnostic (no DOM), so they run in a Worker and in Node. Move DOM code to packages/render or game/src/main.ts.",
   run({ root }) {
     const files = NO_DOM.flatMap((d) => sourceFiles(root, d));
     const hits = findInCode(root, files, DOM_GLOBALS);
@@ -112,6 +112,36 @@ export const levels: Check = {
   },
 };
 
+export const REPLAYS = "game/replays";
+
+/** Every painted level is proven finishable: a kept replay of one of its scenarios finishes it (code/replays checks it still does). */
+export const finishable: Check = {
+  id: "code/finishable",
+  tier: 4,
+  repro: "node game/scripts/bot.ts <scenario> --keep",
+  hint: "A level in game/levels/ has no kept replay that finishes it, so nothing proves it can be finished. Run the search bot on one of its scenarios with --keep (or keep a run of your own with `node game/scripts/replays.ts --add`). See docs/tech-and-toolchain.md#the-game.",
+  run({ root }) {
+    const read = (path: string): Record<string, unknown> | undefined => {
+      try {
+        return JSON.parse(readFileSync(join(root, path), "utf8")) as Record<string, unknown>;
+      } catch {
+        return undefined;
+      }
+    };
+    const json = (dir: string) => (existsSync(join(root, dir)) ? readdirSync(join(root, dir)).filter((f) => f.endsWith(".json")).sort() : []);
+    const ids = existsSync(join(root, LEVELS)) ? readdirSync(join(root, LEVELS), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort() : [];
+    const finished = new Set<string>();
+    for (const name of json(REPLAYS)) {
+      const file = read(`${REPLAYS}/${name}`);
+      const scenario = typeof file?.replay === "string" ? /^pixelbob-replay v1 (\S+) /.exec(file.replay)?.[1] : undefined;
+      const level = scenario && read(`${SCENARIOS}/${scenario}.json`)?.level;
+      if (typeof level === "string" && Number((file?.expect as { finished?: unknown } | undefined)?.finished) > 0) finished.add(level);
+    }
+    const missing = ids.filter((id) => !finished.has(id));
+    return missing.length ? fail(`${missing.length} level${missing.length === 1 ? "" : "s"} not proven finishable`, missing.map((id) => `${LEVELS}/${id}: no kept replay finishes it`).join("\n")) : pass(`${ids.length} level${ids.length === 1 ? "" : "s"}`);
+  },
+};
+
 export const replays: Check = {
   id: "code/replays",
   tier: 4,
@@ -126,4 +156,4 @@ export const replays: Check = {
 };
 
 // Cheap scans first, so a broken convention shows before the slow runs.
-export const CODE = [determinism, noDom, noImports, scenarios, levels, typecheck, test, replays, build];
+export const CODE = [determinism, noDom, noImports, scenarios, levels, finishable, typecheck, test, replays, build];

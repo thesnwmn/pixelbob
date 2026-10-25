@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { M, MATS, PAINT, World, generate, paintedMaterial } from "../src/index.ts";
+import { M, MATS, PAINT, World, copyFields, generate, paintedMaterial } from "../src/index.ts";
 
 /** A box with rock walls and floor, open top. */
 function box(w = 40, h = 40, seed = 1): World {
@@ -329,5 +329,31 @@ describe("the level palette", () => {
     for (const m of MATS) expect(paintedMaterial(PAINT[m.id]), m.name).toBe(m.id);
     expect(PAINT[M.air]).toBe(0x000000);
     expect(paintedMaterial(0x123456)).toBe(-1);
+  });
+});
+
+describe("copy", () => {
+  it("copies a world exactly: both step the same, and changing one leaves the other alone", () => {
+    const a = box(60, 50, 3);
+    for (let x = 5; x < 25; x++) for (let y = 5; y < 15; y++) a.set(x, y, M.water);
+    for (let x = 30; x < 45; x++) for (let y = 2; y < 10; y++) a.set(x, y, M.sand);
+    run(a, 20);
+    const b = a.copy();
+    expect(b).toBeInstanceOf(World);
+    run(a, 120);
+    run(b, 120);
+    expect(b.mat).toEqual(a.mat);
+    expect(b.temp).toEqual(a.temp);
+    expect(b.rand()).toBe(a.rand());
+    a.set(10, 40, M.lava);
+    expect(b.get(10, 40)).not.toBe(M.lava);
+  });
+
+  it("refuses a field it can't copy rather than sharing it", () => {
+    class Holder { m = new Map(); n = 1; }
+    expect(() => copyFields(new Holder(), Object.create(Holder.prototype) as Holder)).toThrow(/Holder\.m is a Map/);
+    class Ref { w = new World(4, 4); }
+    expect(() => copyFields(new Ref(), Object.create(Ref.prototype) as Ref)).toThrow(/needs its own copy/);
+    expect(copyFields(new Ref(), Object.create(Ref.prototype) as Ref, { w: null }).w).toBe(null);
   });
 });

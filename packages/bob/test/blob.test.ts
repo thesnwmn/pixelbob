@@ -67,6 +67,25 @@ describe("body", () => {
   });
 });
 
+describe("copy", () => {
+  it("copies him exactly, in a copy of the world: both runs go on the same", () => {
+    const wa = ground(), a = bob(wa);
+    run(a, wa, 40, { move: 1, jump: true });
+    const wb = wa.copy(), b = a.copy(wb);
+    const inputs: Input[] = [{ move: 1, jump: false }, { move: 1, jump: true }, { move: -0.5, jump: false, down: 1 }];
+    for (let i = 0; i < 240; i++) {
+      const input = inputs[Math.floor(i / 20) % inputs.length];
+      a.step(wa, input);
+      b.step(wb, input);
+    }
+    expect(b.view().x).toEqual(a.view().x);
+    expect(b.view().vy).toEqual(a.view().vy);
+    expect(b.pieces).toEqual(a.pieces);
+    a.shift(5, 0);
+    expect(b.view().x).not.toEqual(a.view().x);
+  });
+});
+
 describe("moving", () => {
   it("rolls up to speed and coasts on momentum", () => {
     const w = ground(), b = bob(w);

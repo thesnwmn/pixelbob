@@ -1,4 +1,4 @@
-import { CAT, CONDUCT, Cat, DENSITY, FRICTION, M, MOBILITY, SHARP, type World } from "@pixelbob/sim";
+import { CAT, CONDUCT, Cat, DENSITY, FRICTION, M, MOBILITY, SHARP, type World, copyFields } from "@pixelbob/sim";
 import type { BobModel, BobView, Input, Losses, Piece } from "./model.ts";
 import { DEFAULTS, frozenness, hopLean, muscleAt, runniness, type Tweaks } from "./tweaks.ts";
 
@@ -145,6 +145,11 @@ export abstract class Body implements BobModel {
     this.seed = seed >>> 0 || 1;
     this.sub = sub;
     this.h = DT / sub;
+  }
+
+  /** An exact, independent copy of him, in `world` (the copy of the world he's in, if he's in one). */
+  copy(world: World | null = null): this {
+    return copyFields(this, Object.create(Object.getPrototypeOf(this)) as this, { world });
   }
 
   rand(): number {

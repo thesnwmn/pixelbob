@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { determinism, levels, noDom, noImports, replays, scenarios, typecheck } from "../src/code.ts";
+import { determinism, finishable, levels, noDom, noImports, replays, scenarios, typecheck } from "../src/code.ts";
 import { ctx, fakeShell, tmpDir } from "./fixture.ts";
 
 describe("code/typecheck (and the other pnpm runs)", () => {
@@ -117,5 +117,19 @@ describe("code/no-imports", () => {
     expect(r.status).toBe("fail");
     expect(r.out).toContain('game/src/replay.ts:2: import { World } from "@pixelbob/sim";');
     expect(r.out).toContain("game/src/scenario.ts:1:");
+  });
+});
+
+describe("code/finishable", () => {
+  const level = { "game/levels/hills/level.json": "{}", "game/scenarios/hills-1.json": '{ "title": "Hills", "level": "hills" }' };
+  const kept = (finished: number) => JSON.stringify({ replay: "pixelbob-replay v1 hills-1 3: 8*3", expect: { finished } });
+  it("passes when a kept replay finishes every level", () => {
+    expect(finishable.run(ctx(tmpDir({ ...level, "game/replays/hills-bot.json": kept(120) })))).toEqual({ status: "pass", detail: "1 level" });
+  });
+  it("fails on a level nothing finishes, naming it", () => {
+    const r = finishable.run(ctx(tmpDir({ ...level, "game/levels/ponds/level.json": "{}", "game/replays/hills-bot.json": kept(120), "game/replays/half.json": "{ " })));
+    expect(r.status).toBe("fail");
+    expect(r.out).toBe("game/levels/ponds: no kept replay finishes it");
+    expect(finishable.run(ctx(tmpDir({ ...level, "game/replays/hills-bot.json": kept(0) }))).status).toBe("fail");
   });
 });

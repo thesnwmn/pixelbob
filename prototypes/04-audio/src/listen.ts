@@ -12,6 +12,10 @@ export interface Cues {
   roll: number;
   speed: number;
   ground: Ground;
+  /** His surface turning over onto the ground: particles that touched down this frame, and that
+   *  peeled off it (the roll's pulses come from these). */
+  touch: number;
+  peel: number;
   /** His goo wobbling: how much his particles move against each other. */
   wobble: number;
   /** Winding up a jump (the charge, 0..1). */
@@ -48,22 +52,28 @@ interface Inside {
 /** Reads Bob after each step and remembers what it needs from the step before. */
 export class Listener {
   private vx = 0; private vy = 0;
+  private touching = new Uint8Array(0);
   private stretch = 0; private air = 0; private dry = true; private out = 99; private boiled = 0; private torn = 0; private since = 99;
-  readonly cues: Cues = { roll: 0, speed: 0, ground: "soft", wobble: 0, charge: 0, wet: 0, sizzle: 0, impact: 0, impactOn: "soft", jump: 0, splash: 0, tear: 0 };
+  readonly cues: Cues = { roll: 0, speed: 0, ground: "soft", touch: 0, peel: 0, wobble: 0, charge: 0, wet: 0, sizzle: 0, impact: 0, impactOn: "soft", jump: 0, splash: 0, tear: 0 };
 
   /** Forget the last frame (a respawn mustn't sound like a landing). */
   reset(bob: BobModel): void {
     const p = bob.main, b = bob as unknown as Inside;
     this.air = 0; this.vx = p?.vx ?? 0; this.vy = p?.vy ?? 0; this.dry = true; this.out = 99;
     this.stretch = b.stretch; this.boiled = b.losses.boiled; this.torn = b.breaks.impact; this.since = 99;
+    // Whatever he's touching now was already down: the first frame mustn't count it as touching down.
+    this.touching = new Uint8Array(b.cap);
+    for (let i = 0; i < b.cap; i++) this.touching[i] = b.alive[i] && b.cmat[i] ? 1 : 0;
   }
 
   hear(bob: BobModel, world: World): Cues {
     const c = this.cues, p = bob.main, b = bob as unknown as Inside;
-    c.impact = c.jump = c.splash = c.tear = 0;
+    c.impact = c.jump = c.splash = c.tear = c.touch = c.peel = 0;
     if (!p) { c.roll = c.wobble = c.charge = c.wet = c.sizzle = 0; return c; }
     const { x, y, vx, vy, t, alive, piece, cmat, cap } = b;
     const main = bob.pieces.indexOf(p);
+    if (this.touching.length !== cap) this.touching = new Uint8Array(cap);
+    const was = this.touching;
     // One pass over his particles: what he touches, how he wobbles, how hot he is.
     const touched = new Map<number, number>();
     // Rolling spins his particles round his middle, which isn't wobble: take out the spin first.
@@ -88,6 +98,10 @@ export class Listener {
       // The cell he's touching underneath, if any (cmat is set on contact).
       const below = world.inside(Math.floor(x[i]), Math.floor(y[i]) + 1) ? world.mat[(Math.floor(y[i]) + 1) * world.w + Math.floor(x[i])] : M.rock;
       if (cmat[i] && below !== M.air) touched.set(cmat[i], (touched.get(cmat[i]) ?? 0) + 1);
+      const now = cmat[i] ? 1 : 0;
+      if (now && !was[i]) c.touch++;
+      else if (!now && was[i]) c.peel++;
+      was[i] = now;
     }
     let most = M.rock, top = 0;
     for (const [m, k] of touched) if (k > top) { top = k; most = m; }

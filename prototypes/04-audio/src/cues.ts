@@ -13,7 +13,7 @@ bob.spawn(world, course.spawn.x, course.spawn.y, 20, course.bits);
 const ear = new Listener();
 ear.reset(bob);
 
-type Tally = { frames: number; roll: number; wobble: number; wet: number; sizzle: number; impacts: number; jumps: number; splashes: number; tears: number };
+type Tally = { frames: number; roll: number; touch: number; peel: number; wobble: number; wet: number; sizzle: number; impacts: number; jumps: number; splashes: number; tears: number };
 const by = new Map<string, Tally>();
 let ms = 0, charging = -1;
 const jumps = [...course.marks.jumps];
@@ -29,11 +29,11 @@ for (let f = 0; f < frames; f++) {
   const c = ear.hear(bob, world);
   ms += performance.now() - t0;
   const name = bob.main ? (sectionAt(course, bob.main.cx)?.name ?? "?") : "gone";
-  const s = by.get(name) ?? { frames: 0, roll: 0, wobble: 0, wet: 0, sizzle: 0, impacts: 0, jumps: 0, splashes: 0, tears: 0 };
-  s.frames++; s.roll += c.roll; s.wobble += c.wobble; s.wet += c.wet; s.sizzle += c.sizzle;
+  const s = by.get(name) ?? { frames: 0, roll: 0, touch: 0, peel: 0, wobble: 0, wet: 0, sizzle: 0, impacts: 0, jumps: 0, splashes: 0, tears: 0 };
+  s.frames++; s.roll += c.roll; s.touch += c.touch; s.peel += c.peel; s.wobble += c.wobble; s.wet += c.wet; s.sizzle += c.sizzle;
   if (c.impact) s.impacts++; if (c.jump) s.jumps++; if (c.splash) s.splashes++; if (c.tear) s.tears++;
   by.set(name, s);
 }
 const r = (v: number, n: number) => (v / n).toFixed(2);
-for (const [name, s] of by) console.log(`${name.padEnd(16)} ${String(s.frames).padStart(5)} frames · roll ${r(s.roll, s.frames)} wobble ${r(s.wobble, s.frames)} wet ${r(s.wet, s.frames)} sizzle ${r(s.sizzle, s.frames)} · ${s.impacts} impacts, ${s.jumps} jumps, ${s.splashes} splashes, ${s.tears} tears`);
+for (const [name, s] of by) console.log(`${name.padEnd(16)} ${String(s.frames).padStart(5)} frames · roll ${r(s.roll, s.frames)} touch ${r(s.touch, s.frames)} peel ${r(s.peel, s.frames)} wobble ${r(s.wobble, s.frames)} wet ${r(s.wet, s.frames)} sizzle ${r(s.sizzle, s.frames)} · ${s.impacts} impacts, ${s.jumps} jumps, ${s.splashes} splashes, ${s.tears} tears`);
 console.log(`hearing: ${(ms / frames * 1000).toFixed(0)} µs a frame on average`);

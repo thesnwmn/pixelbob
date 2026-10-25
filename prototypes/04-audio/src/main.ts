@@ -2,7 +2,8 @@ import { BobPainter, COURSE_H, COURSE_W, DEFAULTS, RANGES, buildCourse, createBo
 import { GLRenderer, LOOKS, Shade, type View } from "@pixelbob/render";
 import { CAT, Cat, M, World } from "@pixelbob/sim";
 import { Listener } from "./listen.ts";
-import { Synth, VOICES } from "./synth.ts";
+import { DEFAULT_TAKES, GROUNDS, Synth, TAKES, TAKE_NOTES, VOICES, type Takes } from "./synth.ts";
+import type { Ground } from "./listen.ts";
 
 const W = COURSE_W, H = COURSE_H, STEP = 1 / 60;
 const params = new URLSearchParams(location.search);
@@ -21,6 +22,14 @@ for (const k of Object.keys(RANGES) as (keyof typeof RANGES)[]) {
 }
 if (params.get("drive") === "crawl") tweaks.drive = "crawl";
 let fixedTemp: number | null = params.has("temp") ? Number(params.get("temp")) : null;
+// The soundboard's picks: ?roll-take=patter&land-take=plop&jump-take=pop&muffle=1500.
+const takes: Takes = { ...DEFAULT_TAKES };
+for (const v of Object.keys(TAKES) as (keyof Takes)[]) {
+  const t = params.get(`${v}-take`);
+  if (t && (TAKES[v] as readonly string[]).includes(t)) (takes as Record<string, string>)[v] = t;
+}
+const MUFFLE = 1500;
+let muffle = Number(params.get("muffle")) || MUFFLE;
 
 function saveUrl() {
   const q = new URLSearchParams();
@@ -28,6 +37,8 @@ function saveUrl() {
   if (tweaks.drive !== DEFAULTS.drive) q.set("drive", tweaks.drive);
   if (fixedTemp !== null) q.set("temp", String(fixedTemp));
   if (state.look !== "day") q.set("look", state.look);
+  for (const v of Object.keys(TAKES) as (keyof Takes)[]) if (takes[v] !== DEFAULT_TAKES[v]) q.set(`${v}-take`, takes[v]);
+  if (muffle !== MUFFLE) q.set("muffle", String(muffle));
   const s = q.toString();
   history.replaceState(null, "", s ? `?${s}` : location.pathname);
 }
@@ -270,21 +281,23 @@ canvas.addEventListener("wheel", (e) => { e.preventDefault(); setZoom(cam.z * Ma
 // ---- Sound controls ----
 
 const soundEl = $<HTMLButtonElement>("#sound"), voicesEl = $("#voices"), volEl = $<HTMLInputElement>("#vol");
-soundEl.onclick = () => {
-  if (!synth) {
-    synth = new Synth(Number(volEl.value));
-    ear.reset(bob);
-    for (const v of VOICES) {
-      const b = document.createElement("button");
-      b.textContent = v; b.className = "on"; b.title = `The ${v} voice on or off`;
-      b.onclick = () => { synth!.on[v] = !synth!.on[v]; b.classList.toggle("on", synth!.on[v]); };
-      voicesEl.append(b);
-    }
-    voicesEl.hidden = false; $("#volwrap").hidden = false;
-    void (synth.ctx as AudioContext).resume();
-    soundEl.textContent = "Sound off"; soundEl.classList.remove("on");
-    return;
+function startSound(): Synth {
+  const s = new Synth(Number(volEl.value), undefined, muffle);
+  Object.assign(s.takes, takes);
+  ear.reset(bob);
+  for (const v of VOICES) {
+    const b = document.createElement("button");
+    b.textContent = v; b.className = "on"; b.title = `The ${v} voice on or off`;
+    b.onclick = () => { s.on[v] = !s.on[v]; b.classList.toggle("on", s.on[v]); };
+    voicesEl.append(b);
   }
+  voicesEl.hidden = false; $("#volwrap").hidden = false;
+  void (s.ctx as AudioContext).resume();
+  soundEl.textContent = "Sound off"; soundEl.classList.remove("on");
+  return s;
+}
+soundEl.onclick = () => {
+  if (!synth) { synth = startSound(); return; }
   const playing = synth.ctx.state === "running";
   const ctx = synth.ctx as AudioContext;
   if (!playing) ear.reset(bob);
@@ -292,6 +305,63 @@ soundEl.onclick = () => {
   soundEl.textContent = playing ? "Sound on" : "Sound off";
   soundEl.classList.toggle("on", playing);
 };
+
+// ---- Soundboard: a few takes for roll, landing and jump, to hear on their own and pick ----
+
+const board = $("#board"), takesEl = $("#takes"), groundsEl = $("#grounds");
+let previewOn: Ground = "soft";
+for (const gr of GROUNDS) {
+  const b = document.createElement("button");
+  b.textContent = gr; b.dataset.ground = gr; b.classList.toggle("on", gr === previewOn);
+  b.onclick = () => {
+    previewOn = gr;
+    for (const x of groundsEl.querySelectorAll<HTMLButtonElement>("button")) x.classList.toggle("on", x.dataset.ground === gr);
+  };
+  groundsEl.append(b);
+}
+/** Make sure sound is on (the board's buttons are a tap, so the browser lets it start). */
+function soundOn(): Synth {
+  if (!synth) synth = startSound();
+  else if (synth.ctx.state !== "running") soundEl.click();
+  return synth;
+}
+for (const v of Object.keys(TAKES) as (keyof Takes)[]) {
+  const row = document.createElement("div");
+  row.className = "voice";
+  row.innerHTML = `<b>${v === "land" ? "landing" : v}</b><div class="seg"></div><p></p>`;
+  const seg = row.querySelector(".seg")!, note = row.querySelector("p")!;
+  const show = () => {
+    for (const x of seg.querySelectorAll<HTMLButtonElement>("button[data-take]")) x.classList.toggle("on", x.dataset.take === takes[v]);
+    note.textContent = TAKE_NOTES[takes[v]];
+  };
+  for (const t of TAKES[v]) {
+    const b = document.createElement("button");
+    b.textContent = t; b.dataset.take = t; b.title = `${TAKE_NOTES[t]}: pick it, and hear it`;
+    // Picking a take plays it too, so comparing is tapping along the row.
+    b.onclick = () => {
+      (takes as Record<string, string>)[v] = t;
+      const s = soundOn();
+      (s.takes as Record<string, string>)[v] = t;
+      s.preview(v, t, previewOn);
+      show(); saveUrl();
+    };
+    seg.append(b);
+  }
+  const again = document.createElement("button");
+  again.textContent = "▶"; again.title = "Hear the picked take again";
+  again.onclick = () => soundOn().preview(v, takes[v], previewOn);
+  seg.append(again);
+  show();
+  takesEl.append(row);
+}
+const muffleEl = $<HTMLInputElement>("#muffle"), muffleVal = $("#muffleval");
+const showMuffle = () => (muffleVal.textContent = `${(muffle / 1000).toFixed(1)} kHz`);
+muffleEl.value = String(muffle); showMuffle();
+muffleEl.oninput = () => { muffle = Number(muffleEl.value); showMuffle(); if (synth) synth.muffle = muffle; saveUrl(); };
+const toggleBoard = (open = board.hidden !== false) => { board.hidden = !open; $("#soundboard").classList.toggle("on", open); };
+$<HTMLButtonElement>("#soundboard").onclick = () => toggleBoard();
+$<HTMLButtonElement>("#boardclose").onclick = () => toggleBoard(false);
+if (params.has("board")) toggleBoard(true);
 volEl.oninput = () => { if (synth) synth.volume = Number(volEl.value); };
 
 // ---- Loop ----

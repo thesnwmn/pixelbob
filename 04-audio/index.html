@@ -8,8 +8,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="theme-color" content="#121014" />
     <title>What Bob sounds like</title>
-    <script type="module" crossorigin src="./assets/index-BUhkMUkt.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DiSsDAea.css">
+    <script type="module" crossorigin src="./assets/index-DHNG2_N_.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-zqZ8znE4.css">
   </head>
   <body>
     <div id="app">
@@ -28,10 +28,19 @@
           <label class="opt slider">temp <input id="temp" type="range" min="-30" max="110" step="1" value="20" /><span id="tempval">20°C</span></label>
           <p class="hint">Settings are saved in the link, so good ones can be shared. Size and gravity take effect on respawn (R).</p>
         </aside>
+        <aside id="board" hidden>
+          <div class="head"><b>Soundboard</b><button id="boardclose" aria-label="Close">✕</button></div>
+          <p class="hint">Tap a take to hear it on its own, then roll about to hear it live. Your picks are saved in the link: send it, and they become the defaults.</p>
+          <div class="voice"><b>on</b><div id="grounds" class="seg"></div><p>soft is grass, moss and dirt; hard is rock; slick is ice; sticky is resin and gum; sharp is spikes</p></div>
+          <div id="takes"></div>
+          <label class="opt slider">muffle <input id="muffle" type="range" min="600" max="6000" step="100" /><span id="muffleval"></span></label>
+          <p class="hint">Lower is more muffled: a low-pass over every voice.</p>
+        </aside>
       </div>
       <div id="bar">
         <div class="row">
           <button id="sound" class="on" title="Turn the sound on (browsers need a tap first)">Sound on</button>
+          <button id="soundboard" title="Pick between takes for each voice">Soundboard</button>
           <div id="voices" class="seg" hidden></div>
           <label class="size" id="volwrap" hidden>vol <input id="vol" type="range" min="0" max="1" step="0.05" value="0.6" /></label>
         </div>

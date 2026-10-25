@@ -1,0 +1,12 @@
+{
+  "recorded": "2026-10-25",
+  "note": "The search bot's route (beam 4), found by node game/scripts/bot.ts green-1-hills --keep: hops nearly all the way, charged jumps up the steps and over the ravine, 15.5 s. It skips the lost bit.",
+  "replay": "pixelbob-replay v1 green-1-hills 930: 8j*4 8*16 8j*22 8*8 0j*22 0*8 4*20 8j*22 8*8 4*20 8j*22 8*8\n8j*22 8*8 8j*22 8*8 0j*22 0*8 8j*22 8*8 4*20 8j*22 8*8 4*40 8j*22 8*8 8j*22 8*8 0j*22 0*8 4*20 8j*22\n8*8 4*20 0j*22 0*8 4*20 0j*22 0*8 4*20 8j*22 8*8 8j*22 8*8 8j*22 8*8 0j*22 0*8 8j*8 8*12 8j*22 8*8\n4*20 8j*22 8*8 8j*22 8*8 8j*22 8*8",
+  "expect": {
+    "frames": 930,
+    "finished": 929,
+    "home": 61,
+    "bob": 100,
+    "state": "bf157605"
+  }
+}

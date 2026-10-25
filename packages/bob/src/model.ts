@@ -50,6 +50,8 @@ export interface BobModel {
   countIn(x0: number, y0: number, x1: number, y1: number): number;
   /** Points to draw, one per pixel of him, grouped by piece (pieces[k].start/len index `order`). */
   view(): BobView;
+  /** An exact, independent copy of him, in `world` (the copy of the world he's in). */
+  copy(world?: World | null): BobModel;
   /** Move all of him (tests drop him from a height). */
   shift(dx: number, dy: number): void;
 }

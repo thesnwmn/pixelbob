@@ -62,6 +62,13 @@ export class Recorder {
     this.frames++;
   }
 
+  copy(): Recorder {
+    const r = new Recorder();
+    r.runs = this.runs.map((x) => ({ ...x }));
+    r.frames = this.frames;
+    return r;
+  }
+
   clear(): void {
     this.runs = [];
     this.frames = 0;

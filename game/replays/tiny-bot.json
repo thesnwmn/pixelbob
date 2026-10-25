@@ -1,0 +1,12 @@
+{
+  "recorded": "2026-10-25",
+  "note": "The search bot's route (beam 4), found by node game/scripts/bot.ts tiny --keep: a tap and two charged jumps, 1.3 s. It skips the lost bit.",
+  "replay": "pixelbob-replay v1 tiny 80: 8j*4 8*16 8j*22 8*8 8j*22 8*8",
+  "expect": {
+    "frames": 80,
+    "finished": 79,
+    "home": 61,
+    "bob": 100,
+    "state": "08bdbb44"
+  }
+}

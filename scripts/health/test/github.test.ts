@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { KINDS } from "../../../studio/board.ts";
 import { gatedHits, verdict } from "../src/gate.ts";
-import { GATE_FILES, gate, IN_STEP_WORKFLOW, inStep, LABELS, labels } from "../src/github.ts";
+import { GATE_FILES, gate, IN_STEP_WORKFLOW, inStep, LABELS, labels, pages, SITE_WORKFLOW } from "../src/github.ts";
 import { ctx, tmpDir } from "./fixture.ts";
 
 const rules = [
@@ -80,4 +80,26 @@ describe("github/in-step", () => {
   it("fails on a workflow that doesn't run again on an edit", () =>
     expect(inStep.run(ctx(tmpDir({ [IN_STEP_WORKFLOW]: yml.replace("edited, ", "") }))).detail).toBe("doesn't run when the PR description is edited"));
   it("fails without the workflow", () => expect(inStep.run(ctx(tmpDir())).status).toBe("fail"));
+});
+
+describe("github/pages", () => {
+  const wf = (name: string) => readFileSync(`../../.github/workflows/${name}`, "utf8");
+  const repo = { [SITE_WORKFLOW]: wf("deploy-pages.yml"), ".github/workflows/pr-preview.yml": wf("pr-preview.yml"), ".github/workflows/pr-cleanup.yml": wf("pr-cleanup.yml") };
+  it("passes on the repo's own workflows", () => expect(pages.run(ctx(process.cwd() + "/../.."))).toMatchObject({ status: "pass", detail: "3 workflows" }));
+  it("passes on copies of them", () => expect(pages.run(ctx(tmpDir(repo))).status).toBe("pass"));
+  it("fails when a preview shares the site's group (#47)", () =>
+    expect(pages.run(ctx(tmpDir({ ...repo, ".github/workflows/pr-preview.yml": wf("pr-preview.yml").replace(/group: .*/, "group: gh-pages-site") }))).out).toBe(
+      ".github/workflows/pr-preview.yml: shares the site's concurrency group gh-pages-site, so it can cancel main's deploy",
+    ));
+  it("fails when the deploy action force-pushes", () =>
+    expect(pages.run(ctx(tmpDir({ ...repo, [SITE_WORKFLOW]: wf("deploy-pages.yml").replace(/^\s*force: false\n/m, "") }))).out).toMatch(/deploy-pages.yml: the deploy action force-pushes/));
+  it("fails when the cleanup gives up on a rejected push", () =>
+    expect(pages.run(ctx(tmpDir({ ...repo, ".github/workflows/pr-cleanup.yml": "jobs:\n  c:\n    steps:\n      - with:\n          ref: gh-pages\n      - run: git push\nconcurrency:\n  group: x\n" }))).out).toBe(
+      ".github/workflows/pr-cleanup.yml: pushes to gh-pages and gives up, or overwrites, when the push is rejected",
+    ));
+  it("fails on a push to gh-pages with no queue", () =>
+    expect(pages.run(ctx(tmpDir({ ...repo, ".github/workflows/pr-cleanup.yml": wf("pr-cleanup.yml").replace(/^concurrency:\n  group: .*\n/m, "") }))).out).toBe(
+      ".github/workflows/pr-cleanup.yml: pushes to gh-pages with no concurrency group",
+    ));
+  it("fails without the site's workflow", () => expect(pages.run(ctx(tmpDir())).detail).toBe(`no ${SITE_WORKFLOW}`));
 });

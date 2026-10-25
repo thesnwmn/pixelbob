@@ -18,13 +18,13 @@ permissions:
 
 jobs:
   deploy:
-    # A merged PR is also a push to main, which deploys anyway. Skipping it matters: GitHub keeps only
-    # one pending run per concurrency group, so a third run at merge could cancel pr-cleanup's.
+    # A merged PR is also a push to main, which deploys anyway.
     if: github.event_name != 'pull_request_target' || !github.event.pull_request.merged
-    # Main and PR previews all push to gh-pages; queue them instead of racing. On the job, so a
-    # skipped run never takes a place in the queue.
+    # The site's own queue: GitHub keeps one pending run per group and cancels the older, so a shared
+    # group let a PR's preview cancel main's deploy (#47). Here only a newer site build can replace a
+    # pending one. On the job, so a skipped run never takes a place in the queue.
     concurrency:
-      group: gh-pages
+      group: gh-pages-site
       cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
@@ -47,3 +47,6 @@ jobs:
           clean: true
           clean-exclude: |
             preview/pr-*/
+          # Previews push to gh-pages at the same time: rebase onto them, never overwrite them.
+          force: false
+          attempt-limit: 10

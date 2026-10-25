@@ -1,8 +1,9 @@
 // Tier 5, GitHub: the files that set up the repo on GitHub follow their formats. The
 // gate's file list names files that exist and protects itself; the labels the studio
-// uses all exist; the bug form files with one. The gate's own logic is gate.ts.
+// uses all exist; the bug form files with one; the workflows that push to gh-pages
+// can't cancel or overwrite main's deploy. The gate's own logic is gate.ts.
 // See studio/README.md#github.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { KINDS } from "../../../studio/board.ts";
 import { type Check, fail, pass, readJson } from "./check.ts";
@@ -86,4 +87,35 @@ export const inStep: Check = {
   },
 };
 
-export const GITHUB = [gate, labels, inStep];
+export const SITE_WORKFLOW = ".github/workflows/deploy-pages.yml";
+
+export const pages: Check = {
+  id: "github/pages",
+  tier: 5,
+  repro: "grep -n 'gh-pages\\|group:\\|force:' .github/workflows/*.yml",
+  hint: "Main's deploy and the PR previews all push to gh-pages. GitHub keeps one pending run per concurrency group and cancels the older, so the site's deploy has a group to itself (a shared one let a preview cancel it, #47), and every push to gh-pages rebases or starts again when it's rejected (the deploy action's force: false), never overwrites. See docs/tech-and-toolchain.md#hosting-and-previews.",
+  run({ root }) {
+    const dir = join(root, ".github/workflows");
+    if (!existsSync(join(root, SITE_WORKFLOW))) return fail(`no ${SITE_WORKFLOW}`);
+    const groups = new Map<string, string[]>();
+    const problems: string[] = [];
+    let n = 0;
+    for (const f of readdirSync(dir).filter((f) => /\.ya?ml$/.test(f)).sort()) {
+      const path = `.github/workflows/${f}`;
+      const yml = readFileSync(join(dir, f), "utf8");
+      if (!/^\s*(branch|ref):\s*gh-pages\s*$/m.test(yml)) continue;
+      n++;
+      const group = yml.match(/^\s*group:\s*(\S+)/m)?.[1];
+      if (!group) problems.push(`${path}: pushes to gh-pages with no concurrency group`);
+      else groups.set(group, [...(groups.get(group) ?? []), path]);
+      if (yml.includes("github-pages-deploy-action") && !/^\s*force:\s*false\s*$/m.test(yml))
+        problems.push(`${path}: the deploy action force-pushes (its default) and can overwrite another push: set force: false`);
+      if (/\bgit push\b/.test(yml) && !/\bgit fetch\b/.test(yml)) problems.push(`${path}: pushes to gh-pages and gives up, or overwrites, when the push is rejected`);
+    }
+    const site = readFileSync(join(root, SITE_WORKFLOW), "utf8").match(/^\s*group:\s*(\S+)/m)?.[1];
+    for (const other of (site && groups.get(site)) || []) if (other !== SITE_WORKFLOW) problems.push(`${other}: shares the site's concurrency group ${site}, so it can cancel main's deploy`);
+    return problemsResult(problems, `${n} workflows`);
+  },
+};
+
+export const GITHUB = [gate, labels, inStep, pages];

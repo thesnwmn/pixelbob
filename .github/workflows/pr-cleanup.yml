@@ -7,8 +7,9 @@ on:
 permissions:
   contents: write
 
+# One queue per PR, shared with its preview, so it never cancels main's deploy (#47).
 concurrency:
-  group: gh-pages
+  group: gh-pages-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
@@ -22,10 +23,17 @@ jobs:
       - name: Remove preview folder
         run: |
           FOLDER="preview/pr-${{ github.event.pull_request.number }}"
-          if [ -d "$FOLDER" ]; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Main and other PRs push to gh-pages at the same time: if the push is rejected, start
+          # again from the new tip rather than overwrite theirs.
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            [ -d "$FOLDER" ] || exit 0
             git rm -rf --quiet "$FOLDER"
-            git commit -m "chore: remove preview for PR #${{ github.event.pull_request.number }}"
-            git push
-          fi
+            git commit --quiet -m "chore: remove preview for PR #${{ github.event.pull_request.number }}"
+            git push && exit 0
+            sleep "$i"
+            git fetch --quiet origin gh-pages
+            git reset --quiet --hard FETCH_HEAD
+          done
+          exit 1

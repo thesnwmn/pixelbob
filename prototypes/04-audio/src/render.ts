@@ -17,7 +17,8 @@ const { chromium } = require(process.env.PLAYWRIGHT ?? "playwright");
 
 /** What to render: the tour's cues frame by frame, or soundboard previews, each in its own leg. */
 type Leg = { name: string; at: number };
-let cues: unknown[] = [], legs: Leg[] = [], previews: { at: number; voice: string; take: string; ground: string }[] = [], secs: number;
+type Preview = { at: number; voice: string; take: string; ground: string };
+let cues: unknown[] = [], legs: Leg[] = [], previews: Preview[] = [], secs: number;
 if (opts.board) {
   const LEG = 2.2;
   for (const voice of Object.keys(TAKES) as (keyof typeof TAKES)[])
@@ -39,7 +40,7 @@ const synth = stripTypeScriptTypes(readFileSync(new URL("./synth.ts", import.met
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM });
 const page = await browser.newPage();
 await page.addScriptTag({ content: `${synth}\nwindow.Synth = Synth;` });
-const { b64, renderMs, pulses } = await page.evaluate(async ([cues, previews, legs, secs, opts]: [unknown[], typeof previews, Leg[], number, Record<string, string>]) => {
+const { b64, renderMs, pulses } = await page.evaluate(async ([cues, previews, legs, secs, opts]: [unknown[], Preview[], Leg[], number, Record<string, string>]) => {
   const rate = 44100, ctx = new OfflineAudioContext(1, Math.ceil((secs + 1) * rate), rate);
   const synth = new (window as any).Synth(0.6, ctx, Number(opts.muffle) || undefined);
   for (const v of ["roll", "land", "jump"]) if (opts[v]) synth.takes[v] = opts[v];

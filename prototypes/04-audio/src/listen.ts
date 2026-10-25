@@ -103,6 +103,8 @@ export class Listener {
       else if (!now && was[i]) c.peel++;
       was[i] = now;
     }
+    // Keep the rest up to date too, so a particle joining the main piece doesn't count as touching down.
+    for (let i = 0; i < cap; i++) if (!alive[i] || piece[i] !== main) was[i] = alive[i] && cmat[i] ? 1 : 0;
     let most = M.rock, top = 0;
     for (const [m, k] of touched) if (k > top) { top = k; most = m; }
     const on = groundOf(most), grounded = p.ground > 0, speed = Math.hypot(p.vx, p.vy);

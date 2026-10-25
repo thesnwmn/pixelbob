@@ -29,7 +29,7 @@ for (const v of Object.keys(TAKES) as (keyof Takes)[]) {
   if (t && (TAKES[v] as readonly string[]).includes(t)) (takes as Record<string, string>)[v] = t;
 }
 const MUFFLE = 1500;
-let muffle = Number(params.get("muffle")) || MUFFLE;
+let muffle = Math.max(600, Math.min(6000, Number(params.get("muffle")) || MUFFLE));
 
 function saveUrl() {
   const q = new URLSearchParams();

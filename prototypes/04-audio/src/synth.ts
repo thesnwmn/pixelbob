@@ -32,18 +32,23 @@ export const TAKE_NOTES: Record<string, string> = {
 
 export const GROUNDS: Ground[] = ["soft", "hard", "slick", "sticky", "sharp"];
 /** How each ground colours the roll, landing and jump: how bright (scales the filters), how wet
- *  (resonance and gurgle), and how loud. Grass and moss pat, rock is drier and quieter, ice is
- *  barely heard, resin and gum are the wettest. */
-const GROUND: Record<Ground, { bright: number; wet: number; level: number }> = {
-  soft: { bright: 0.8, wet: 0.6, level: 1 },
-  hard: { bright: 1.15, wet: 0.2, level: 0.45 },
-  slick: { bright: 1.3, wet: 0.1, level: 0.2 },
-  sticky: { bright: 0.65, wet: 1, level: 1.2 },
-  sharp: { bright: 1.3, wet: 0.3, level: 0.6 },
+ *  (resonance and gurgle), how loud, and how often the roll pulses (he slides on ice more than he
+ *  turns over). Grass and moss pat, rock is drier and quieter, ice is barely heard and seldom,
+ *  resin and gum are the wettest. */
+const GROUND: Record<Ground, { bright: number; wet: number; level: number; turns: number }> = {
+  soft: { bright: 0.8, wet: 0.6, level: 1, turns: 1 },
+  hard: { bright: 1.15, wet: 0.2, level: 0.45, turns: 0.8 },
+  slick: { bright: 1.3, wet: 0.1, level: 0.2, turns: 0.4 },
+  sticky: { bright: 0.65, wet: 1, level: 1.2, turns: 1 },
+  sharp: { bright: 1.3, wet: 0.3, level: 0.6, turns: 0.8 },
 };
 
-/** Contacts made (and half of those lost) that add up to one pulse of the roll. */
-const TURN = 14;
+/** Contacts made (and half of those lost) that add up to one pulse of the roll. Rolling at his top
+ *  speed makes about 3.3 a frame, so this is about 5 pulses a second, far enough apart that each
+ *  pat is heard on its own rather than blurring into a hiss. */
+const TURN = 40;
+/** The soundboard's roll plays pulses this far apart (s), about what rolling at speed gives. */
+const PREVIEW_TURN = 0.2;
 
 /** A small seeded generator: audio isn't the sim, but nothing here needs Math.random either. */
 function lcg(seed: number) {
@@ -66,6 +71,8 @@ export class Synth {
   private sizF: BiquadFilterNode; private sizG: GainNode;
   private nextBubble = 0;
   private turned = 0; private turnAt = TURN; private swell = 0; private previewing = 0;
+  /** Roll pulses so far, for render.ts to count. */
+  pulses = 0;
   /** One-shots playing, for the cost readout. */
   live = 0;
 
@@ -120,10 +127,11 @@ export class Synth {
   update(c: Cues): void {
     const t = this.ctx.currentTime, k = 0.03, on = this.on, g = GROUND[c.ground];
     // The roll: a pulse each time enough of his surface has turned over onto the ground.
-    if (c.roll > 0.03) this.turned += c.touch + 0.5 * c.peel;
+    if (c.roll > 0.03) this.turned += (c.touch + 0.5 * c.peel) * g.turns;
     else this.turned = 0;
     if (this.turned >= this.turnAt) {
       this.turned = 0; this.turnAt = TURN * (0.8 + 0.4 * this.rand());
+      this.pulses++;
       if (on.roll) this.turn(c.roll, c.ground, c.speed);
     }
     // The smear take's bed swells on each pulse and sinks between them.
@@ -159,8 +167,9 @@ export class Synth {
     const was = this.takes[voice], t = this.ctx.currentTime + 0.05;
     (this.takes as Record<string, string>)[voice] = take;
     if (voice === "roll") {
-      // A second and a half of rolling at a steady speed, his surface turning over about 8 times a second.
-      for (let i = 0; i < 12; i++) this.turn(0.8, ground, 80, t + i * 0.125 + 0.02 * this.rand());
+      // A second and a half of rolling at a steady speed, at the rate he pulses rolling for real.
+      const every = PREVIEW_TURN / GROUND[ground].turns;
+      for (let i = 0; i * every < 1.5; i++) this.turn(0.8, ground, 80, t + i * every + 0.03 * this.rand());
       if (take === "smear") {
         const g = GROUND[ground];
         this.previewing = t + 1.6;
@@ -261,7 +270,7 @@ export class Synth {
       // The weight of him: a low push of noise, not a tone.
       this.burst(0.1 + 0.08 * s, "lowpass", 220, 70, 1, (0.15 + 0.3 * s) * level, at, 0.015);
     } else if (take === "plop") {
-      this.squelch(0.1 + 0.1 * s, g.bright * (700 + 400 * s), 140, 10 + 6 * g.wet, (0.2 + 0.4 * s) * level, at, 0.012);
+      this.squelch(0.1 + 0.1 * s, g.bright * (700 + 400 * s), 140, 10 + 6 * g.wet, (0.15 + 0.28 * s) * level, at, 0.012);
       const bubbles = Math.round(1 + 2 * s * g.wet);
       for (let i = 0; i < bubbles; i++) this.bubble(0.6, at + 0.08 + i * (0.05 + 0.05 * this.rand()));
     } else {
@@ -280,10 +289,10 @@ export class Synth {
     if (take === "unstick") {
       this.squelch(0.09 + 0.12 * c, g.bright * 180, g.bright * (450 + 400 * c), 6 + 6 * g.wet, (0.25 + 0.4 * c) * level, at, 0.03, 18 * g.wet);
     } else if (take === "slurp") {
-      this.squelch(0.07 + 0.05 * c, g.bright * 200, g.bright * (350 + 200 * c), 7 + 5 * g.wet, (0.2 + 0.3 * c) * level, at, 0.02, 30);
-      this.squelch(0.08 + 0.08 * c, g.bright * 260, g.bright * (500 + 300 * c), 7 + 5 * g.wet, (0.16 + 0.25 * c) * level, at + 0.07, 0.02, 30);
+      this.squelch(0.07 + 0.05 * c, g.bright * 200, g.bright * (350 + 200 * c), 7 + 5 * g.wet, (0.5 + 0.7 * c) * level, at, 0.02, 30);
+      this.squelch(0.08 + 0.08 * c, g.bright * 260, g.bright * (500 + 300 * c), 7 + 5 * g.wet, (0.4 + 0.6 * c) * level, at + 0.07, 0.02, 30);
     } else {
-      this.burst(0.06 + 0.06 * c, "bandpass", g.bright * 220, g.bright * (380 + 200 * c), 10, (0.35 + 0.4 * c) * level, at, 0.01);
+      this.burst(0.06 + 0.06 * c, "bandpass", g.bright * 220, g.bright * (380 + 200 * c), 10, (1.2 + 1.2 * c) * level, at, 0.01);
     }
   }
 

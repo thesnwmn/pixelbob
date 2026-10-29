@@ -3,7 +3,7 @@ title: Can the music come from the game?
 kind: spike
 role: prototyper
 size: S
-status: ready
+status: doing
 milestone: m1-green-alpha
 needs: []
 ---
@@ -18,3 +18,7 @@ The producer wants atmosphere to carry the opening, music included ([taste notes
 
 ## Not this
 Composed or licensed tracks, other worlds' music, final mixing, menus and the title.
+
+## Log
+- 2026-10-29 the question: can Web Audio generate calm, looping music for The Green live, with no clips, that follows the game continuously (how fast Bob goes, how high he is, winding up a jump, being in water, how far through the level he is), sits under Bob's own sounds from [audio-tune](audio-tune.md) without fighting them, and costs well under 1 ms a frame? Built as `prototypes/05-music/`: green-1-hills from the game, with Bob's voices and a generative score on one audio context. **Kill criterion** (stated before any code): the producer wouldn't keep it after a few minutes in green-1-hills, or the score and its scheduling cost more than 1 ms a frame (measured in Node and in headless Chromium; the phone is the producer's).
+

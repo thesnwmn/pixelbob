@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="theme-color" content="#121014" />
+    <title>Music from the game</title>
+    <script type="module" crossorigin src="./assets/index-C_Lu7p0k.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-MCP2cvoP.css">
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="view"></canvas>
+      <div id="hud"></div>
+      <div id="bar">
+        <button id="sound" class="primary" title="Browsers need a tap before they play anything">Sound on</button>
+        <button id="listen" title="Watch and listen to a kept run through the level (L)">Listen</button>
+        <button id="mix" title="The parts and the levels">Mix</button>
+        <button id="restart" title="Back to the start">Restart</button>
+        <button id="pause" title="Pause (P)">Pause</button>
+      </div>
+      <aside id="panel" hidden>
+        <div class="head"><b>Mix</b><button id="close" aria-label="Close">✕</button></div>
+        <label class="slider">music <input id="music" type="range" min="0" max="1" step="0.05" /></label>
+        <label class="slider">Bob <input id="bob" type="range" min="0" max="1" step="0.05" /></label>
+        <p class="hint">Bob's voices are the audio spike's, with its defaults.</p>
+        <div id="parts" class="seg"></div>
+        <p class="hint">Turn a part off to hear what it does. The mood bars on the left are what the music is following.</p>
+      </aside>
+      <div id="touch"><span>◀ drag ▶ · ▼ pour · ▲ climb</span><span>tap: jump</span></div>
+    </div>
+    <div id="error" class="sheet" hidden><div class="box"></div></div>
+  </body>
+</html>

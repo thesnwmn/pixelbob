@@ -28,7 +28,7 @@ export const MOOD_KEYS = ["energy", "height", "air", "wind", "wet", "warmth", "p
 /** Bob's insides the model interface doesn't name. */
 interface Inside { charge: number }
 
-/** How fast each number eases towards where the game is, per second: speed is twitchy, so it eases slowest. */
+/** How fast each number eases towards where the game is, per second: the charge and the air follow at once; speed is twitchy, so it eases slower; warmth, progress and rest drift. */
 const EASE: Record<keyof Mood, number> = { energy: 1.2, height: 1.5, air: 4, wind: 8, wet: 3, warmth: 0.5, progress: 0.5, rest: 0.4 };
 
 export class Follower {

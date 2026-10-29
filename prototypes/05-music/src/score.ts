@@ -98,9 +98,10 @@ export class Conductor {
       this.bar.fill(null);
     }
 
-    // The pad: the chord, held for its two bars, always there. Under water it's all that's left.
+    // The pad: the chord, held for its two bars, always there. A third longer, so if the tempo
+    // slows (under water) the next chord still starts before it fades.
     if (s === 0 && barN % BARS_PER_CHORD === 0)
-      for (const n of chord.slice(1)) push("pad", n, 0.5 + 0.2 * m.warmth, len * STEPS * BARS_PER_CHORD + 0.6);
+      for (const n of chord.slice(1)) push("pad", n, 0.5 + 0.2 * m.warmth, len * STEPS * BARS_PER_CHORD * 1.3 + 0.6);
 
     // The bass comes in over the first stretch of the level and walks a little with speed.
     const bass = smooth(0.03, 0.3, m.progress) * (1 - 0.5 * m.rest);

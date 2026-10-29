@@ -1,0 +1,21 @@
+{
+  "name": "@pixelbob/05-music",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike: can the music come from the game? A generative score in Web Audio, no clips, that follows Bob through the first Green level (speed, height, wind-up, water, progress), under his sounds from the audio spike",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p .",
+    "notes": "node src/notes.ts"
+  },
+  "dependencies": {
+    "@pixelbob/bob": "workspace:*",
+    "@pixelbob/render": "workspace:*",
+    "@pixelbob/sim": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}

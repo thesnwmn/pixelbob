@@ -1,0 +1,40 @@
+:root {
+  --bg: #121014;
+  --panel: #1c1920;
+  --ink: #e9e2d6;
+  --dim: #9b9184;
+  --accent: #e7c27a;
+  --line: #2e2933;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden; overscroll-behavior: none; }
+body { font: 14px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; -webkit-user-select: none; user-select: none; }
+#stage { position: fixed; inset: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+#view { image-rendering: pixelated; touch-action: none; background: #000; display: block; width: 100%; height: 100%; }
+#hud, #note { position: absolute; left: 10px; pointer-events: none; font-size: 12px; text-shadow: 0 1px 0 #000, 0 0 3px #000; }
+#hud { top: calc(8px + env(safe-area-inset-top)); white-space: pre; color: #e9e2d6dd; }
+#note { bottom: calc(8px + env(safe-area-inset-bottom)); max-width: 60%; color: #e9e2d6cc; }
+#bar { position: absolute; right: 8px; top: calc(8px + env(safe-area-inset-top)); display: flex; gap: 6px; }
+button {
+  font: inherit; color: var(--ink); background: #26222bdd; border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 10px; min-height: 36px; touch-action: manipulation; cursor: pointer;
+}
+button.primary, button.on { background: var(--accent); color: #1a1408; border-color: var(--accent); }
+#touch { position: absolute; inset: auto 0 calc(6px + env(safe-area-inset-bottom)) 0; display: none; justify-content: space-between; padding: 0 16px; pointer-events: none; font-size: 12px; color: #e9e2d677; }
+@media (pointer: coarse) { #touch { display: flex; gap: 12px; white-space: nowrap; } #note { bottom: calc(28px + env(safe-area-inset-bottom)); } }
+.sheet { position: fixed; inset: 0; background: #0009; display: grid; place-items: center; padding: 12px; }
+.sheet[hidden] { display: none; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; max-width: 34rem; width: 100%; }
+
+/* The mix: a panel under the bar. */
+#panel { position: absolute; right: 8px; top: calc(54px + env(safe-area-inset-top)); width: min(300px, calc(100% - 16px)); background: #1c1920ee; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+#panel[hidden] { display: none; }
+#panel .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+#panel .head button { min-height: 28px; padding: 2px 8px; }
+.slider { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.slider input { flex: 1; accent-color: var(--accent); }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.seg button { min-height: 30px; padding: 2px 8px; }
+.hint { color: var(--dim); font-size: 12px; margin: 6px 0; }
+@media (max-width: 600px) { #panel { top: calc(96px + env(safe-area-inset-top)); } }
